@@ -25,4 +25,38 @@ El paso a paso está en la [guía de Git](https://github.com/akirasoftutl/Servia
 
 ## Cómo correrlo
 
-Se documenta en el Sprint 0, cuando exista el proyecto base.
+Necesitas **Node.js 22 o más nuevo** y npm. Para ver datos reales, la API (`Servia_BE`) debe estar corriendo.
+
+```bash
+npm install
+cp .env.example .env      # URL de la API y configuración web de Firebase (ver docs/firebase.md de Servia_BE)
+npm run dev               # http://localhost:5173
+```
+
+| Comando | Para qué |
+|---|---|
+| `npm run dev` | Desarrollo con recarga automática (el service worker está apagado en este modo) |
+| `npm run build` | Compilar para producción (genera el service worker y el manifest) |
+| `npm run preview` | Servir lo compilado en http://localhost:4173; aquí se prueba la instalación de la PWA |
+| `npm test` | Pruebas (Vitest + Testing Library) |
+| `npm run lint` | Revisar el código (oxlint) |
+
+**Probar que se puede instalar:** `npm run build && npm run preview`, abre http://localhost:4173 en Chrome y aparece el ícono de instalar en la barra de direcciones. En DevTools → *Application* se ven el *Manifest* y el *Service worker*.
+
+## Estructura
+
+```
+src/
+├── main.tsx             Arranque: rutas y registro del service worker
+├── router.tsx           Rutas del panel
+├── componentes/         Piezas compartidas (Layout con el encabezado)
+├── paginas/             Una página por ruta (Inicio, NoEncontrado…)
+├── servicios/
+│   ├── api.ts           Cliente de la API: agrega el token de Firebase y convierte errores en ErrorApi
+│   └── firebase.ts      Inicializa Firebase web con las variables VITE_FIREBASE_*
+├── pruebas/setup.ts     Configuración de las pruebas
+└── estilos.css          Estilos globales y color de Servia (#E27441)
+public/                  Íconos de la PWA, generados a partir del logo
+```
+
+Para llamar a la API usa `api()`: `const perfil = await api<Perfil>('/negocios/mio')`. Si hay sesión, agrega solo el token; si la API responde con error, lanza `ErrorApi` con `estado` (código HTTP) y el mensaje del servidor.
