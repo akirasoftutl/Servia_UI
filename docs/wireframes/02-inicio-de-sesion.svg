@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" role="img" aria-labelledby="titulo descripcion">
+<title id="titulo">Inicio de sesión</title>
+<desc id="descripcion">Boceto de baja fidelidad del panel del negocio. MVP-03 · Enlace de recuperación: MVP-04. Los controles representan acciones; los ejemplos y estados alternativos no ocurren a la vez.</desc>
+<rect width="1280" height="800" fill="#ffffff"/>
+<g font-family="Arial, sans-serif" fill="#222222">
+<rect x="0" y="0" width="1280" height="64" fill="#eeeeee" stroke="#777777"/>
+<text x="28" y="40" font-size="24" font-weight="bold">Servia · Panel del negocio</text>
+<text x="910" y="39" font-size="18">Boceto · Datos de ejemplo</text>
+<text x="350" y="115" font-size="28" font-weight="bold">Inicio de sesión</text>
+<text x="350" y="146" font-size="16">MVP-03 · Enlace de recuperación: MVP-04</text>
+<text x="350" y="780" font-size="14">Wireframe estático · Cajas y controles sin implementación</text>
+<text x="350" y="207" font-size="17" font-weight="bold">Correo</text>
+<rect x="350" y="217" width="580" height="36" fill="#ffffff" stroke="#777777"/>
+<text x="360" y="241" font-size="16">negocio@ejemplo.invalid</text>
+<text x="350" y="292" font-size="17" font-weight="bold">Contraseña</text>
+<rect x="350" y="302" width="580" height="36" fill="#ffffff" stroke="#777777"/>
+<text x="360" y="326" font-size="16">••••••••</text>
+<rect x="350" y="358" width="580" height="46" fill="#f5f5f5" stroke="#777777"/>
+<text x="366" y="387" font-size="18">Correo o contraseña incorrectos</text>
+<a href="06-reservas.svg">
+<rect x="350" y="425" width="580" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="362" y="450" font-size="17">Iniciar sesión</text>
+</a>
+<rect x="350" y="482" width="580" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="362" y="507" font-size="17">Olvidé mi contraseña</text>
+<text x="350" y="550" font-size="17">Si la cuenta es de cliente: usa la app móvil de Servia.</text>
+<text x="350" y="581" font-size="17">Si la cuenta está desactivada: no puedes iniciar sesión.</text>
+<a href="01-registro.svg">
+<rect x="350" y="626" width="580" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="362" y="651" font-size="17">No tengo cuenta · Registrarme</text>
+</a>
+<text x="350" y="703" font-size="16">Recuperación: el enlace representa la entrada a MVP-04.</text>
+<text x="350" y="730" font-size="16">Su pantalla no forma parte de estos ocho bocetos.</text>
+</g>
+</svg>
