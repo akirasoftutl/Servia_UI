@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" role="img" aria-labelledby="titulo descripcion">
+<title id="titulo">Horario y bloqueos</title>
+<desc id="descripcion">Boceto de baja fidelidad del panel del negocio. MVP-10 · MVP-11 · MVP-12. Los controles representan acciones; los ejemplos y estados alternativos no ocurren a la vez.</desc>
+<rect width="1280" height="800" fill="#ffffff"/>
+<g font-family="Arial, sans-serif" fill="#222222">
+<rect x="0" y="0" width="1280" height="64" fill="#eeeeee" stroke="#777777"/>
+<text x="28" y="40" font-size="24" font-weight="bold">Servia · Panel del negocio</text>
+<text x="910" y="39" font-size="18">Boceto · Datos de ejemplo</text>
+<rect x="0" y="64" width="220" height="736" fill="#f5f5f5" stroke="#777777"/>
+<text x="24" y="112" font-size="20" font-weight="bold">Mi negocio</text>
+<a href="06-reservas.svg">
+<rect x="16" y="145" width="188" height="38" fill="#ffffff" stroke="#777777"/>
+<text x="28" y="170" font-size="17">Reservas</text>
+</a>
+<a href="04-servicios.svg">
+<rect x="16" y="207" width="188" height="38" fill="#ffffff" stroke="#777777"/>
+<text x="28" y="232" font-size="17">Servicios</text>
+</a>
+<a href="05-horario-y-bloqueos.svg">
+<rect x="16" y="269" width="188" height="38" fill="#dddddd" stroke="#777777"/>
+<text x="28" y="294" font-size="17">Horario</text>
+</a>
+<a href="03-perfil-del-negocio.svg">
+<rect x="16" y="331" width="188" height="38" fill="#ffffff" stroke="#777777"/>
+<text x="28" y="356" font-size="17">Perfil</text>
+</a>
+<a href="08-avisos.svg">
+<rect x="16" y="393" width="188" height="38" fill="#ffffff" stroke="#777777"/>
+<text x="28" y="418" font-size="17">Avisos (2)</text>
+</a>
+<a href="02-inicio-de-sesion.svg">
+<rect x="16" y="687" width="188" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="28" y="712" font-size="17">Cerrar sesión</text>
+</a>
+<text x="256" y="112" font-size="28" font-weight="bold">Horario y bloqueos</text>
+<text x="256" y="143" font-size="16">MVP-10 · MVP-11 · MVP-12</text>
+<text x="256" y="780" font-size="14">Wireframe estático · Cajas y controles sin implementación</text>
+<rect x="256" y="165" width="326" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="268" y="190" font-size="17">[✓] Recibir reservas · Activado</text>
+<text x="610" y="188" font-size="17">Al pausar: «No acepta reservas por ahora».</text>
+<text x="610" y="215" font-size="16">El perfil sigue visible y las reservas existentes no cambian.</text>
+<rect x="256" y="236" width="460" height="326" fill="#ffffff" stroke="#777777"/>
+<text x="272" y="262" font-size="17" font-weight="bold">Día / Tipo</text>
+<text x="483" y="262" font-size="17" font-weight="bold">Apertura</text>
+<text x="603" y="262" font-size="17" font-weight="bold">Cierre</text>
+<text x="272" y="296" font-size="16">Lunes</text>
+<text x="365" y="296" font-size="16">Laborable</text>
+<text x="495" y="296" font-size="16">09:00</text>
+<text x="614" y="296" font-size="16">18:00</text>
+<text x="272" y="328" font-size="16">Martes</text>
+<text x="365" y="328" font-size="16">Laborable</text>
+<text x="495" y="328" font-size="16">09:00</text>
+<text x="614" y="328" font-size="16">18:00</text>
+<text x="272" y="360" font-size="16">Miércoles</text>
+<text x="365" y="360" font-size="16">Laborable</text>
+<text x="495" y="360" font-size="16">09:00</text>
+<text x="614" y="360" font-size="16">18:00</text>
+<text x="272" y="392" font-size="16">Jueves</text>
+<text x="365" y="392" font-size="16">Laborable</text>
+<text x="495" y="392" font-size="16">09:00</text>
+<text x="614" y="392" font-size="16">18:00</text>
+<text x="272" y="424" font-size="16">Viernes</text>
+<text x="365" y="424" font-size="16">Laborable</text>
+<text x="495" y="424" font-size="16">09:00</text>
+<text x="614" y="424" font-size="16">18:00</text>
+<text x="272" y="456" font-size="16">Sábado</text>
+<text x="365" y="456" font-size="16">Laborable</text>
+<text x="495" y="456" font-size="16">09:00</text>
+<text x="614" y="456" font-size="16">18:00</text>
+<text x="272" y="488" font-size="16">Domingo</text>
+<text x="365" y="488" font-size="16">Descanso</text>
+<text x="495" y="488" font-size="16">—</text>
+<text x="614" y="488" font-size="16">—</text>
+<rect x="272" y="521" width="423" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="284" y="546" font-size="17">Guardar horario · Un turno por día</text>
+<rect x="748" y="236" width="484" height="326" fill="#ffffff" stroke="#777777"/>
+<text x="764" y="262" font-size="20" font-weight="bold">Bloqueos</text>
+<text x="764" y="294" font-size="16">14/10/2026 · 13:00–14:00 · Comida</text>
+<rect x="1110" y="310" width="106" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="1122" y="335" font-size="17">Quitar</text>
+<text x="764" y="374" font-size="18" font-weight="bold">Agregar bloqueo</text>
+<text x="764" y="405" font-size="16">Tipo: Fecha / Rango de fechas / Horas</text>
+<text x="764" y="441" font-size="17" font-weight="bold">Desde</text>
+<rect x="764" y="451" width="208" height="36" fill="#ffffff" stroke="#777777"/>
+<text x="774" y="475" font-size="16">15/10/2026 13:00</text>
+<text x="990" y="441" font-size="17" font-weight="bold">Hasta</text>
+<rect x="990" y="451" width="226" height="36" fill="#ffffff" stroke="#777777"/>
+<text x="1000" y="475" font-size="16">15/10/2026 14:00</text>
+<rect x="764" y="510" width="452" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="776" y="535" font-size="17">Motivo (opcional): comida · Agregar</text>
+<rect x="256" y="585" width="976" height="158" fill="#f5f5f5" stroke="#777777"/>
+<text x="272" y="613" font-size="16">Validación: el cierre debe ser posterior a la apertura. Sin horario no se reciben reservas.</text>
+<text x="272" y="637" font-size="16">Cambio que afecta reservas: SRV-7KQ2MX · 14/10, 16:00 · Pendiente.</text>
+<text x="272" y="661" font-size="16">Se muestran las afectadas y se pide confirmar; no se cancelan automáticamente.</text>
+<text x="272" y="685" font-size="16">Bloqueo con reservas Pendientes o Confirmadas: no se permite agregarlo.</text>
+<text x="272" y="709" font-size="16">Se muestran sus reservas para rechazarlas o cancelarlas primero.</text>
+<rect x="954" y="685" width="258" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="966" y="710" font-size="17">Confirmar cambio de horario</text>
+</g>
+</svg>
