@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../servicios/firebase';
-import { api, ErrorApi } from '../servicios/api';
+import { api} from '../servicios/api';
 
 export function Login() {
   const navigate = useNavigate();
