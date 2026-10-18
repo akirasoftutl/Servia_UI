@@ -1,19 +1,22 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate } from 'react-router'; // Quitamos Link porque vamos a borrar el de registro
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../servicios/firebase';
-import { api, ErrorApi } from '../servicios/api';
+import { api } from '../servicios/api';
 
 export function Login() {
   const navigate = useNavigate();
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [exito, setExito] = useState(''); // Para mostrar el mensaje de "Inició sesión"
   const [cargando, setCargando] = useState(false);
+  const [mostrarPassword, setMostrarPassword] = useState(false); // Para el ojito
 
-    const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    setExito('');
     setCargando(true);
 
     try {
@@ -26,106 +29,110 @@ export function Login() {
       if (respuesta.tipo !== 'negocio') {
         await auth!.signOut();
         setError('Este panel es para negocios. Si eres cliente, usa la app de Servia.');
+        setCargando(false);
         return;
       }
 
-      // 3. Si es negocio, adentro
-      navigate('/mi-perfil'); 
-    } catch (error: any) {
-      // TRUCO: Imprimimos el error en consola para ver qué es
-      console.log("ERROR REAL:", error); 
+      // 3. Mostrar mensaje de éxito antes de redirigir
+      setExito('¡Inicio de sesión exitoso! Redirigiendo...');
+      
+      setTimeout(() => {
+        navigate('/mi-perfil');
+      }, 1500); // Espera 1.5 segundos para que se lea el mensaje
 
-      // Si el error viene de Firebase Auth (credenciales malas)
+    } catch (error: any) {
       if (error.code?.includes('auth/')) {
         setError('Correo o contraseña incorrectos');
-      } 
-      // Si el error viene de nuestra API (ej. 403 desactivado)
-      else if (error.estado === 403) {
+      } else if (error.estado === 403) {
         await auth!.signOut();
         setError('Tu cuenta está desactivada. Contacta al soporte.');
-      } 
-      // Cualquier otro error, lo mostramos
-      else {
+      } else {
         setError('Ocurrió un error al iniciar sesión.');
       }
-    } finally {
       setCargando(false);
     }
   };
 
-    return (
-  
-    <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+  return (
+    // Fondo con un degradado suave para mejorar el diseño
+    <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #ffd8c2 100%)' }}>
       
-      
-      <div className="card shadow-sm border-0" style={{ maxWidth: '400px', width: '100%', borderRadius: '12px' }}>
+      <div className="card shadow-lg border-0" style={{ maxWidth: '420px', width: '100%', borderRadius: '16px' }}>
         <div className="card-body p-4 p-md-5">
           
-         
           <div className="text-center mb-4">
-            <h2 className="fw-bold" style={{ color: '#e27441' }}>Servia</h2>
-            <h5 className="text-muted mb-0">Iniciar Sesión</h5>
+            <h2 className="fw-bold" style={{ color: '#e27441', fontSize: '2.5rem' }}>Servia</h2>
+            <p className="text-muted fw-semibold">Panel del Negocio</p>
           </div>
 
-          {error && <div className="alert alert-danger py-2 text-center" role="alert">{error}</div>}
+          {/* Mensajes de Error o Éxito */}
+          {error && <div className="alert alert-danger py-2 text-center small" role="alert">{error}</div>}
+          {exito && <div className="alert alert-success py-2 text-center small" role="alert">{exito}</div>}
 
           <form onSubmit={handleSubmit}>
-            
-          
+            {/* Input Correo con nuevo placeholder */}
             <div className="mb-3">
-              <label className="form-label text-muted small">Correo electrónico</label>
+              <label className="form-label fw-semibold text-secondary small">Correo electrónico</label>
               <input 
                 type="email" 
-                className="form-control" 
-                placeholder="tu@correo.com"
+                className="form-control form-control-lg" 
+                placeholder="contacto@tunegocio.com" // <-- Placeholder cambiado
                 value={correo} 
                 onChange={(e) => setCorreo(e.target.value)} 
-                disabled={cargando}
+                disabled={cargando || exito !== ''}
                 required
               />
             </div>
 
-           
-            <div className="mb-3">
-              <label className="form-label text-muted small">Contraseña</label>
+            {/* Input Contraseña con botón de ver/ocultar */}
+            <div className="mb-4 position-relative">
+              <label className="form-label fw-semibold text-secondary small">Contraseña</label>
               <input 
-                type="password" 
-                className="form-control" 
-                placeholder="Contraseña"
+                type={mostrarPassword ? "text" : "password"} // <-- Cambia dinámicamente
+                className="form-control form-control-lg" 
+                placeholder="Ingresa tu contraseña"
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
-                disabled={cargando}
+                disabled={cargando || exito !== ''}
                 required
+                style={{ paddingRight: '45px' }} // Espacio para el ojito
               />
+                          <button 
+                type="button"
+                className="btn position-absolute end-0 border-0 bg-transparent text-secondary"
+                onClick={() => setMostrarPassword(!mostrarPassword)}
+                style={{ top: '38px', zIndex: 10 }}
+                tabIndex={-1}
+              >
+                {mostrarPassword ? (
+                  // Ojo Abierto (Cuando la contraseña ES VISIBLE)
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                ) : (
+                  // Ojo Tachado (Cuando la contraseña ESTÁ OCULTA)
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                )}
+              </button>
             </div>
 
-   
-            <div className="form-check mb-4">
-              <input className="form-check-input" type="checkbox" id="recordarme" />
-              <label className="form-check-label text-muted small" htmlFor="recordarme">
-                Recuérdame
-              </label>
-            </div>
-
-            
             <button 
               type="submit" 
-              className="btn w-100 fw-bold text-white" 
-              style={{ backgroundColor: '#e27441', padding: '0.6rem', borderRadius: '8px' }}
-              disabled={cargando}
+              className="btn w-100 fw-bold text-white shadow-sm" 
+              style={{ backgroundColor: '#e27441', padding: '0.8rem', borderRadius: '10px', fontSize: '1.1rem' }}
+              disabled={cargando || exito !== ''}
             >
-              {cargando ? 'Entrando...' : 'ENTRAR'}
+              {cargando ? 'Validando...' : 'INICIAR SESIÓN'}
             </button>
           </form>
 
-         
-          <div className="text-center mt-4 small">
-            <Link to="/recuperar" className="text-decoration-none text-muted d-block mb-1">
-              ¿Olvidaste tu contraseña?
-            </Link>
-            <Link to="/registro-negocio" className="text-decoration-none fw-bold" style={{ color: '#e27441' }}>
-              ¿No tienes cuenta? Regístrate
-            </Link>
+          {/* QUITAMOS EL ENLACE DE REGISTRO COMO PIDIÓ TU COMPAÑERO */}
+          <div className="text-center mt-4 small text-muted">
+            Acceso exclusivo para negocios registrados.
           </div>
 
         </div>
