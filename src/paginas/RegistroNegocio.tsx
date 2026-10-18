@@ -4,12 +4,11 @@ import { api } from '../servicios/api';
 import { auth } from '../servicios/firebase'; 
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
-
 interface FormularioRegistro {
-  nombre: string;
+  nombreNegocio: string;
   correo: string;
   telefono: string;
-  password: string;
+  contrasena: string;
 }
 
 type ErroresFormulario = Partial<Record<keyof FormularioRegistro, string>>;
@@ -18,10 +17,10 @@ export function RegistroNegocio() {
   const navigate = useNavigate();
   
   const [form, setForm] = useState<FormularioRegistro>({
-    nombre: '',
+    nombreNegocio: '',
     correo: '',
     telefono: '',
-    password: '',
+    contrasena: '',
   });
 
   const [errores, setErrores] = useState<ErroresFormulario>({});
@@ -36,10 +35,19 @@ export function RegistroNegocio() {
 
   const validar = (): boolean => {
     const nuevosErrores: ErroresFormulario = {};
-    if (!form.nombre.trim()) nuevosErrores.nombre = 'El nombre es obligatorio';
+    
+    if (!form.nombreNegocio.trim()) nuevosErrores.nombreNegocio = 'El nombre es obligatorio';
     if (!form.correo.includes('@')) nuevosErrores.correo = 'Correo inválido';
-    if (!form.telefono.trim()) nuevosErrores.telefono = 'El teléfono es obligatorio';
-    if (form.password.length < 6) nuevosErrores.password = 'Mínimo 6 caracteres';
+    
+    // Validación de 10 dígitos exactos (como pide la API)
+    if (!/^\d{10}$/.test(form.telefono)) {
+      nuevosErrores.telefono = 'Debe tener exactamente 10 números (sin espacios ni +52)';
+    }
+    
+    // Validación de mínimo 8 caracteres (como pide la API)
+    if (form.contrasena.length < 8) {
+      nuevosErrores.contrasena = 'Mínimo 8 caracteres';
+    }
     
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
@@ -56,14 +64,14 @@ export function RegistroNegocio() {
       await api('/auth/registro/negocio', {
         method: 'POST',
         body: JSON.stringify({
-          nombre: form.nombre,
+          nombreNegocio: form.nombreNegocio,
           correo: form.correo,
           telefono: form.telefono,
-          password: form.password,
+          contrasena: form.contrasena,
         }),
       });
 
-      await signInWithEmailAndPassword(auth!, form.correo, form.password);
+      await signInWithEmailAndPassword(auth!, form.correo, form.contrasena);
 
       alert('Tu cuenta se creó correctamente');
       navigate('/mi-perfil', { 
@@ -82,13 +90,10 @@ export function RegistroNegocio() {
   };
 
   return (
-    
-       <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #ffd8c2 100%)' }}>
+    <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #ffd8c2 100%)' }}>
       
-   
       <div className="card shadow-lg border-0" style={{ maxWidth: '450px', width: '100%', borderRadius: '1rem' }}>
         <div className="card-body p-5">
-          
           
           <div className="text-center mb-4">
             <h2 className="fw-bold" style={{ color: '#e87a47' }}>Servia</h2>
@@ -99,22 +104,20 @@ export function RegistroNegocio() {
 
           <form onSubmit={handleSubmit}>
             
-            
             <div className="mb-3">
               <label className="form-label fw-semibold">Nombre del Negocio</label>
               <input 
                 type="text" 
-                name="nombre" 
-                className={`form-control ${errores.nombre ? 'is-invalid' : ''}`}
+                name="nombreNegocio" 
+                className={`form-control ${errores.nombreNegocio ? 'is-invalid' : ''}`}
                 placeholder="Ej. Barbería El Bigote"
-                value={form.nombre} 
+                value={form.nombreNegocio} 
                 onChange={handleChange} 
                 disabled={cargando}
               />
-              {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
+              {errores.nombreNegocio && <div className="invalid-feedback">{errores.nombreNegocio}</div>}
             </div>
 
-            
             <div className="mb-3">
               <label className="form-label fw-semibold">Correo Electrónico</label>
               <input 
@@ -129,14 +132,13 @@ export function RegistroNegocio() {
               {errores.correo && <div className="invalid-feedback">{errores.correo}</div>}
             </div>
 
-     
             <div className="mb-3">
               <label className="form-label fw-semibold">Teléfono</label>
               <input 
                 type="tel" 
                 name="telefono" 
                 className={`form-control ${errores.telefono ? 'is-invalid' : ''}`}
-                placeholder="Ej. +52 55 1234 5678"
+                placeholder="Ej. 4771234567"
                 value={form.telefono} 
                 onChange={handleChange} 
                 disabled={cargando}
@@ -144,22 +146,20 @@ export function RegistroNegocio() {
               {errores.telefono && <div className="invalid-feedback">{errores.telefono}</div>}
             </div>
 
-           
             <div className="mb-4">
               <label className="form-label fw-semibold">Contraseña</label>
               <input 
                 type="password" 
-                name="password" 
-                className={`form-control ${errores.password ? 'is-invalid' : ''}`}
-                placeholder="Mínimo 6 caracteres"
-                value={form.password} 
+                name="contrasena" 
+                className={`form-control ${errores.contrasena ? 'is-invalid' : ''}`}
+                placeholder="Mínimo 8 caracteres"
+                value={form.contrasena} 
                 onChange={handleChange} 
                 disabled={cargando}
               />
-              {errores.password && <div className="invalid-feedback">{errores.password}</div>}
+              {errores.contrasena && <div className="invalid-feedback">{errores.contrasena}</div>}
             </div>
 
-            
             <button 
               type="submit" 
               className="btn w-100 fw-bold text-white shadow-sm" 
@@ -170,7 +170,6 @@ export function RegistroNegocio() {
             </button>
           </form>
 
-         
           <div className="text-center mt-4">
             <span className="text-muted">¿Ya tienes cuenta? </span>
             <Link to="/login" className="text-decoration-none fw-bold" style={{ color: '#e87a47' }}>
