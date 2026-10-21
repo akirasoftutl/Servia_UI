@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
 import { registerSW } from 'virtual:pwa-register'
 import { router } from './router'
-import './estilos.css'
+import './index.css'
 
 // Service worker de la PWA: permite instalar el panel y lo actualiza solo.
 registerSW({ immediate: true })
