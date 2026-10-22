@@ -1,10 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import './Navbar.css';
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
-
+  const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const handleLoginClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenuOpen(false);
+    navigate('/login');
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -16,7 +23,7 @@ function Navbar() {
     if (menuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -45,7 +52,7 @@ function Navbar() {
   ];
 
   const caracteristicas: string[] = [
-    'Programación', 'Punto de venta', 
+    'Programación', 'Punto de venta',
     'Reputación Online', 'Marketing y promociones', 'Pagos en línea',
   ];
 
@@ -110,14 +117,14 @@ function Navbar() {
           <div className={`menu-dropdown ${menuOpen ? 'is-visible' : ''}`}>
             <div className="menu-dropdown__section">
               <span className="menu-dropdown__title">Para empresas</span>
-              <a href="#login" className="menu-dropdown__link--purple" onClick={() => setMenuOpen(false)}>
+              <a href="/login" className="menu-dropdown__link--purple" onClick={handleLoginClick}>
                 Inicia sesión o regístrate
               </a>
               <a href="#casa" onClick={() => setMenuOpen(false)}>Casa</a>
               <a href="#descarga" onClick={() => setMenuOpen(false)}>Descarga la aplicación</a>
               <a href="#blog" onClick={() => setMenuOpen(false)}>Blog</a>
               <a href="#ayuda" onClick={() => setMenuOpen(false)}>Ayuda y soporte</a>
-              
+
               <a href="#idioma" className="menu-dropdown__language" onClick={() => setMenuOpen(false)}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
