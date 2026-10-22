@@ -5,7 +5,7 @@ import { registerSW } from 'virtual:pwa-register'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { AuthProvider } from './contextos/AuthContext';
 import { router } from './router'
-import './estilos.css'
+import './index.css'
 
 // Service worker de la PWA: permite instalar el panel y lo actualiza solo.
 registerSW({ immediate: true })

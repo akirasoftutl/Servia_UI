@@ -1,19 +1,17 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { Layout } from './componentes/Layout'
-import { Inicio } from './paginas/Inicio'
-import { RegistroNegocio } from './paginas/RegistroNegocio'
 import { MiPerfil } from './paginas/MiPerfil'
-import { NoEncontrado } from './paginas/NoEncontrado'
 import { RutaProtegida } from './componentes/RutaProtegida'
 import { Login } from './paginas/login/Login'
+import { Layout } from './componentes/layout/Layout.tsx'
+import  Home  from './paginas/home/Home.tsx'
+import { NoEncontrado } from './paginas/noEncontrado/NoEncontrado'
 
 export const rutas: RouteObject[] = [
   {
     path: '/',
     element: <Layout />,
     children: [
-      { index: true, element: <Inicio /> },
-      { path: 'registro-negocio', element: <RegistroNegocio /> },
+      { index: true, element: <Home /> },
       { path: 'login', element: <Login /> },
 
       {
