@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../servicios/firebase';
 import { api } from '../../servicios/api';
-import { ArrowLeft, Eye, EyeOff, Smartphone } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import './Login.css'; 
 
 export function Login() {
@@ -148,13 +148,6 @@ export function Login() {
           </div>
 
           <div className="social-buttons">
-            <button
-              type="button"
-              className="social-btn"
-            >
-              <Smartphone size={18} />
-              <span>Continuar con el celular</span>
-            </button>
 
             <button
               type="button"
@@ -198,7 +191,7 @@ export function Login() {
         </div>
 
         <img
-          src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80"
+          src="./galeria_home/Login_page.jpg"
           alt="Profesionales de Negocio"
           className="hero-image"
         />
