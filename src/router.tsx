@@ -5,9 +5,8 @@ import { RegistroNegocio } from './paginas/RegistroNegocio'
 import { MiPerfil } from './paginas/MiPerfil'
 import { NoEncontrado } from './paginas/NoEncontrado'
 import { RutaProtegida } from './componentes/RutaProtegida'
-import { Login } from './paginas/Login'
+import { Login } from './paginas/login/Login'
 
-// Rutas del panel. Aquí se agregan las páginas de cada historia (registro, sesión, perfil…).
 export const rutas: RouteObject[] = [
   {
     path: '/',
@@ -17,12 +16,10 @@ export const rutas: RouteObject[] = [
       { path: 'registro-negocio', element: <RegistroNegocio /> },
       { path: 'login', element: <Login /> },
 
-      // Rutas protegidas: sin sesión de negocio no se entra
       {
         element: <RutaProtegida />,
         children: [
           { path: 'mi-perfil', element: <MiPerfil /> },
-          // Aquí irán las demás (servicios, reservas, etc.)
         ],
       },
 
