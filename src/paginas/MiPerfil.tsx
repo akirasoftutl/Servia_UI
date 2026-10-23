@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { api } from '../servicios/api';
 
 interface Categoria {
@@ -19,7 +19,6 @@ interface PerfilNegocio {
 }
 
 export function MiPerfil() {
-  const navigate = useNavigate();
   const [form, setForm] = useState<PerfilNegocio>({
     nombre: '',
     descripcion: '',
