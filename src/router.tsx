@@ -17,12 +17,11 @@ export const rutas: RouteObject[] = [
       { path: 'registro-negocio', element: <RegistroNegocio /> },
       { path: 'login', element: <Login /> },
 
-      // Rutas protegidas: sin sesión de negocio no se entra
       {
         element: <RutaProtegida />,
         children: [
           { path: 'mi-perfil', element: <MiPerfil /> },
-          // Aquí irán las demás (servicios, reservas, etc.)
+     
         ],
       },
 
