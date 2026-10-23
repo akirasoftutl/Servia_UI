@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" role="img" aria-labelledby="titulo descripcion">
+<title id="titulo">Reservas</title>
+<desc id="descripcion">Boceto de baja fidelidad del panel del negocio. MVP-22. Los controles representan acciones; los ejemplos y estados alternativos no ocurren a la vez.</desc>
+<rect width="1280" height="800" fill="#ffffff"/>
+<g font-family="Arial, sans-serif" fill="#222222">
+<rect x="0" y="0" width="1280" height="64" fill="#eeeeee" stroke="#777777"/>
+<text x="28" y="40" font-size="24" font-weight="bold">Servia · Panel del negocio</text>
+<text x="910" y="39" font-size="18">Boceto · Datos de ejemplo</text>
+<rect x="0" y="64" width="220" height="736" fill="#f5f5f5" stroke="#777777"/>
+<text x="24" y="112" font-size="20" font-weight="bold">Mi negocio</text>
+<a href="06-reservas.svg">
+<rect x="16" y="145" width="188" height="38" fill="#dddddd" stroke="#777777"/>
+<text x="28" y="170" font-size="17">Reservas</text>
+</a>
+<a href="04-servicios.svg">
+<rect x="16" y="207" width="188" height="38" fill="#ffffff" stroke="#777777"/>
+<text x="28" y="232" font-size="17">Servicios</text>
+</a>
+<a href="05-horario-y-bloqueos.svg">
+<rect x="16" y="269" width="188" height="38" fill="#ffffff" stroke="#777777"/>
+<text x="28" y="294" font-size="17">Horario</text>
+</a>
+<a href="03-perfil-del-negocio.svg">
+<rect x="16" y="331" width="188" height="38" fill="#ffffff" stroke="#777777"/>
+<text x="28" y="356" font-size="17">Perfil</text>
+</a>
+<a href="08-avisos.svg">
+<rect x="16" y="393" width="188" height="38" fill="#ffffff" stroke="#777777"/>
+<text x="28" y="418" font-size="17">Avisos (2)</text>
+</a>
+<a href="02-inicio-de-sesion.svg">
+<rect x="16" y="687" width="188" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="28" y="712" font-size="17">Cerrar sesión</text>
+</a>
+<text x="256" y="112" font-size="28" font-weight="bold">Reservas</text>
+<text x="256" y="143" font-size="16">MVP-22</text>
+<text x="256" y="780" font-size="14">Wireframe estático · Cajas y controles sin implementación</text>
+<rect x="256" y="170" width="255" height="38" fill="#dddddd" stroke="#777777"/>
+<text x="268" y="195" font-size="17">Pendientes (2) · Primero</text>
+<rect x="532" y="170" width="240" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="544" y="195" font-size="17">Próximas</text>
+<text x="256" y="243" font-size="18" font-weight="bold">Filtrar por estado y fecha</text>
+<rect x="256" y="257" width="976" height="99" fill="#ffffff" stroke="#777777"/>
+<text x="272" y="283" font-size="16">Estado: Todos / Pendiente / Confirmada / Rechazada / Rechazada por vencimiento</text>
+<text x="272" y="308" font-size="16">Cancelada / Completada</text>
+<text x="272" y="333" font-size="16">Fecha desde: 14/10/2026     hasta: 20/10/2026</text>
+<rect x="1080" y="305" width="136" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="1092" y="330" font-size="17">Filtrar</text>
+<text x="256" y="393" font-size="20" font-weight="bold">Pendientes · Tiempo restante para responder</text>
+<rect x="256" y="409" width="976" height="175" fill="#ffffff" stroke="#777777"/>
+<text x="272" y="436" font-size="16" font-weight="bold">Cliente</text>
+<text x="464" y="436" font-size="16" font-weight="bold">Servicio</text>
+<text x="670" y="436" font-size="16" font-weight="bold">Fecha</text>
+<text x="818" y="436" font-size="16" font-weight="bold">Hora</text>
+<text x="915" y="436" font-size="16" font-weight="bold">Estado</text>
+<text x="272" y="475" font-size="16">Ana Ejemplo</text>
+<text x="464" y="475" font-size="16">Corte de cabello</text>
+<text x="670" y="475" font-size="16">14/10/2026</text>
+<text x="818" y="475" font-size="16">16:00</text>
+<text x="915" y="475" font-size="16">Pendiente</text>
+<a href="07-detalle-de-reserva.svg">
+<rect x="1060" y="448" width="155" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="1072" y="473" font-size="17">Ver detalle</text>
+</a>
+<text x="1060" y="501" font-size="15">01 h 20 min</text>
+<text x="272" y="540" font-size="16">Luis Ejemplo</text>
+<text x="464" y="540" font-size="16">Peinado</text>
+<text x="670" y="540" font-size="16">14/10/2026</text>
+<text x="818" y="540" font-size="16">17:00</text>
+<text x="915" y="540" font-size="16">Pendiente</text>
+<a href="07-detalle-de-reserva.svg">
+<rect x="1060" y="513" width="155" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="1072" y="538" font-size="17">Ver detalle</text>
+</a>
+<text x="1060" y="566" font-size="15">00 h 45 min</text>
+<text x="256" y="602" font-size="20" font-weight="bold">Próximas · Vista alternativa · Confirmadas por fecha y hora</text>
+<rect x="256" y="619" width="976" height="67" fill="#ffffff" stroke="#777777"/>
+<text x="272" y="659" font-size="16">Marta Ejemplo</text>
+<text x="464" y="659" font-size="16">Corte de cabello</text>
+<text x="670" y="659" font-size="16">15/10/2026</text>
+<text x="818" y="659" font-size="16">10:00</text>
+<text x="915" y="659" font-size="16">Confirmada</text>
+<a href="07-detalle-de-reserva.svg">
+<rect x="1060" y="633" width="155" height="38" fill="#eeeeee" stroke="#777777"/>
+<text x="1072" y="658" font-size="17">Ver detalle</text>
+</a>
+<text x="256" y="720" font-size="16">Una Pendiente ocupa el horario y vence a las 2 h o al inicio, lo que ocurra primero.</text>
+<text x="256" y="746" font-size="16">Ejemplos de cada pestaña; la lista muestra solo reservas de este negocio.</text>
+</g>
+</svg>

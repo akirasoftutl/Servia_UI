@@ -234,10 +234,9 @@ export function RegistroNegocio() {
 
       </div>
 
-      {/* LADO DERECHO: Imagen Hero recta y sin cortes de media luna */}
       <div className="registro-hero-side">
         <img
-          src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80"
+          src="./galeria_home/registro3.jpg"
           alt="Profesionales de Negocio"
           className="hero-image"
         />

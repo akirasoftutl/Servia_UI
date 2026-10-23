@@ -43,6 +43,16 @@ npm run dev               # http://localhost:5173
 
 **Probar que se puede instalar:** `npm run build && npm run preview`, abre http://localhost:4173 en Chrome y aparece el ícono de instalar en la barra de direcciones. En DevTools → *Application* se ven el *Manifest* y el *Service worker*.
 
+## Integración continua
+
+El workflow de GitHub Actions revisa automáticamente el código con oxlint, ejecuta las pruebas y compila el panel en cada pull request hacia `dev` y `main`, y en cada push a esas ramas. Usa Node.js 22 y no necesita credenciales de Firebase. Un PR con un error de lint, una prueba fallida o un build roto queda en rojo.
+
+Para correr las mismas revisiones en local:
+
+```bash
+npm ci && npm run lint && npm test && npm run build
+```
+
 ## Estructura
 
 ```

@@ -1,0 +1,519 @@
+/* ===== SECCIÓN PLATAFORMA E INFINITAS POSIBILIDADES ===== */
+
+.platform-section {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 50px 24px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.platform__header {
+  max-width: 680px;
+  margin: 0 auto 60px auto;
+  text-align: center;
+}
+
+.platform__header h2 {
+  font-size: clamp(32px, 100px, 60px);
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -1.5px;
+  margin-bottom: 16px;
+  line-height: 1.15;
+}
+
+.platform__header p {
+  font-size: 16px;
+  color: #666666;
+  line-height: 1.6;
+  margin-bottom: 28px;
+  
+}
+
+.platform__header .btn--dark {
+  display: inline-flex;
+}
+
+.platform__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 28px;
+}
+
+.platform__card {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  height: 360px;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.platform__card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Imagen de fondo de la tarjeta */
+.platform__card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.platform__card:hover img {
+  transform: scale(1.03); /* Sutil zoom al pasar el cursor */
+}
+
+/* Capa de máscara oscura sutil para toda la tarjeta y degradado inferior */
+.platform__card-overlay {
+  position: absolute;
+  inset: 0;
+  /* Oscurece ligeramente toda la imagen (15%) y añade más sombra abajo para el texto */
+  background: linear-gradient(
+    to top, 
+    rgba(0, 0, 0, 0.7) 0%, 
+    rgba(0, 0, 0, 0.25) 50%, 
+    rgba(0, 0, 0, 0.15) 100%
+  );
+  transition: background 0.3s ease;
+}
+
+/* Opcional: si quieres que se oscurezca un pelín más al pasar el cursor para resaltar aún más el texto */
+.platform__card:hover .platform__card-overlay {
+  background: linear-gradient(
+    to top, 
+    rgba(0, 0, 0, 0.8) 0%, 
+    rgba(0, 0, 0, 0.35) 50%, 
+    rgba(0, 0, 0, 0.2) 100%
+  );
+}
+/* Texto del título dentro de la tarjeta */
+.platform__card-title {
+  position: absolute;
+  bottom: 28px;
+  left: 28px;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  z-index: 2;
+}
+
+/* Responsive para dispositivos móviles */
+@media (max-width: 768px) {
+  .platform-section {
+    padding: 40px 16px;
+  }
+  
+  .platform__card {
+    height: 350px;
+  }
+}
+
+.admin-features-section {
+  background-color: #f3f0fb; 
+  padding: 60px 24px;
+  font-family: Arial, Helvetica, sans-serif;
+  width: 100%;
+}
+
+.admin-features__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-features__header {
+  max-width: 700px;
+  margin-bottom: 40px;
+}
+
+.admin-features__header h2 {
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -1.2px;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+
+.admin-features__header p {
+  font-size: 16px;
+  color: #4b4b4b;
+  line-height: 1.6;
+text-align: justify;
+}
+
+.admin-features__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 48px;
+}
+
+.admin-features__card h3 {
+  font-size: 25px;
+  font-weight: 700;
+  color: #111111;
+  margin-bottom: 14px;
+  letter-spacing: -0.5px;
+}
+
+.admin-features__card p {
+  font-size: 15px;
+  color: #555555;
+  line-height: 1.6;
+  text-align: justify;
+}
+
+@media (max-width: 768px) {
+  .admin-features-section {
+    padding: 50px 18px;
+  }
+
+  .admin-features__grid {
+    gap: 36px;
+  }
+}
+
+/* ===== HERO SECTION ===== */
+
+.hero-section {
+  width: 100%;
+  background-color: #ffffff;
+  padding: 60px 48px 100px 48px;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
+}
+
+.hero__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.hero__content {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero__title {
+  font-size: clamp(30px, 70px, 58px);
+  font-weight: 700;
+  color: #111111;
+  line-height: 1.1;
+  letter-spacing: -1.8px;
+  margin-bottom: 24px;
+  padding: 0 12px;
+  text-align: justify;
+}
+
+.hero__title-highlight {
+  background: linear-gradient(135deg, #7c3aed 0%, #e652a2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block; /* Necesario para que el gradiente aplique correctamente en algunos navegadores */
+}
+
+.hero__subtitle {
+  font-family: inherit;
+  font-size: 16px;
+  color: #4b4b4b;
+  line-height: 1.5;
+  margin-bottom: 36px;
+  max-width: 540px;
+  padding: 0 20px;
+}
+
+.hero__list {
+  list-style: none;
+  padding: 0 30px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.hero__list-item {
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: 15.5px;
+  color: #333333;
+  line-height: 1.55;
+}
+
+.hero__check-icon {
+  width: 20px;
+  height: 20px;
+  color: #a027be;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.hero__visuals {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.hero__mockup-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  height: 620px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.hero__card {
+  border-radius: 32px;
+  background: #ffffff;
+  border: 8px solid #e2dbfc; /* Borde morado suave idéntico a la imagen */
+  box-shadow: 0 20px 40px rgba(100, 70, 180, 0.12);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.hero__card--front {
+  width: 250px;
+  height: 480px;
+  margin-top: 40px;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.hero__card--back {
+  width: 290px;
+  height: 580px;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+/* Tarjeta Perfil (Sarah Curtis) */
+.profile-card {
+  padding: 16px;
+  background: #ffffff;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-card__avatar-wrap {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #e652a2;
+  margin-bottom: 8px;
+}
+
+.profile-card__avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-card__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111111;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-check {
+  background-color: #6366f1;
+  color: white;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+}
+
+.profile-card__gallery {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.profile-card__gallery img {
+  width: 50%;
+  height: 65px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.profile-card__section {
+  width: 100%;
+  text-align: left;
+}
+
+.profile-card__section h4 {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  background: #f4f4f6;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  color: #333;
+  font-weight: 600;
+}
+
+.calendar-card {
+  background: #f8f9fe;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-card__header {
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 8px;
+  background: #ffffff;
+  border-bottom: 1px solid #eee;
+}
+
+.user-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  color: #666;
+}
+
+.user-pill img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 2px;
+}
+
+.user-pill.active img {
+  border: 2px solid #e652a2;
+}
+
+.calendar-card__grid {
+  padding: 12px 8px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.time-row {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  position: relative;
+}
+
+.time-label {
+  font-size: 9px;
+  color: #888;
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.event {
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 9px;
+  flex: 1;
+}
+
+.event strong { display: block; font-size: 8px; opacity: 0.8; }
+.event p { margin: 2px 0 0 0; font-weight: 700; }
+.event small { font-size: 8px; opacity: 0.8; }
+
+.event--yellow { background: #fef08a; color: #854d0e; }
+.event--blue   { background: #bae6fd; color: #0369a1; }
+.event--green  { background: #99f6e4; color: #115e59; }
+.event--pink   { background: #fbcfe8; color: #9d174d; }
+.event--teal   { background: #a7f3d0; color: #065f46; }
+.event--purple { background: #f3e8ff; color: #6b21a8; }
+
+.calendar-card__footer {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px;
+  background: #ffffff;
+  border-top: 1px solid #eee;
+}
+
+.nav-btn {
+  font-size: 14px;
+  color: #666;
+}
+
+.nav-btn--plus {
+  background: #7c3aed;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 1024px) {
+  .hero__container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .hero__mockup-wrapper {
+    height: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-section {
+    padding: 40px 20px;
+  }
+
+  .hero__mockup-wrapper {
+    flex-direction: column;
+    align-items: center;
+    max-width: 100%;
+  }
+
+  .hero__card--front, 
+  .hero__card--back {
+    width: 100%;
+    max-width: 300px;
+    margin-top: 0;
+  }
+}
