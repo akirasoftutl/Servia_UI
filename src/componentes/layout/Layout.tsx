@@ -5,16 +5,19 @@ import Footer from '../footer/Footer';
 export function Layout() {
   const location = useLocation();
 
-  const esPaginaLogin = location.pathname === '/login';
+
+  const ocultarHYF = 
+    location.pathname === '/login' || location.pathname === '/registro-negocio';
+
   return (
     <div className="layout">
-      {!esPaginaLogin && <Navbar />}
+      {!ocultarHYF && <Navbar />}
       
       <main className="contenido">
         <Outlet />
       </main>
       
-      {!esPaginaLogin && <Footer />}
+      {!ocultarHYF && <Footer />}
     </div>
   );
 }

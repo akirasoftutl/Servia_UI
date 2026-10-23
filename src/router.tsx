@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router'
 import { MiPerfil } from './paginas/MiPerfil'
 import { RutaProtegida } from './componentes/RutaProtegida'
 import { Login } from './paginas/login/Login'
+import { RegistroNegocio } from './paginas/registro_negocio/RegistroNegocio'
 import { Layout } from './componentes/layout/Layout.tsx'
 import  Home  from './paginas/home/Home.tsx'
 import { NoEncontrado } from './paginas/noEncontrado/NoEncontrado'
@@ -12,6 +13,7 @@ export const rutas: RouteObject[] = [
     element: <Layout />,
     children: [
       { index: true, element: <Home /> },
+      { path: 'registro-negocio', element: <RegistroNegocio /> },
       { path: 'login', element: <Login /> },
 
       {

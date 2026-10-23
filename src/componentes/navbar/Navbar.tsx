@@ -13,6 +13,11 @@ function Navbar() {
     navigate('/login');
   };
 
+  const handleRegistrarClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate('/registro-negocio');
+  };
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -95,7 +100,7 @@ function Navbar() {
           Marketplace
         </a>
 
-        <a href="#registro" className="btn btn--dark">
+        <a href="#registro" className="btn btn--dark" onClick={handleRegistrarClick}>
           Regístrate
         </a>
 
@@ -118,7 +123,7 @@ function Navbar() {
             <div className="menu-dropdown__section">
               <span className="menu-dropdown__title">Para empresas</span>
               <a href="/login" className="menu-dropdown__link--purple" onClick={handleLoginClick}>
-                Inicia sesión o regístrate
+                Inicia sesión 
               </a>
               <a href="#casa" onClick={() => setMenuOpen(false)}>Casa</a>
               <a href="#descarga" onClick={() => setMenuOpen(false)}>Descarga la aplicación</a>
