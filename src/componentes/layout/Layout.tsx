@@ -7,7 +7,9 @@ export function Layout() {
 
 
   const ocultarHYF = 
-    location.pathname === '/login' || location.pathname === '/registro-negocio';
+    location.pathname === '/login' || 
+    location.pathname === '/registro-negocio' ||
+    location.pathname.startsWith('/mi-perfil');;
 
   return (
     <div className="layout">
