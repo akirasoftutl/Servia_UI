@@ -56,7 +56,6 @@ export function Login() {
   return (
     <div className="login-container">
       
-      {/* LADO IZQUIERDO: Formulario de Login */}
       <div className="login-form-side">
         
         <div>
