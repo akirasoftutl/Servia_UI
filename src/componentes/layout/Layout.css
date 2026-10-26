@@ -1,0 +1,20 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout--with-sidebar {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.layout--with-sidebar .sidebar {
+  flex-shrink: 0;
+}
+
+.layout--with-sidebar .contenido {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+}
