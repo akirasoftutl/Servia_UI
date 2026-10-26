@@ -20,7 +20,6 @@ interface PerfilNegocio {
 }
 
 export function MiPerfil() {
-  const navigate = useNavigate();
 
   // Estado para controlar el paso actual (1, 2 o 3)
   const [pasoActual, setPasoActual] = useState<number>(1);
