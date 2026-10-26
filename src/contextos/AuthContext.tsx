@@ -16,28 +16,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-<<<<<<< HEAD
-    // Firebase nos avisa si el usuario entra o sale
-    const unsubscribe = onAuthStateChanged(auth!, async (user) => {
-      if (user) {
-        try {
-          // Verificamos con la API si es negocio
-=======
+    // Forzar cierre de sesión al iniciar para no mantener sesión persistente
+    if (auth) {
+      signOut(auth).catch(() => {});
+    }
    
     const unsubscribe = onAuthStateChanged(auth!, async (user) => {
       if (user) {
         try {
 
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
           const respuesta = await api<{ tipo: string }>('/auth/yo');
           if (respuesta.tipo === 'negocio') {
             setUsuario(user);
           } else {
-<<<<<<< HEAD
-            // Si es cliente, lo sacamos inmediatamente
-=======
            
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
             await signOut(auth!);
             setUsuario(null);
           }
