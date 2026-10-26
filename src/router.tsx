@@ -1,5 +1,5 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { MiPerfil } from './paginas/MiPerfil'
+import { MiPerfil } from './paginas/mi_perfil/MiPerfil.tsx'
 import { RutaProtegida } from './componentes/RutaProtegida'
 import { Login } from './paginas/login/Login'
 import { RegistroNegocio } from './paginas/registro_negocio/RegistroNegocio'
