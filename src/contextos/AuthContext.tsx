@@ -16,7 +16,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    // Firebase nos avisa si el usuario entra o sale
+    // Forzar cierre de sesión al iniciar para no mantener sesión persistente
+    if (auth) {
+      signOut(auth).catch(() => {});
+    }
+   
     const unsubscribe = onAuthStateChanged(auth!, async (user) => {
       if (user) {
         try {

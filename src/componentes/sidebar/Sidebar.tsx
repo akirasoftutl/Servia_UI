@@ -133,11 +133,12 @@ export const Sidebar: React.FC = () => {
           </div>
         ))}
       </nav>
-{/* SECCIÓN DE USUARIO CON LA REFERENCIA (ref={userMenuRef}) */}
+
+
       <div className="user-profile" ref={userMenuRef}>
         {isUserMenuOpen && (
           <div className="user-dropdown-menu">
-            <button className="dropdown-item" onClick={() => { setIsUserMenuOpen(false); console.log('Mi Perfil'); }}>
+            <button className="dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/mi-perfil'); }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />

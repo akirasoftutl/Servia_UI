@@ -1,16 +1,16 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { Layout } from './componentes/layout/Layout'
+import { NuevoServicio } from './paginas/NuevoServicio.tsx'
+import { MiPerfil } from './paginas/mi_perfil/MiPerfil.tsx'
 import { RutaProtegida } from './componentes/RutaProtegida'
-
+import { MisServicios } from './paginas/MisServicios'
 // Páginas (Rutas exactas según tus carpetas actuales)
-import Home from './paginas/home/Home' // <-- Es Home, no Inicio
-import { NoEncontrado } from './paginas/noEncontrado/NoEncontrado'
 import { Login } from './paginas/login/Login'
 import { RegistroNegocio } from './paginas/registro_negocio/RegistroNegocio'
-import { MiPerfil } from './paginas/MiPerfil'
-import { NuevoServicio } from './paginas/NuevoServicio'
-import { MisServicios } from './paginas/MisServicios'
+import { Layout } from './componentes/layout/Layout.tsx'
+import Home from './paginas/home/Home.tsx'
+import { NoEncontrado } from './paginas/noEncontrado/NoEncontrado'
 
+// Rutas del panel. Aquí se agregan las páginas de cada historia (registro, sesión, perfil…).
 export const rutas: RouteObject[] = [
   {
     path: '/',

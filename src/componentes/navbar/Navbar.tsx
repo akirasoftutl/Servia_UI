@@ -1,11 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import { useAuth } from '../../contextos/AuthContext';
 import './Navbar.css';
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const { usuario, cerrarSesion } = useAuth();
+
+  const handleLogout = async () => {
+    await cerrarSesion();
+    navigate('/login');
+  };
 
   const handleLoginClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -92,6 +99,12 @@ function Navbar() {
       </nav>
 
       <div className="navbar__actions">
+        {usuario && (
+          <button type="button" className="btn btn--outline" onClick={handleLogout}>
+            Cerrar sesión
+          </button>
+        )}
+
         <a href="#marketplace" className="btn btn--outline marketplace">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 10h18l-2-6H5l-2 6Z" />
