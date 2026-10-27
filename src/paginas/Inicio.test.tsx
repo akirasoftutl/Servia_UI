@@ -13,7 +13,6 @@ vi.mock('../servicios/firebase', () => ({
     }),
     signOut: vi.fn(),
   },
-  firebaseConfigurado: true,
 }));
 
 function mostrar(ruta: string) {

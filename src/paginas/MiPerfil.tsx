@@ -1,8 +1,5 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
-<<<<<<< HEAD
 import { Link, useNavigate } from 'react-router';
-=======
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
 import { api } from '../servicios/api';
 
 interface Categoria {
@@ -18,18 +15,12 @@ interface PerfilNegocio {
   correoContacto: string;
   direccion: string;
   perfilCompleto: boolean;
-<<<<<<< HEAD
   camposFaltantes: string[];
 }
 
 export function MiPerfil() {
   const navigate = useNavigate();
-=======
-  camposFaltantes: string[]; // La API nos da los nombres de los campos que faltan
-}
-
-export function MiPerfil() {
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
+  
   const [form, setForm] = useState<PerfilNegocio>({
     nombre: '',
     descripcion: '',
@@ -47,24 +38,13 @@ export function MiPerfil() {
   const [guardando, setGuardando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
 
-<<<<<<< HEAD
+  // Cargar categorías y perfil
   useEffect(() => {
     const cargarDatos = async () => {
       try {
         const cats = await api<Categoria[]>('/categorias');
         setCategorias(cats);
 
-=======
-  // 1. Cargar categorías y datos del perfil al entrar
-  useEffect(() => {
-    const cargarDatos = async () => {
-      try {
-        // Cargar categorías
-        const cats = await api<Categoria[]>('/categorias');
-        setCategorias(cats);
-
-        // Cargar perfil actual
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
         const perfil = await api<PerfilNegocio>('/negocios/mio');
         setForm(perfil);
       } catch (error) {
@@ -76,24 +56,17 @@ export function MiPerfil() {
     cargarDatos();
   }, []);
 
-<<<<<<< HEAD
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-=======
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
     setErrores({ ...errores, [name]: '' });
   };
 
-<<<<<<< HEAD
   const handleCategoriaChange = (id: string) => {
     setForm({ ...form, categoriaId: id });
     setErrores({ ...errores, categoriaId: '' });
   };
 
-=======
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
   const validar = (): boolean => {
     const nuevosErrores: Record<string, string> = {};
     if (!form.nombre.trim()) nuevosErrores.nombre = 'El nombre es obligatorio';
@@ -115,21 +88,13 @@ export function MiPerfil() {
 
     setGuardando(true);
     try {
-<<<<<<< HEAD
-=======
-      // Solo enviamos los campos que la API espera en el PUT
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
       const { nombre, descripcion, categoriaId, telefono, correoContacto, direccion } = form;
       const respuesta = await api<PerfilNegocio>('/negocios/mio', {
         method: 'PUT',
         body: JSON.stringify({ nombre, descripcion, categoriaId, telefono, correoContacto, direccion }),
       });
       
-<<<<<<< HEAD
       setForm(respuesta); 
-=======
-      setForm(respuesta); // Actualizamos con la respuesta (para ver si ya no hay faltantes)
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
       setMensajeExito('Perfil guardado correctamente.');
     } catch (error: any) {
       alert(error.message || 'Error al guardar el perfil');
@@ -141,12 +106,10 @@ export function MiPerfil() {
   if (cargando) return <div className="text-center mt-5"><h3>Cargando perfil...</h3></div>;
 
   return (
-<<<<<<< HEAD
-    // Fondo gris claro para toda la pantalla
     <div className="container-fluid bg-light min-vh-100 p-0">
       <div className="row g-0">
         
-        {/* BARRA LATERAL (Sidebar) Moderna */}
+        {/* BARRA LATERAL (Sidebar) */}
         <div className="col-md-3 col-lg-2 bg-white border-end p-3 d-flex flex-column" style={{ minHeight: 'calc(100vh - 60px)' }}>
           <h5 className="fw-bold mb-4" style={{ color: '#333' }}>Mi negocio</h5>
           
@@ -155,7 +118,6 @@ export function MiPerfil() {
             <button className="nav-link text-start text-dark border-0">Servicios</button>
             <button className="nav-link text-start text-dark border-0">Horario</button>
             
-            {/* Botón Activo */}
             <button className="nav-link text-start border-0 text-white fw-bold" style={{ backgroundColor: '#e27441' }}>
               Perfil
             </button>
@@ -177,7 +139,7 @@ export function MiPerfil() {
             <p className="text-muted">Completa tu información para que los clientes puedan encontrarte.</p>
           </div>
 
-          {/* Aviso de perfil incompleto (Estilo Bootstrap alert) */}
+          {/* Aviso de perfil incompleto */}
           {!form.perfilCompleto && form.camposFaltantes.length > 0 && (
             <div className="alert alert-warning shadow-sm border-0 d-flex align-items-center mb-4" role="alert">
               <div>
@@ -189,13 +151,12 @@ export function MiPerfil() {
 
           {mensajeExito && <div className="alert alert-success shadow-sm border-0 mb-4">{mensajeExito}</div>}
 
-          {/* Tarjeta blanca para el formulario */}
+          {/* Formulario */}
           <div className="card shadow-sm border-0 rounded-4">
             <div className="card-body p-4 p-md-5">
               <form onSubmit={handleSubmit}>
                 <div className="row g-4">
                   
-                  {/* Fila 1 */}
                   <div className="col-md-6">
                     <label className="form-label fw-semibold text-secondary">Nombre del Negocio *</label>
                     <input type="text" name="nombre" className={`form-control form-control-lg ${errores.nombre ? 'is-invalid' : ''}`} value={form.nombre} onChange={handleChange} placeholder="Ej. Estética Bella" />
@@ -208,7 +169,6 @@ export function MiPerfil() {
                     {errores.descripcion && <div className="invalid-feedback">{errores.descripcion}</div>}
                   </div>
 
-                  {/* Fila 2 */}
                   <div className="col-md-6">
                     <label className="form-label fw-semibold text-secondary">Teléfono *</label>
                     <input type="tel" name="telefono" className={`form-control form-control-lg ${errores.telefono ? 'is-invalid' : ''}`} value={form.telefono} onChange={handleChange} placeholder="Ej. 477 123 4567" />
@@ -221,14 +181,12 @@ export function MiPerfil() {
                     {errores.correoContacto && <div className="invalid-feedback">{errores.correoContacto}</div>}
                   </div>
 
-                  {/* Fila 3 */}
                   <div className="col-12">
                     <label className="form-label fw-semibold text-secondary">Dirección *</label>
                     <input type="text" name="direccion" className={`form-control form-control-lg ${errores.direccion ? 'is-invalid' : ''}`} value={form.direccion} onChange={handleChange} placeholder="Ej. Av. Juárez 123, León, Gto." />
                     {errores.direccion && <div className="invalid-feedback">{errores.direccion}</div>}
                   </div>
 
-                  {/* Fila 4: Categorías (Con un diseño más limpio) */}
                   <div className="col-12 mt-4">
                     <label className="form-label fw-semibold text-secondary mb-3">Categoría * · Selecciona una del catálogo</label>
                     <div className={`bg-light p-4 rounded-3 border ${errores.categoriaId ? 'border-danger' : ''}`}>
@@ -258,7 +216,6 @@ export function MiPerfil() {
 
                 </div>
 
-                {/* Botones de acción */}
                 <div className="mt-5 d-flex flex-wrap align-items-center gap-3 border-top pt-4">
                   <button type="submit" className="btn btn-lg text-white px-5 fw-bold rounded-pill shadow-sm" style={{ backgroundColor: '#e27441' }} disabled={guardando}>
                     {guardando ? 'Guardando...' : 'Guardar perfil'}
@@ -271,84 +228,6 @@ export function MiPerfil() {
               </form>
             </div>
           </div>
-
-=======
-    <div className="container py-4" style={{ maxWidth: '800px' }}>
-      <h2 className="fw-bold mb-4">Mi Perfil</h2>
-
-      {/* Aviso de perfil incompleto dinámico */}
-      {!form.perfilCompleto && form.camposFaltantes.length > 0 && (
-        <div className="alert alert-warning" role="alert">
-          <strong>¡Atención!</strong> Tu perfil está incompleto. Te falta llenar: 
-          <ul className="mb-0 mt-2">
-            {form.camposFaltantes.map((campo, index) => (
-              <li key={index}>{campo}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {mensajeExito && <div className="alert alert-success">{mensajeExito}</div>}
-
-      <div className="card shadow-sm border-0">
-        <div className="card-body p-4">
-          <form onSubmit={handleSubmit}>
-            <div className="row g-3">
-              {/* Nombre */}
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Nombre del Negocio</label>
-                <input type="text" name="nombre" className={`form-control ${errores.nombre ? 'is-invalid' : ''}`} value={form.nombre} onChange={handleChange} />
-                {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
-              </div>
-
-              {/* Categoría */}
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Categoría</label>
-                <select name="categoriaId" className={`form-select ${errores.categoriaId ? 'is-invalid' : ''}`} value={form.categoriaId} onChange={handleChange}>
-                  <option value="">Selecciona...</option>
-                  {categorias.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                  ))}
-                </select>
-                {errores.categoriaId && <div className="invalid-feedback">{errores.categoriaId}</div>}
-              </div>
-
-              {/* Descripción */}
-              <div className="col-12">
-                <label className="form-label fw-semibold">Descripción</label>
-                <textarea name="descripcion" className={`form-control ${errores.descripcion ? 'is-invalid' : ''}`} rows={3} value={form.descripcion} onChange={handleChange}></textarea>
-                {errores.descripcion && <div className="invalid-feedback">{errores.descripcion}</div>}
-              </div>
-
-              {/* Teléfono */}
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Teléfono</label>
-                <input type="tel" name="telefono" className={`form-control ${errores.telefono ? 'is-invalid' : ''}`} value={form.telefono} onChange={handleChange} />
-                {errores.telefono && <div className="invalid-feedback">{errores.telefono}</div>}
-              </div>
-
-              {/* Correo de contacto */}
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Correo de contacto</label>
-                <input type="email" name="correoContacto" className={`form-control ${errores.correoContacto ? 'is-invalid' : ''}`} value={form.correoContacto} onChange={handleChange} />
-                {errores.correoContacto && <div className="invalid-feedback">{errores.correoContacto}</div>}
-              </div>
-
-              {/* Dirección */}
-              <div className="col-12">
-                <label className="form-label fw-semibold">Dirección</label>
-                <input type="text" name="direccion" className={`form-control ${errores.direccion ? 'is-invalid' : ''}`} value={form.direccion} onChange={handleChange} />
-                {errores.direccion && <div className="invalid-feedback">{errores.direccion}</div>}
-              </div>
-            </div>
-
-            <div className="mt-4 text-end">
-              <button type="submit" className="btn text-white fw-bold px-4" style={{ backgroundColor: '#e27441' }} disabled={guardando}>
-                {guardando ? 'Guardando...' : 'Guardar perfil'}
-              </button>
-            </div>
-          </form>
->>>>>>> f9df2f0562ec411822fd6c647c766e5e234fa11d
         </div>
       </div>
     </div>
