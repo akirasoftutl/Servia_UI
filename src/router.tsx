@@ -6,6 +6,8 @@ import { RegistroNegocio } from './paginas/registro_negocio/RegistroNegocio'
 import { Layout } from './componentes/layout/Layout.tsx'
 import Home from './paginas/home/Home.tsx'
 import { NoEncontrado } from './paginas/noEncontrado/NoEncontrado'
+import { NuevoServicio } from './paginas/NuevoServicio'
+import { MisServicios } from './paginas/MisServicios'
 
 // Rutas del panel. Aquí se agregan las páginas de cada historia (registro, sesión, perfil…).
 export const rutas: RouteObject[] = [
@@ -21,6 +23,8 @@ export const rutas: RouteObject[] = [
         element: <RutaProtegida />,
         children: [
           { path: 'mi-perfil', element: <MiPerfil /> },
+          { path: 'servicios', element: <MisServicios /> },
+          { path: 'servicios/nuevo', element: <NuevoServicio /> },
         ],
       },
 
