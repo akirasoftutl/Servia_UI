@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { ShieldAlert } from 'lucide-react'
 import { api } from '../../servicios/api'
 import '../servicios/Servicios.css'
@@ -175,6 +175,46 @@ export function Horario() {
   >([])
   const [dialogoAbierto, setDialogoAbierto] = useState(false)
   const [intentoCarga, setIntentoCarga] = useState(0)
+  // El cuerpo serializado es la copia inmutable que produjo la lista del 409.
+  const [payloadConflicto, setPayloadConflicto] = useState<string | null>(null)
+  const revisionFormulario = useRef(0)
+  const dialogoRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!dialogoAbierto) return
+    const focoAnterior = document.activeElement as HTMLElement | null
+    const dialogo = dialogoRef.current!
+    const retenerFoco = () => {
+      if (!dialogo.contains(document.activeElement)) {
+        (dialogo.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? dialogo).focus()
+      }
+    }
+    retenerFoco()
+    document.addEventListener('focusin', retenerFoco)
+    return () => {
+      document.removeEventListener('focusin', retenerFoco)
+      focoAnterior?.focus()
+    }
+  }, [dialogoAbierto])
+
+  const cerrarConflicto = () => {
+    setDialogoAbierto(false)
+    setPayloadConflicto(null)
+    setReservasConflicto([])
+  }
+
+  const manejarTecladoDialogo = (evento: KeyboardEvent<HTMLDivElement>) => {
+    if (evento.key === 'Escape' && !guardando) cerrarConflicto()
+    if (evento.key !== 'Tab') return
+    const botones = Array.from(dialogoRef.current!.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'))
+    const indice = botones.indexOf(document.activeElement as HTMLButtonElement)
+    evento.preventDefault()
+    const siguiente = evento.shiftKey
+      ? (indice <= 0 ? botones.length - 1 : indice - 1)
+      : (indice + 1) % botones.length
+    const destino = botones[siguiente] ?? dialogoRef.current
+    destino?.focus()
+  }
 
   useEffect(() => {
     let activo = true
@@ -209,6 +249,8 @@ export function Horario() {
   }
 
   const actualizarDia = (clave: ClaveDia, cambios: Partial<DiaFormulario>) => {
+    revisionFormulario.current += 1
+    cerrarConflicto()
     setFormulario((previo) => ({
       ...previo,
       [clave]: { ...previo[clave], ...cambios },
@@ -244,7 +286,15 @@ export function Horario() {
   }
 
   const guardar = async (confirmar = false) => {
+    if (guardando) return
+    const payloadActual = JSON.stringify(aDiasHorario(formulario))
+    if (confirmar && (!payloadConflicto || payloadConflicto !== payloadActual)) {
+      cerrarConflicto()
+      return
+    }
     if (!confirmar && !validar()) return
+    const payload = confirmar ? payloadConflicto! : payloadActual
+    const revision = revisionFormulario.current
 
     setGuardando(true)
     setErrorGuardado('')
@@ -254,7 +304,7 @@ export function Horario() {
         `/negocios/mio/horario${confirmar ? '?confirmar=true' : ''}`,
         {
           method: 'PUT',
-          body: JSON.stringify(aDiasHorario(formulario)),
+          body: payload,
         },
       )
 
@@ -264,15 +314,16 @@ export function Horario() {
       if (respuesta.dias) {
         setFormulario(crearFormulario(respuesta.dias))
       }
-      setReservasConflicto([])
-      setDialogoAbierto(false)
+      cerrarConflicto()
       setMostrarModalExito(true)
     } catch (error) {
+      if (revision !== revisionFormulario.current) return
       if (esConflicto(error)) {
+        setPayloadConflicto(payload)
         setReservasConflicto(reservasDelError(datosDelError(error)))
         setDialogoAbierto(true)
       } else {
-        setDialogoAbierto(false)
+        cerrarConflicto()
         setErrorGuardado(MENSAJE_ERROR_GUARDADO)
       }
     } finally {
@@ -330,7 +381,7 @@ export function Horario() {
 
   return (
     <div className="horario-page">
-      <div className="horario-container">
+      <div className="horario-container" inert={dialogoAbierto}>
         <header className="horario-hero">
           <div className="horario-hero-contenido">
             <span className="horario-eyebrow">
@@ -422,6 +473,7 @@ export function Horario() {
           </div>
 
           <form onSubmit={handleSubmit} noValidate>
+            <fieldset className="horario-campos" disabled={guardando || dialogoAbierto}>
             <div className="horario-lista">
               {DIAS.map(({ clave, nombre }) => {
                 const dia = formulario[clave]
@@ -598,6 +650,7 @@ export function Horario() {
                 )}
               </button>
             </div>
+            </fieldset>
           </form>
         </section>
       </div>
@@ -606,6 +659,9 @@ export function Horario() {
         <div className="horario-dialogo-overlay">
           <div
             className="horario-dialogo"
+            ref={dialogoRef}
+            tabIndex={-1}
+            onKeyDown={manejarTecladoDialogo}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="horario-conflicto-titulo"
@@ -678,7 +734,7 @@ export function Horario() {
               <button
                 type="button"
                 className="btn-servia-secondary"
-                onClick={() => setDialogoAbierto(false)}
+                onClick={cerrarConflicto}
                 disabled={guardando}
               >
                 Volver

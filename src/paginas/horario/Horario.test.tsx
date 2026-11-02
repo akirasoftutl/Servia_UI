@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { api, ErrorApi } from '../../servicios/api'
 import { Horario } from './Horario'
@@ -56,6 +56,77 @@ describe('Horario', () => {
       fecha.mockRestore()
       hora.mockRestore()
     }
+  })
+
+  async function abrirConflicto() {
+    apiMock.mockResolvedValueOnce({ configurado: true, dias: diasConfigurados })
+    apiMock.mockRejectedValueOnce(new ErrorApi(409, 'Conflicto', { reservas: [] }))
+    renderizarHorario()
+    const guardar = await screen.findByRole('button', { name: 'Guardar horario' })
+    await userEvent.click(guardar)
+    return { guardar, dialogo: await screen.findByRole('alertdialog') }
+  }
+
+  it('mueve y retiene el foco, bloquea el formulario y restaura el foco al volver', async () => {
+    const user = userEvent.setup()
+    const { guardar, dialogo } = await abrirConflicto()
+    const confirmar = within(dialogo).getByRole('button', { name: 'Guardar de todos modos' })
+    const volver = within(dialogo).getByRole('button', { name: 'Volver' })
+    expect(confirmar).toHaveFocus()
+    expect(screen.getByRole('switch', { name: 'Martes laborable' })).toBeDisabled()
+    expect(guardar.closest('.horario-container')).toHaveAttribute('inert')
+    await user.tab({ shift: true })
+    expect(volver).toHaveFocus()
+    await user.tab()
+    expect(confirmar).toHaveFocus()
+    for (let i = 0; i < 6; i++) await user.tab({ shift: true })
+    expect(dialogo).toContainElement(document.activeElement as HTMLElement)
+    await user.click(volver)
+    expect(guardar).toHaveFocus()
+    expect(screen.getByRole('switch', { name: 'Martes laborable' })).toBeEnabled()
+    expect(apiMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('confirma el payload inmutable del 409 pese a intentar editar el fondo', async () => {
+    const { dialogo } = await abrirConflicto()
+    const payloadInicial = apiMock.mock.calls[1][1]?.body
+    apiMock.mockResolvedValueOnce({ configurado: true, dias: null })
+    await userEvent.click(screen.getByRole('switch', { name: 'Martes laborable' }))
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar de todos modos' }))
+    await screen.findByText('Horario guardado.')
+    expect(apiMock.mock.calls[2][0]).toBe('/negocios/mio/horario?confirmar=true')
+    expect(apiMock.mock.calls[2][1]?.body).toBe(payloadInicial)
+    expect(JSON.parse(String(payloadInicial)).martes).toEqual({ abre: '09:00', cierra: '18:00' })
+  })
+
+  it('invalida la confirmación si cambia el formulario y pide una nueva lista', async () => {
+    const { dialogo } = await abrirConflicto()
+    // Evento programático: fuerza una modificación aunque el fondo esté bloqueado.
+    fireEvent.change(within(screen.getByTestId('dia-martes')).getByLabelText('Cierra'), {
+      target: { value: '17:00' },
+    })
+    expect(dialogo).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Guardar de todos modos' })).not.toBeInTheDocument()
+    expect(apiMock).toHaveBeenCalledTimes(2)
+    apiMock.mockRejectedValueOnce(new ErrorApi(409, 'Conflicto nuevo', { reservas: [] }))
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar horario' }))
+    await screen.findByRole('alertdialog')
+    expect(apiMock.mock.calls[2][0]).toBe('/negocios/mio/horario')
+    expect(JSON.parse(String(apiMock.mock.calls[2][1]?.body)).martes.cierra).toBe('17:00')
+  })
+
+  it('descarta un 409 tardío si cambió el formulario durante la petición', async () => {
+    apiMock.mockResolvedValueOnce({ configurado: true, dias: diasConfigurados })
+    let rechazar!: (error: ErrorApi) => void
+    apiMock.mockImplementationOnce(() => new Promise((_, reject) => { rechazar = reject }))
+    renderizarHorario()
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar horario' }))
+    fireEvent.change(within(screen.getByTestId('dia-martes')).getByLabelText('Cierra'), {
+      target: { value: '17:00' },
+    })
+    await act(async () => { rechazar(new ErrorApi(409, 'Conflicto viejo', { reservas: [] })) })
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(apiMock).toHaveBeenCalledTimes(2)
   })
 
   it('muestra el aviso y los siete días cuando el negocio no tiene horario', async () => {
