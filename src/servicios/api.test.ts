@@ -33,4 +33,17 @@ describe('api', () => {
     expect(error).toBeInstanceOf(ErrorApi)
     expect((error as ErrorApi).message).toBe('correo inválido falta nombre')
   })
+
+  it('conserva el cuerpo de la respuesta cuando hay un conflicto', async () => {
+    const cuerpo = {
+      message: 'Hay reservas fuera del horario',
+      reservas: [{ folio: 'SRV-7KQ2MX' }],
+    }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(respuesta(409, cuerpo))
+
+    const error = await api('/negocios/mio/horario').catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ErrorApi)
+    expect((error as ErrorApi).datos).toEqual(cuerpo)
+  })
 })
