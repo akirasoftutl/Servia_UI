@@ -2,14 +2,18 @@ import { auth } from './firebase'
 
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 
-// Error de la API con su código HTTP y el mensaje que mandó el servidor.
+// Error de la API con su código HTTP, el mensaje que mandó el servidor y, si
+// existe, el cuerpo completo de la respuesta (por ejemplo, las reservas en
+// conflicto de un 409).
 export class ErrorApi extends Error {
   readonly estado: number
+  readonly datos: unknown
 
-  constructor(estado: number, mensaje: string) {
+  constructor(estado: number, mensaje: string, datos?: unknown) {
     super(mensaje)
     this.name = 'ErrorApi'
     this.estado = estado
+    this.datos = datos
   }
 }
 
@@ -34,6 +38,7 @@ export async function api<T>(ruta: string, opciones: RequestInit = {}): Promise<
     throw new ErrorApi(
       respuesta.status,
       Array.isArray(mensaje) ? mensaje.join(' ') : (mensaje ?? 'Ocurrió un error con el servidor.'),
+      datos,
     )
   }
   return datos as T

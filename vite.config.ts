@@ -38,5 +38,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/pruebas/setup.ts'],
+    // jsdom tarda en crear el entorno; damos margen para que las pruebas de
+    // rutas no fallen por carga del equipo o del CI.
+    testTimeout: 15_000,
   },
 })
