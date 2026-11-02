@@ -7,6 +7,7 @@ interface NavItem {
   id: string;
   label: string;
   icon: React.ReactNode;
+  ruta?: string;
 }
 
 interface NavGroup {
@@ -57,6 +58,7 @@ export const Sidebar: React.FC = () => {
         {
           id: 'servicios',
           label: 'Servicios',
+          ruta: '/servicios/nuevo',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -121,7 +123,10 @@ export const Sidebar: React.FC = () => {
                   <li key={item.id} className="nav-item">
                     <button
                       className={`nav-link ${isActive ? 'active' : ''}`}
-                      onClick={() => setActiveItem(item.id)}
+                      onClick={() => {
+                        setActiveItem(item.id);
+                        if (item.ruta) navigate(item.ruta);
+                      }}
                     >
                       {item.icon}
                       <span>{item.label}</span>
