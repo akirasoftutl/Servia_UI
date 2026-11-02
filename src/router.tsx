@@ -19,12 +19,14 @@ export const rutas: RouteObject[] = [
       { path: 'registro-negocio', element: <RegistroNegocio /> },
       { path: 'login', element: <Login /> },
 
+      // RUTAS PROTEGIDAS: si no hay sesión, no entran aquí
       {
         element: <RutaProtegida />,
         children: [
           { path: 'mi-perfil', element: <MiPerfil /> },
           { path: 'servicios', element: <MisServicios /> },
           { path: 'servicios/nuevo', element: <NuevoServicio /> },
+          { path: 'servicios/:id', element: <NuevoServicio /> },
         ],
       },
 
@@ -32,4 +34,5 @@ export const rutas: RouteObject[] = [
     ],
   },
 ]
-export const router = createBrowserRouter(rutas);
+
+export const router = createBrowserRouter(rutas)

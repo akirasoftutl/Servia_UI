@@ -19,3 +19,16 @@ button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
+/* Hacer que el Layout sea una fila flexible */
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Asegurar que el sidebar tenga un ancho fijo y no se encoja */
+.layout > aside,
+.layout > nav, 
+.layout > .sidebar { 
+  flex-shrink: 0;
+  width: 250px; /* Ajusta este ancho si el menú de tu compañero es más angosto o ancho */
+}
