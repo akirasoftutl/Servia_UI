@@ -32,11 +32,3 @@ a {
   flex-shrink: 0;
   width: 250px; /* Ajusta este ancho si el menú de tu compañero es más angosto o ancho */
 }
-
-/* Asegurar que el contenido ocupe el resto del espacio y sea visible */
-.contenido {
-  flex: 1;
-  padding: 24px;
-  background-color: #f8f9fa; /* Un gris muy claro para diferenciarlo del menú */
-  overflow-y: auto;
-}
