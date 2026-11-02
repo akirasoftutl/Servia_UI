@@ -170,7 +170,7 @@ describe('Horario', () => {
     expect(within(filaLunes).getByText('Descanso')).toBeInTheDocument()
   })
 
-  it('valida que la hora de cierre sea posterior a la de apertura', async () => {
+  it.each(['08:00', '09:00'])('impide guardar cierre %s con apertura a las 09:00', async (cierre) => {
     const user = userEvent.setup()
     apiMock.mockResolvedValueOnce({
       configurado: true,
@@ -181,7 +181,7 @@ describe('Horario', () => {
 
     const filaLunes = await screen.findByTestId('dia-lunes')
     fireEvent.change(within(filaLunes).getByLabelText('Cierra'), {
-      target: { value: '08:00' },
+      target: { value: cierre },
     })
 
     await user.click(screen.getByRole('button', { name: 'Guardar horario' }))
