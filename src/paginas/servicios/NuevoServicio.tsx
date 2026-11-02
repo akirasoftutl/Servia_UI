@@ -292,7 +292,9 @@ export function NuevoServicio() {
               <div className="servicio-alerta-icono" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
               </div>
-              <h2 className="servicio-alerta-titulo">{esEdicion ? '¡Cambios guardados!' : '¡Servicio publicado!'}</h2>
+               <h2 id="servicio-alerta-titulo" className="servicio-alerta-titulo">
+  {mensajeExito}
+</h2>
               <p className="servicio-alerta-texto"><strong>{form.nombre}</strong> ya forma parte de tu catálogo. Tus clientes podrán encontrarlo y reservarlo.</p>
               <div className="servicio-alerta-acciones">
                 <button type="button" className="btn-servia-primary" onClick={() => navigate('/servicios')}>Ver mis servicios</button>
