@@ -4,22 +4,16 @@ import { rutas } from '../router'
 import { AuthProvider } from '../contextos/AuthContext'
 import { vi } from 'vitest'
 
-// 1. Simulamos Firebase para que no falle
+// Simulamos Firebase para que no falle en el CI
 vi.mock('../servicios/firebase', () => ({
   auth: {
     onAuthStateChanged: vi.fn((callback) => {
       callback(null);
       return () => {};
     }),
-    signOut: vi.fn().mockResolvedValue(undefined), 
+    signOut: vi.fn(),
   },
   firebaseConfigurado: true,
-}));
-
-// 2. Simulamos la API para que no haga peticiones reales
-vi.mock('../servicios/api', () => ({
-  api: vi.fn().mockResolvedValue({ estado: 'ok' }),
-  ErrorApi: class extends Error {},
 }));
 
 function mostrar(ruta: string) {
@@ -31,12 +25,11 @@ function mostrar(ruta: string) {
 }
 
 describe('Inicio', () => {
-  it('renderiza la pagina principal sin errores', async () => {
+  it('muestra la página de inicio', async () => {
     mostrar('/')
-    // En lugar de buscar un texto exacto, buscamos que el logo de "Servia" exista.
-    // Usamos findAllByText porque puede aparecer en el navbar, en el footer, etc.
-    const logos = await screen.findAllByText(/Servia/i);
-    expect(logos.length).toBeGreaterThan(0);
+    expect(
+      await screen.findByRole('heading', { name: /Una plataforma, infinitas posibilidades/i })
+    ).toBeInTheDocument()
   })
 
   it('muestra la página de no encontrado en una ruta desconocida', async () => {

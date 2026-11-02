@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { api } from '../servicios/api';
+import { api } from '../../servicios/api';
 
 interface Servicio {
   id: string;

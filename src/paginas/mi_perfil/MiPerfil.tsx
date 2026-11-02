@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Link } from 'react-router';
+import { ShieldAlert } from 'lucide-react'
 import './MiPerfil.css';
 import { api } from '../../servicios/api';
 
@@ -225,7 +226,7 @@ export function MiPerfil() {
                     fontSize: 20,
                   }}
                 >
-                  ⚠️
+                  <ShieldAlert />
                 </div>
 
                 <div>

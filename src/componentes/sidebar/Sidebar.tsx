@@ -23,6 +23,7 @@ export const Sidebar: React.FC = () => {
   const { cerrarSesion } = useAuth();
   const navigate = useNavigate();
 
+  // Cerrar el menú si se hace clic fuera del contenedor 'user-profile'
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
