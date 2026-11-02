@@ -6,6 +6,7 @@ import {
   type ChangeEvent
 } from 'react';
 
+import { ShieldAlert } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { api } from '../../servicios/api';
 import './Servicios.css';
@@ -222,7 +223,7 @@ return (
                   fontSize: 20,
                 }}
               >
-                ⚠️
+              <ShieldAlert />
               </div>
 
               <div>
@@ -241,7 +242,7 @@ return (
               to="/mi-perfil"
               className="btn btn-warning fw-semibold px-4 py-2 rounded-3 text-decoration-none"
             >
-              Completar mi perfil →
+              Completar mi perfil
             </Link>
           </div>
         </div>
