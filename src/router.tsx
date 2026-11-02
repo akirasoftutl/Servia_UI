@@ -7,7 +7,7 @@ import { Layout } from './componentes/layout/Layout.tsx'
 import Home from './paginas/home/Home.tsx'
 import { NoEncontrado } from './paginas/noEncontrado/NoEncontrado'
 import { NuevoServicio } from './paginas/servicios/NuevoServicio.tsx'
-import { MisServicios } from './paginas/MisServicios'
+import { MisServicios } from './paginas/servicios/MisServicios.tsx'
 
 // Rutas del panel. Aquí se agregan las páginas de cada historia (registro, sesión, perfil…).
 export const rutas: RouteObject[] = [
