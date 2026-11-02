@@ -16,20 +16,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    // Forzar cierre de sesión al iniciar para no mantener sesión persistente
-    if (auth) {
-      signOut(auth).catch(() => {});
-    }
-   
     const unsubscribe = onAuthStateChanged(auth!, async (user) => {
       if (user) {
         try {
-          // Verificamos con la API si es negocio
+
           const respuesta = await api<{ tipo: string }>('/auth/yo');
           if (respuesta.tipo === 'negocio') {
             setUsuario(user);
           } else {
-            // Si es cliente, lo sacamos inmediatamente
+           
             await signOut(auth!);
             setUsuario(null);
           }
