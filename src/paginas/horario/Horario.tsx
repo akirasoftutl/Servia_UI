@@ -135,6 +135,7 @@ function formatearFecha(inicio: string): string {
   if (Number.isNaN(fecha.getTime())) return inicio
 
   return fecha.toLocaleDateString('es-MX', {
+    timeZone: 'America/Mexico_City',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -146,6 +147,7 @@ function formatearHora(inicio: string): string {
   if (Number.isNaN(fecha.getTime())) return ''
 
   return fecha.toLocaleTimeString('es-MX', {
+    timeZone: 'America/Mexico_City',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,

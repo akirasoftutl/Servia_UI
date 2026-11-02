@@ -32,6 +32,32 @@ describe('Horario', () => {
     apiMock.mockReset()
   })
 
+  it.each(['UTC', 'Asia/Tokyo'])('muestra fecha y hora de México desde un navegador en %s', async (zona) => {
+    const fechaOriginal = Date.prototype.toLocaleDateString
+    const horaOriginal = Date.prototype.toLocaleTimeString
+    const fecha = vi.spyOn(Date.prototype, 'toLocaleDateString').mockImplementation(function (this: Date, idioma, opciones) {
+      return fechaOriginal.call(this, idioma, { timeZone: zona, ...opciones })
+    })
+    const hora = vi.spyOn(Date.prototype, 'toLocaleTimeString').mockImplementation(function (this: Date, idioma, opciones) {
+      return horaOriginal.call(this, idioma, { timeZone: zona, ...opciones })
+    })
+    try {
+      apiMock.mockResolvedValueOnce({ configurado: true, dias: diasConfigurados })
+      apiMock.mockRejectedValueOnce(new ErrorApi(409, 'Conflicto', { reservas: [{
+        id: 'zona', folio: 'SRV-ZONA', inicio: '2026-11-03T01:00:00.000Z',
+        servicio: { nombre: 'Corte' }, estado: 'confirmada',
+      }] }))
+      renderizarHorario()
+      await userEvent.click(await screen.findByRole('button', { name: 'Guardar horario' }))
+      const dialogo = await screen.findByRole('alertdialog')
+      expect(within(dialogo).getByText('02/11/2026')).toBeInTheDocument()
+      expect(within(dialogo).getByText('19:00')).toBeInTheDocument()
+    } finally {
+      fecha.mockRestore()
+      hora.mockRestore()
+    }
+  })
+
   it('muestra el aviso y los siete días cuando el negocio no tiene horario', async () => {
     apiMock.mockResolvedValueOnce({ configurado: false, dias: null })
 
