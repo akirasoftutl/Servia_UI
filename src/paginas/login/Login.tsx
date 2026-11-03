@@ -4,10 +4,12 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../servicios/firebase';
 import { api } from '../../servicios/api';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useVolver } from '../../utilidades/useVolver';
 import './Login.css'; 
 
 export function Login() {
   const navigate = useNavigate();
+  const volver = useVolver();
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -61,7 +63,7 @@ export function Login() {
         <div>
           <button 
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={volver}
             className="back-btn"
             aria-label="Volver"
           >

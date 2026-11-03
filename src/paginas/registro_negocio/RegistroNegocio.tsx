@@ -4,6 +4,7 @@ import { api } from '../../servicios/api';
 import { auth } from '../../servicios/firebase'; 
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useVolver } from '../../utilidades/useVolver';
 import './Registro.css'; 
 
 interface FormularioRegistro {
@@ -17,6 +18,7 @@ type ErroresFormulario = Partial<Record<keyof FormularioRegistro, string>>;
 
 export function RegistroNegocio() {
   const navigate = useNavigate();
+  const volver = useVolver();
   
   const [form, setForm] = useState<FormularioRegistro>({
     nombreNegocio: '',
@@ -100,7 +102,7 @@ export function RegistroNegocio() {
         <div>
           <button 
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={volver}
             className="back-btn"
             aria-label="Volver"
           >
