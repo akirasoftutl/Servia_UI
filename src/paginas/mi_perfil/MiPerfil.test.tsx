@@ -9,6 +9,9 @@ vi.mock('../../servicios/api', async (importOriginal) => {
   return { ...actual, api: vi.fn() }
 })
 
+// Sin sesión simulada, la sección «Cambiar contraseña» (MVP-04) no se muestra aquí; se prueba en CambiarContrasena.test.tsx.
+vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => ({ usuario: null }) }))
+
 const apiMock = vi.mocked(api)
 
 const direccionGuardada = {

@@ -12,6 +12,7 @@ import {
   type Direccion,
   type DireccionForm,
 } from './direccion';
+import { CambiarContrasena } from './CambiarContrasena';
 
 interface Categoria {
   id: string;
@@ -904,6 +905,9 @@ export function MiPerfil() {
           </div>
 
         </form>
+
+        {/* Fuera del formulario del perfil: es un formulario aparte (MVP-04). */}
+        <CambiarContrasena />
       </div>
     </div>
   );
