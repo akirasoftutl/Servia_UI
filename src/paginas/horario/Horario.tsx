@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { ShieldAlert } from 'lucide-react'
 import { api } from '../../servicios/api'
-import '../servicios/Servicios.css'
 import './Horario.css'
 
 const DIAS = [
@@ -345,12 +344,12 @@ export function Horario() {
 
   if (cargando) {
     return (
-      <div className="horario-page d-flex align-items-center justify-content-center">
-        <div className="text-center">
-          <div className="spinner-border horario-spinner" role="status">
+      <div className="panel-pagina panel-pagina--centrada">
+        <div className="panel-estado">
+          <div className="spinner-border" role="status">
             <span className="visually-hidden">Cargando...</span>
           </div>
-          <p className="text-secondary mt-3 mb-0">
+          <p className="panel-estado-texto">
             Cargando tu horario...
           </p>
         </div>
@@ -360,12 +359,12 @@ export function Horario() {
 
   if (errorCarga) {
     return (
-      <div className="horario-page">
-        <div className="horario-container">
-          <div className="horario-feedback" role="alert">
-            <div className="horario-feedback-icono">!</div>
-            <h1>Algo salió mal</h1>
-            <p>{errorCarga}</p>
+      <div className="panel-pagina">
+        <div className="panel-contenedor horario-container">
+          <div className="panel-tarjeta panel-estado" role="alert">
+            <div className="panel-estado-icono panel-estado-icono--error">!</div>
+            <h1 className="panel-estado-titulo">Algo salió mal</h1>
+            <p className="panel-estado-texto">{errorCarga}</p>
             <button
               type="button"
               className="btn-servia-primary"
@@ -380,64 +379,39 @@ export function Horario() {
   }
 
   return (
-    <div className="horario-page">
-      <div className="horario-container" inert={dialogoAbierto}>
-        <header className="horario-hero">
-          <div className="horario-hero-contenido">
-            <span className="horario-eyebrow">
-              <span className="horario-eyebrow-punto" aria-hidden="true" />
-              OPERACIONES
-            </span>
-            <h1>Horario de atención</h1>
-            <p>
+    <div className="panel-pagina">
+      <div className="panel-contenedor horario-container" inert={dialogoAbierto}>
+        <header className="panel-encabezado">
+          <div>
+            <span className="panel-eyebrow">OPERACIONES</span>
+            <h1 className="panel-titulo">Horario de atención</h1>
+            <p className="panel-subtitulo">
               Define qué días trabaja tu negocio y en qué horario puedes recibir
               reservas.
             </p>
 
-            <div className="horario-hero-meta">
+            <div className="horario-meta">
               <span
-                className={`horario-estado ${
-                  configurado
-                    ? 'horario-estado--activo'
-                    : 'horario-estado--pendiente'
+                className={`panel-insignia ${
+                  configurado ? 'panel-insignia--exito' : 'panel-insignia--aviso'
                 }`}
               >
                 <span className="horario-estado-punto" aria-hidden="true" />
                 {configurado ? 'Horario configurado' : 'Horario pendiente'}
               </span>
-              <span className="horario-meta-separador" aria-hidden="true" />
               <span className="horario-meta-texto">
                 {diasActivos} de 7 días laborables
               </span>
             </div>
           </div>
-
-          <div className="horario-hero-ilustracion" aria-hidden="true">
-            <span className="horario-hero-brillo horario-hero-brillo--uno" />
-            <span className="horario-hero-brillo horario-hero-brillo--dos" />
-            <div className="horario-hero-icono">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="4.5" width="18" height="17" rx="3" />
-                <path d="M8 2.5v4M16 2.5v4M3 9.5h18" />
-                <path d="M8 14h2M14 14h2M8 18h2" />
-              </svg>
-            </div>
-          </div>
         </header>
 
         {!configurado && (
-          <div className="horario-aviso horario-aviso--pendiente" role="status">
-            <div className="horario-aviso-icono" aria-hidden="true">
+          <div className="panel-alerta panel-alerta--aviso" role="status">
+            <div className="panel-alerta-icono" aria-hidden="true">
               <ShieldAlert />
             </div>
-            <div className="horario-aviso-contenido">
+            <div className="panel-alerta-contenido">
               <strong>{MENSAJE_SIN_HORARIO}</strong>
               <p>Mientras no guardes tu horario, no podrás recibir reservas.</p>
             </div>
@@ -445,22 +419,22 @@ export function Horario() {
         )}
 
         {errorGuardado && (
-          <div className="horario-aviso horario-aviso--error" role="alert">
-            <div className="horario-aviso-icono" aria-hidden="true">
+          <div className="panel-alerta panel-alerta--error" role="alert">
+            <div className="panel-alerta-icono" aria-hidden="true">
               !
             </div>
-            <div className="horario-aviso-contenido">
+            <div className="panel-alerta-contenido">
               <strong>{errorGuardado}</strong>
             </div>
           </div>
         )}
 
-        <section className="horario-card" aria-labelledby="titulo-horario">
+        <section className="panel-tarjeta horario-card" aria-labelledby="titulo-horario">
           <div className="horario-card-header">
             <div>
-              <span className="horario-card-eyebrow">PLAN SEMANAL</span>
-              <h2 id="titulo-horario">Tu semana</h2>
-              <p>Activa los días que trabajas y ajusta tu horario de atención.</p>
+              <span className="panel-eyebrow">PLAN SEMANAL</span>
+              <h2 id="titulo-horario" className="panel-tarjeta-titulo">Tu semana</h2>
+              <p className="panel-tarjeta-subtitulo">Activa los días que trabajas y ajusta tu horario de atención.</p>
             </div>
 
             <div
@@ -656,9 +630,9 @@ export function Horario() {
       </div>
 
       {dialogoAbierto && (
-        <div className="horario-dialogo-overlay">
+        <div className="panel-dialogo-fondo">
           <div
-            className="horario-dialogo"
+            className="panel-dialogo panel-dialogo--amplio"
             ref={dialogoRef}
             tabIndex={-1}
             onKeyDown={manejarTecladoDialogo}
@@ -668,25 +642,25 @@ export function Horario() {
             aria-describedby="horario-conflicto-texto"
           >
             <div className="horario-dialogo-encabezado">
-              <span className="horario-dialogo-icono" aria-hidden="true">
+              <span className="panel-dialogo-icono panel-dialogo-icono--aviso" aria-hidden="true">
                 !
               </span>
               <div>
-                <h2 id="horario-conflicto-titulo">
+                <h2 id="horario-conflicto-titulo" className="panel-dialogo-titulo">
                   Estas reservas quedan fuera del nuevo horario
                 </h2>
 
                 <p
                   id="horario-conflicto-texto"
-                  className="horario-dialogo-texto"
+                  className="panel-dialogo-texto"
                 >
                   No se cancelarán solas. Si guardas, revisa cada una.
                 </p>
               </div>
             </div>
 
-            <div className="table-responsive horario-tabla-contenedor">
-              <table className="table horario-tabla">
+            <div className="panel-tabla-contenedor">
+              <table className="panel-tabla">
                 <thead>
                   <tr>
                     <th scope="col">Folio</th>
@@ -710,7 +684,7 @@ export function Horario() {
               </table>
             </div>
 
-            <div className="horario-dialogo-acciones">
+            <div className="panel-dialogo-acciones">
               <button
                 type="button"
                 className="btn-servia-primary"
@@ -746,14 +720,14 @@ export function Horario() {
 
       {mostrarModalExito && (
         <div
-          className="servicio-alerta-overlay"
+          className="panel-dialogo-fondo"
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="horario-exito-titulo"
           aria-describedby="horario-exito-texto"
         >
-          <div className="servicio-alerta-card">
-            <div className="servicio-alerta-icono" aria-hidden="true">
+          <div className="panel-dialogo">
+            <div className="panel-dialogo-icono" aria-hidden="true">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -768,18 +742,18 @@ export function Horario() {
 
             <h2
               id="horario-exito-titulo"
-              className="servicio-alerta-titulo"
+              className="panel-dialogo-titulo"
             >
               Horario guardado.
             </h2>
 
-            <p id="horario-exito-texto" className="servicio-alerta-texto">
+            <p id="horario-exito-texto" className="panel-dialogo-texto">
               {diasActivos > 0
                 ? 'Tu horario de atención quedó actualizado. Los clientes podrán reservar dentro de los días y horas que configuraste.'
                 : 'Tu horario se guardó, pero no hay días laborables. Los clientes no podrán reservar hasta que actives uno.'}
             </p>
 
-            <div className="servicio-alerta-acciones">
+            <div className="panel-dialogo-acciones panel-dialogo-acciones--columna">
               <button
                 type="button"
                 className="btn-servia-primary"

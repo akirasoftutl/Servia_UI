@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router/dom'
 import { registerSW } from 'virtual:pwa-register'
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './estilos/panel.css';
 import { AuthProvider } from './contextos/AuthContext';
 import { router } from './router'
 import './index.css'

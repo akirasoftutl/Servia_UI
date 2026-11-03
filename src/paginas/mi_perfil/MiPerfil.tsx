@@ -214,16 +214,12 @@ export function MiPerfil() {
 
   if (cargando) {
     return (
-      <div className="perfil-page d-flex align-items-center justify-content-center">
-        <div className="text-center">
-          <div
-            className="spinner-border"
-            style={{ color: '#9333ea' }}
-            role="status"
-          >
+      <div className="panel-pagina panel-pagina--centrada">
+        <div className="panel-estado">
+          <div className="spinner-border" role="status">
             <span className="visually-hidden">Cargando...</span>
           </div>
-          <p className="text-secondary mt-3 mb-0">
+          <p className="panel-estado-texto">
             Cargando información del negocio...
           </p>
         </div>
@@ -232,40 +228,30 @@ export function MiPerfil() {
   }
 
   return (
-    <div className="perfil-page">
-      <div className="perfil-container">
+    <div className="panel-pagina">
+      <div className="panel-contenedor">
 
         {/* Aviso de perfil incompleto */}
         {!form.perfilCompleto &&
           (form.camposFaltantes?.length ?? 0) > 0 && (
             <div
-              className="alert alert-warning border-0 rounded-4 p-3 mb-4"
+              className="panel-alerta panel-alerta--aviso perfil-alerta-incompleto"
               role="status"
             >
-              <div className="d-flex align-items-start gap-3">
-                <div
-                  className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                  style={{
-                    width: 42,
-                    height: 42,
-                    background: '#fff0c2',
-                    fontSize: 20,
-                  }}
-                >
-                  <ShieldAlert />
-                </div>
+              <div className="panel-alerta-icono" aria-hidden="true">
+                <ShieldAlert />
+              </div>
 
-                <div>
-                  <strong className="d-block mb-1">
-                    Completa tu perfil para publicar servicios
+              <div className="panel-alerta-contenido">
+                <strong className="d-block">
+                  Completa tu perfil para publicar servicios
+                </strong>
+                <p>
+                  Campos pendientes:{' '}
+                  <strong>
+                    {form.camposFaltantes.join(', ')}
                   </strong>
-                  <span className="small text-secondary">
-                    Campos pendientes:{' '}
-                    <strong>
-                      {form.camposFaltantes.join(', ')}
-                    </strong>
-                  </span>
-                </div>
+                </p>
               </div>
             </div>
           )}
@@ -273,44 +259,31 @@ export function MiPerfil() {
         {/* Mensaje de éxito */}
         {mensajeExito && !mostrarModalExito && (
           <div
-            className="alert alert-success border-0 rounded-4 p-3 mb-4"
+            className="panel-alerta panel-alerta--exito"
             role="status"
           >
-            <div className="d-flex align-items-center gap-2">
-              <span style={{ fontSize: 20 }}>✓</span>
-              <span className="fw-semibold">{mensajeExito}</span>
-            </div>
+            <span aria-hidden="true">✓</span>
+            <strong>{mensajeExito}</strong>
           </div>
         )}
 
         {mostrarModalExito && (
           <div
-            className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', zIndex: 1050 }}
+            className="panel-dialogo-fondo"
             onClick={() => setMostrarModalExito(false)}
           >
             <div
-              className="bg-white rounded-4 shadow-lg p-4 text-center"
-              style={{ maxWidth: '400px', width: '90%' }}
+              className="panel-dialogo"
               onClick={(e) => e.stopPropagation()}
             >
-              <div
-                className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                style={{
-                  width: 64,
-                  height: 64,
-                  background: '#dcfce7',
-                  color: '#16a34a',
-                  fontSize: 32,
-                }}
-              >
+              <div className="panel-dialogo-icono panel-dialogo-icono--exito" aria-hidden="true">
                 ✓
               </div>
-              <h4 className="fw-bold mb-2">¡Éxito!</h4>
-              <p className="text-secondary mb-4">{mensajeExito}</p>
+              <h4 className="panel-dialogo-titulo">¡Éxito!</h4>
+              <p className="panel-dialogo-texto">{mensajeExito}</p>
               <button
                 type="button"
-                className="btn-servia-primary px-4"
+                className="btn-servia-primary"
                 onClick={() => setMostrarModalExito(false)}
               >
                 Aceptar
@@ -321,34 +294,25 @@ export function MiPerfil() {
 
         <form onSubmit={handleSubmit} noValidate>
 
+          {/* Encabezado */}
+          <header className="panel-encabezado">
+            <div>
+              <span className="panel-eyebrow">PANEL DE NEGOCIO</span>
+
+              <h1 className="panel-titulo">
+                Perfil del negocio
+              </h1>
+
+              <p className="panel-subtitulo">
+                Administra la información de tu establecimiento
+                y haz que más clientes te encuentren en Servia.
+              </p>
+            </div>
+          </header>
+
           {/* Tarjeta principal */}
-          <div className="perfil-card">
-            <div className="perfil-card-body">
-
-              {/* Encabezado */}
-              <header className="perfil-header">
-                <div className="d-flex align-items-center gap-2 mb-3">
-                  <span
-                    className="rounded-pill px-3 py-2 small fw-semibold"
-                    style={{
-                      color: '#7e22ce',
-                      background: '#f5eaff',
-                    }}
-                  >
-                    <span className="me-2">✦</span>
-                    PANEL DE NEGOCIO
-                  </span>
-                </div>
-
-                <h1 className="perfil-title">
-                  Perfil del negocio
-                </h1>
-
-                <p className="perfil-subtitle">
-                  Administra la información de tu establecimiento
-                  y haz que más clientes te encuentren en Servia.
-                </p>
-              </header>
+          <div className="panel-tarjeta">
+            <div>
 
               <div className="perfil-progress-lines" aria-hidden="true">
                 <span className={pasoActual >= 1 ? 'active' : ''} />
@@ -361,12 +325,12 @@ export function MiPerfil() {
                   <div className="mb-4">
                     <h2
                       id="titulo-informacion"
-                      className="perfil-section-title mb-2"
+                      className="panel-tarjeta-titulo"
                     >
                       Información general
                     </h2>
 
-                    <p className="perfil-subtitle">
+                    <p className="panel-tarjeta-subtitulo">
                       Cuéntales a tus clientes quién eres y cómo
                       pueden ponerse en contacto contigo.
                     </p>
@@ -483,18 +447,18 @@ export function MiPerfil() {
                             required
                           />
 
-                          <div className="d-flex justify-content-between align-items-center mt-2">
+                          <div className="perfil-campo-pie">
                             {errores.descripcion ? (
-                              <span className="text-danger small">
+                              <span className="panel-error-campo">
                                 {errores.descripcion}
                               </span>
                             ) : (
-                              <span className="text-secondary small">
+                              <span className="panel-ayuda">
                                 Una buena descripción genera confianza.
                               </span>
                             )}
 
-                            <span className="text-secondary small">
+                            <span className="panel-ayuda">
                               {(form.descripcion || '').length}/500
                             </span>
                           </div>
@@ -506,11 +470,11 @@ export function MiPerfil() {
               
                     <div className="col-12 col-lg-5">
                       <div className="perfil-upload h-100">
-                        <h3 className="fw-bold mb-2 fs-6">
+                        <h3 className="perfil-upload-titulo">
                           Imagen de tu negocio
                         </h3>
 
-                        <p className="text-secondary small mb-3">
+                        <p className="panel-ayuda mb-3">
                           Agrega tu logotipo o una imagen que
                           represente tu establecimiento.
                         </p>
@@ -558,8 +522,7 @@ export function MiPerfil() {
 
                         <label
                           htmlFor="logo-upload"
-                          className="btn-servia-secondary d-flex align-items-center justify-content-center gap-2 w-100"
-                          style={{ cursor: 'pointer' }}
+                          className="btn-servia-secondary btn-servia-bloque"
                         >
 
                           {imagenPreview
@@ -567,7 +530,7 @@ export function MiPerfil() {
                             : 'Seleccionar imagen'}
                         </label>
 
-                        <p className="text-secondary text-center small mt-3 mb-0">
+                        <p className="panel-ayuda text-center mt-3 mb-0">
                           Máximo 5 MB
                         </p>
                       </div>
@@ -585,12 +548,12 @@ export function MiPerfil() {
                   <div className="mb-4">
                     <h2
                       id="titulo-ubicacion"
-                      className="perfil-section-title mb-2"
+                      className="panel-tarjeta-titulo"
                     >
                       Ubicación y contacto
                     </h2>
 
-                    <p className="perfil-subtitle">
+                    <p className="panel-tarjeta-subtitulo">
                       Facilita que tus clientes encuentren tu
                       establecimiento.
                     </p>
@@ -792,26 +755,26 @@ export function MiPerfil() {
                   <div className="mb-4">
                     <h2
                       id="titulo-categoria"
-                      className="perfil-section-title mb-2"
+                      className="panel-tarjeta-titulo"
                     >
                       Categoría del negocio
                     </h2>
 
-                    <p className="perfil-subtitle">
+                    <p className="panel-tarjeta-subtitulo">
                       Selecciona la categoría que mejor describe
                       los servicios que ofreces.
                     </p>
                   </div>
 
                   {errores.categoriaId && (
-                    <div className="alert alert-danger py-2 small">
+                    <div className="panel-alerta panel-alerta--error">
                       {errores.categoriaId}
                     </div>
                   )}
 
                   {categorias.length === 0 ? (
-                    <div className="text-center py-5">
-                      <p className="text-secondary mb-0">
+                    <div className="panel-estado">
+                      <p className="panel-estado-texto">
                         No hay categorías disponibles por el momento.
                       </p>
                     </div>
@@ -843,10 +806,6 @@ export function MiPerfil() {
                                 }`}
                               style={{
                                 backgroundImage: `linear-gradient(to top, rgba(20, 15, 30, 0.88), rgba(20, 15, 30, 0.08)), url('${imagenCategoria}')`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                color: '#fff',
-                                fontFamily: 'inherit',
                               }}
                               onClick={() =>
                                 handleCategoriaChange(cat.id)
@@ -867,7 +826,7 @@ export function MiPerfil() {
                     </div>
                   )}
 
-                  <p className="text-secondary small mt-3 mb-0">
+                  <p className="panel-ayuda mt-3 mb-0">
                     Puedes seleccionar una sola categoría.
                   </p>
                 </section>
@@ -926,7 +885,7 @@ export function MiPerfil() {
 
                   <Link
                     to="/servicios"
-                    className="btn-servia-secondary text-decoration-none d-inline-flex align-items-center justify-content-center"
+                    className="btn-servia-secondary"
                   >
                     Salir
                   </Link>
@@ -934,12 +893,9 @@ export function MiPerfil() {
               </div>
 
               {/* Pie de la tarjeta */}
-              <div
-                className="d-flex align-items-center justify-content-center gap-2 mt-4 pt-3"
-                style={{ borderTop: '1px solid #eceef4' }}
-              >
-                <span style={{ color: '#9333ea' }}>●</span>
-                <span className="text-secondary small">
+              <div className="panel-nota-pie">
+                <span className="panel-nota-pie-punto" aria-hidden="true">●</span>
+                <span>
                   Tu información te ayuda a conectar con más clientes.
                 </span>
               </div>

@@ -18,3 +18,9 @@
   width: 100%;
   min-width: 0;
 }
+
+/* Mismo fondo que las páginas del panel, para que no se vea una franja blanca
+   alrededor del interruptor de recepción de reservas. */
+.layout--with-sidebar .contenido {
+  background: var(--sv-fondo, #f7f6fb);
+}

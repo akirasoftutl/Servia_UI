@@ -66,12 +66,12 @@ export function AccionesServicio({ id, nombre, activo, alCambiarEstado, alElimin
   }
 
   return <div>
-    <div className="d-flex gap-2" inert={dialogo !== null}>
-      <button className={`btn btn-sm ${activo ? 'btn-outline-warning' : 'btn-outline-success'}`} type="button" disabled={ocupado || eliminado} onClick={() => activo ? setDialogo('desactivar') : void cambiarEstado()}>{activo ? 'Desactivar' : 'Activar'}</button>
-      <button className="btn btn-sm btn-outline-danger" type="button" disabled={ocupado || eliminado} onClick={() => setDialogo('eliminar')}>Eliminar</button>
+    <div className="servicio-acciones-botones" inert={dialogo !== null}>
+      <button className="btn-servia-secondary btn-servia-sm" type="button" disabled={ocupado || eliminado} onClick={() => activo ? setDialogo('desactivar') : void cambiarEstado()}>{activo ? 'Desactivar' : 'Activar'}</button>
+      <button className="btn-servia-danger btn-servia-sm" type="button" disabled={ocupado || eliminado} onClick={() => setDialogo('eliminar')}>Eliminar</button>
     </div>
-    {error && <p role="alert">{error}</p>}
-    {eliminado && error && <button type="button" disabled={ocupado} onClick={reintentarVisibilidad}>Consultar visibilidad de nuevo</button>}
+    {error && <p role="alert" className="panel-error-campo">{error}</p>}
+    {eliminado && error && <button type="button" className="btn-servia-secondary btn-servia-sm" disabled={ocupado} onClick={reintentarVisibilidad}>Consultar visibilidad de nuevo</button>}
     {dialogo && <DialogoServicio ocupado={ocupado} accion={dialogo === 'eliminar' ? 'Eliminar' : 'Desactivar'}
       texto={dialogo === 'eliminar' ? `¿Eliminar «${nombre}»? Esta acción no se puede deshacer.`
         : dialogo === 'reservas' ? 'Este servicio ya tuvo reservas, así que no se puede eliminar. Puedes desactivarlo para que deje de ofrecerse.'
