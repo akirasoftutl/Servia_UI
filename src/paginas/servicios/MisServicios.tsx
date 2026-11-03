@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { api } from '../../servicios/api';
-import './Servicios.css'
+import './Servicios.css';
+import { AccionesServicio } from './AccionesServicio';
 
 interface Servicio {
   id: string;
@@ -19,153 +19,94 @@ export function MisServicios() {
   const [filtro, setFiltro] = useState<'todos' | 'activos' | 'inactivos'>('todos');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const { state } = useLocation();
+  const [alerta, setAlerta] = useState<string>(state?.mensaje ?? '');
 
+  const [revision, setRevision] = useState(0);
   useEffect(() => {
-    const cargarServicios = async () => {
-      setCargando(true);
-      setError('');
+    let vigente = true;
+    let ruta = '/negocios/mio/servicios';
+    if (filtro !== 'todos') ruta += `?estado=${filtro}`;
+    void api<Servicio[]>(ruta).then(data => {
+      if (vigente) { setServicios(data); setError(''); }
+    }).catch(() => {
+      if (vigente) setError('No pudimos cargar tus servicios. Intenta nuevamente.');
+    }).finally(() => { if (vigente) setCargando(false); });
+    return () => { vigente = false; };
+  }, [filtro, revision]);
+  const cargarServicios = () => setRevision(prev => prev + 1);
 
-      try {
-        let ruta = '/negocios/mio/servicios';
-
-        if (filtro === 'activos') ruta += '?estado=activos';
-        if (filtro === 'inactivos') ruta += '?estado=inactivos';
-
-        const data = await api<Servicio[]>(ruta);
-        setServicios(data);
-      } catch {
-        setError('No pudimos cargar tus servicios. Intenta nuevamente.');
-      } finally {
-        setCargando(false);
-      }
-    };
-
-    cargarServicios();
-  }, [filtro]);
+  const cambiarFiltro = (nuevo: typeof filtro) => {
+    if (nuevo === filtro) return;
+    setCargando(true);
+    setError('');
+    setFiltro(nuevo);
+  };
 
   return (
     <div className="servicios-page">
       <div className="servicios-container">
+        
+        {alerta && <div role="status" className="alert alert-info rounded-4 mb-3">{alerta}</div>}
 
-        {/* Encabezado */}
         <header className="servicios-header">
           <div>
             <span className="servicios-eyebrow">ADMINISTRACIÓN</span>
             <h1>Mis servicios</h1>
             <p>Organiza y administra los servicios de tu negocio.</p>
           </div>
-
-          <Link to="/servicios/nuevo" className="btn-servia-primary">
-
-            Crear servicio
-          </Link>
+          <Link to="/servicios/nuevo" className="btn-servia-primary">Crear servicio</Link>
         </header>
 
-        {/* Panel principal */}
         <section className="servicios-panel">
-
           <div className="servicios-panel-header">
             <div>
               <h2>Tu catálogo</h2>
               <p>Consulta los servicios que tienes publicados.</p>
             </div>
-
             {!cargando && !error && (
-              <span className="servicios-contador">
-                {servicios.length} {servicios.length === 1 ? 'servicio' : 'servicios'}
-              </span>
+              <span className="servicios-contador">{servicios.length} {servicios.length === 1 ? 'servicio' : 'servicios'}</span>
             )}
           </div>
 
-          {/* Filtros */}
           <div className="servicios-tabs">
-            <button
-              className={filtro === 'todos' ? 'active' : ''}
-              onClick={() => setFiltro('todos')}
-            >
-              Todos
-            </button>
-
-            <button
-              className={filtro === 'activos' ? 'active' : ''}
-              onClick={() => setFiltro('activos')}
-            >
-              Activos
-            </button>
-
-            <button
-              className={filtro === 'inactivos' ? 'active' : ''}
-              onClick={() => setFiltro('inactivos')}
-            >
-              Inactivos
-            </button>
+            <button className={filtro === 'todos' ? 'active' : ''} onClick={() => cambiarFiltro('todos')}>Todos</button>
+            <button className={filtro === 'activos' ? 'active' : ''} onClick={() => cambiarFiltro('activos')}>Activos</button>
+            <button className={filtro === 'inactivos' ? 'active' : ''} onClick={() => cambiarFiltro('inactivos')}>Inactivos</button>
           </div>
 
-          {/* Cargando */}
           {cargando && (
             <div className="servicios-feedback">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
+              <div className="spinner-border" role="status"></div>
               <p>Cargando tus servicios...</p>
             </div>
           )}
 
-          {/* Error */}
           {!cargando && error && (
             <div className="servicios-feedback">
               <div className="servicios-feedback-icon error">!</div>
               <h3>Algo salió mal</h3>
               <p>{error}</p>
-              <button
-                className="servicios-btn-secundario"
-                onClick={() => setFiltro(filtro)}
-              >
-                Intentar de nuevo
-              </button>
+              <button className="servicios-btn-secundario" onClick={() => { setCargando(true); setError(''); void cargarServicios(); }}>Intentar de nuevo</button>
             </div>
           )}
 
-          {/* Sin resultados */}
           {!cargando && !error && servicios.length === 0 && (
             <div className="servicios-feedback">
               <div className="servicios-feedback-icon">✦</div>
-
-              <h3>
-                {filtro === 'todos' && 'Tu catálogo está vacío'}
-                {filtro === 'activos' && 'No tienes servicios activos'}
-                {filtro === 'inactivos' && 'No tienes servicios inactivos'}
-              </h3>
-
-              <p>
-                {filtro === 'todos'
-                  ? 'Comienza agregando tu primer servicio para que tus clientes puedan descubrirlo.'
-                  : 'No encontramos servicios en esta categoría.'}
-              </p>
+              <h3>{filtro === 'todos' ? 'Tu catálogo está vacío' : `No tienes servicios ${filtro}`}</h3>
+              <p>{filtro === 'todos' ? 'Comienza agregando tu primer servicio para que tus clientes puedan descubrirlo.' : 'No encontramos servicios en esta categoría.'}</p>
             </div>
           )}
 
           {!cargando && !error && servicios.length > 0 && (
             <div className="servicios-lista">
               {servicios.map((srv) => (
-                <article
-                  key={srv.id}
-                  className="servicio-card"
-                  onClick={() => navigate(`/servicios/${srv.id}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      navigate(`/servicios/${srv.id}`);
-                    }
-                  }}
-                >
-                  <div className="servicio-card-principal">
-                    <div className="servicio-icono">
-                      <span>✦</span>
-                    </div>
-
+                <article key={srv.id} className="servicio-card">
+                  
+                  {/* Hacemos clic en el área principal para editar */}
+                  <Link className="servicio-card-principal text-decoration-none text-reset" to={`/servicios/${srv.id}`}>
+                    <div className="servicio-icono"><span>✦</span></div>
                     <div className="servicio-informacion">
                       <div className="servicio-titulo-fila">
                         <h3>{srv.nombre}</h3>
@@ -174,31 +115,30 @@ export function MisServicios() {
                           {srv.activo ? 'Activo' : 'Inactivo'}
                         </span>
                       </div>
-
                       <div className="servicio-datos">
-                        <span>
-                          <small>Precio</small>
-                          <strong>${srv.precio.toFixed(2)}</strong>
-                        </span>
-
+                        <span><small>Precio</small><strong>${srv.precio.toFixed(2)}</strong></span>
                         <span className="servicio-dato-separador" />
-
-                        <span>
-                          <small>Duración</small>
-                          <strong>{srv.duracionMin} min</strong>
-                        </span>
+                        <span><small>Duración</small><strong>{srv.duracionMin} min</strong></span>
                       </div>
                     </div>
+                  </Link>
+
+                  {/* Botones de acción */}
+                  <div className="d-flex gap-2 pe-3 align-items-center">
+                    <button onClick={() => navigate(`/servicios/${srv.id}`)} className="btn btn-sm btn-servia-secondary">Editar</button>
+                    <AccionesServicio id={srv.id} nombre={srv.nombre} activo={srv.activo}
+                      alMensaje={setAlerta}
+                      alCambiarEstado={activo => {
+                        setServicios(prev => prev.map(servicio => servicio.id === srv.id ? { ...servicio, activo } : servicio));
+                        void cargarServicios();
+                      }}
+                      alEliminar={mensaje => { setAlerta(mensaje); void cargarServicios(); }} />
                   </div>
 
-                  <div className="servicio-card-flecha">
-                    <span>›</span>
-                  </div>
                 </article>
               ))}
             </div>
           )}
-
         </section>
       </div>
     </div>
