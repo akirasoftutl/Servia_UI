@@ -135,3 +135,5 @@
   padding: 4px 8px;
   border-radius: 8px;
 }
+.reserva-badge.rechazada { background: #fff0f0; color: #c84b58; }
+.reserva-badge.completada { background: #eaf0fb; color: #355b8c; }
