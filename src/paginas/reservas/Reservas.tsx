@@ -100,17 +100,23 @@ export function Reservas() {
   }
 
   return (
-    <div className="reservas-page"><div className="reservas-container">
-      <header className="reservas-header"><h1>Reservas</h1><p>Administra las solicitudes de tus clientes.</p></header>
-      <section className="reservas-panel">
-        <div className="d-flex flex-wrap gap-3 mb-4">
+    <div className="panel-pagina"><div className="panel-contenedor">
+      <header className="panel-encabezado">
+        <div>
+          <span className="panel-eyebrow">ADMINISTRACIÓN</span>
+          <h1 className="panel-titulo">Reservas</h1>
+          <p className="panel-subtitulo">Administra las solicitudes de tus clientes.</p>
+        </div>
+      </header>
+      <section className="panel-tarjeta">
+        <div className="reservas-filtros">
           <div>
-            <label htmlFor="reservas-fecha" className="form-label small fw-bold text-muted">Fecha</label>
+            <label htmlFor="reservas-fecha" className="form-label">Fecha</label>
             <input id="reservas-fecha" type="date" className="form-control" value={filtroFecha}
               onChange={(e) => setConsulta({ ...consulta, fecha: e.target.value, cursores: [''] })} />
           </div>
           <div>
-            <label htmlFor="reservas-estado" className="form-label small fw-bold text-muted">Estado</label>
+            <label htmlFor="reservas-estado" className="form-label">Estado</label>
             <select id="reservas-estado" className="form-select" value={filtroEstado} disabled={pestana === 'proximas'}
               onChange={(e) => setConsulta({ ...consulta, estado: e.target.value, cursores: [''] })}>
               <option value="">Todos</option>
@@ -118,7 +124,7 @@ export function Reservas() {
             </select>
           </div>
         </div>
-        <div className="reservas-tabs" role="tablist" aria-label="Vistas de reservas">
+        <div className="panel-pestanas" role="tablist" aria-label="Vistas de reservas">
           {(['pendientes', 'proximas'] as const).map((vista) => (
             <button key={vista} id={`tab-${vista}`} role="tab" aria-selected={pestana === vista}
               aria-controls="panel-reservas" tabIndex={pestana === vista ? 0 : -1}
@@ -133,19 +139,26 @@ export function Reservas() {
           ))}
         </div>
         <div id="panel-reservas" role="tabpanel" aria-labelledby={`tab-${pestana}`} aria-busy={cargando}>
-          {cargando && <p className="text-center py-5" role="status">Cargando reservas...</p>}
-          {!cargando && error && <div className="text-center py-5">
-            <p className="text-danger" role="alert">{error}</p>
+          {cargando && <div className="panel-estado">
+            <div className="spinner-border" aria-hidden="true" />
+            <p className="panel-estado-texto" role="status">Cargando reservas...</p>
+          </div>}
+          {!cargando && error && <div className="panel-estado">
+            <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
+            <p className="panel-estado-texto" role="alert">{error}</p>
             <button className="btn-servia-primary" onClick={() => setRevision((r) => r + 1)}>Reintentar</button>
           </div>}
-          {!cargando && !error && pagina.items.length === 0 && <p className="text-muted">
-            {pestana === 'pendientes' ? 'No tienes reservas pendientes.' : 'No tienes reservas próximas.'}
-          </p>}
-          {!cargando && !error && <div className="reservas-lista">
-            {pagina.items.map((r) => <article key={r.id} className="reserva-card">
+          {!cargando && !error && pagina.items.length === 0 && <div className="panel-estado">
+            <div className="panel-estado-icono" aria-hidden="true">✦</div>
+            <p className="panel-estado-texto">
+              {pestana === 'pendientes' ? 'No tienes reservas pendientes.' : 'No tienes reservas próximas.'}
+            </p>
+          </div>}
+          {!cargando && !error && <div className="panel-lista">
+            {pagina.items.map((r) => <article key={r.id} className="panel-item reserva-card">
               <div className="reserva-info-principal">
-                <h3>{r.cliente.nombre}</h3>
-                <p>{r.servicio.nombre} · {fecha.format(new Date(r.inicio))} de {hora.format(new Date(r.inicio))} a {hora.format(new Date(r.fin))}</p>
+                <h3 className="panel-item-titulo">{r.cliente.nombre}</h3>
+                <p className="panel-item-texto">{r.servicio.nombre} · {fecha.format(new Date(r.inicio))} de {hora.format(new Date(r.inicio))} a {hora.format(new Date(r.fin))}</p>
               </div>
               <div className="reserva-estado-container">
                 <span className={`reserva-badge ${r.estado}`}>{estados[r.estado]}</span>
@@ -154,10 +167,10 @@ export function Reservas() {
               </div>
             </article>)}
           </div>}
-          {!cargando && !error && (cursores.length > 1 || pagina.siguiente) && <nav aria-label="Páginas de reservas" className="d-flex gap-3 mt-4">
-            <button disabled={cursores.length === 1} onClick={() => setConsulta({ ...consulta, cursores: cursores.slice(0, -1) })}>Anterior</button>
+          {!cargando && !error && (cursores.length > 1 || pagina.siguiente) && <nav aria-label="Páginas de reservas" className="panel-paginacion">
+            <button className="btn-servia-secondary btn-servia-sm" disabled={cursores.length === 1} onClick={() => setConsulta({ ...consulta, cursores: cursores.slice(0, -1) })}>Anterior</button>
             <span>Página {cursores.length}</span>
-            <button disabled={!pagina.siguiente} onClick={() => setConsulta({ ...consulta, cursores: [...cursores, pagina.siguiente!] })}>Siguiente</button>
+            <button className="btn-servia-secondary btn-servia-sm" disabled={!pagina.siguiente} onClick={() => setConsulta({ ...consulta, cursores: [...cursores, pagina.siguiente!] })}>Siguiente</button>
           </nav>}
         </div>
       </section>

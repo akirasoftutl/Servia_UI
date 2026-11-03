@@ -1,139 +1,73 @@
-/* src/paginas/reservas/Reservas.css */
-.reservas-page {
-  min-height: 100vh;
-  padding: 45px 20px 70px;
-  background: #f7f6fb;
-}
+/*
+ * Reservas. Lo común (página, encabezado, tarjeta, pestañas, lista, campos,
+ * paginación y estados) vive en src/estilos/panel.css; aquí quedan los
+ * filtros y las etiquetas de estado de cada reserva.
+ */
 
-.reservas-container {
-  max-width: 1050px;
-  margin: 0 auto;
-}
-
-.reservas-header {
-  margin-bottom: 32px;
-}
-
-.reservas-header h1 {
-  color: #30234f;
-  font-size: 32px;
-  font-weight: 800;
-  margin: 0 0 8px;
-}
-
-.reservas-header p {
-  color: #89839a;
-  font-size: 14px;
-  margin: 0;
-}
-
-.reservas-panel {
-  background: #fff;
-  border: 1px solid #eeeaf5;
-  border-radius: 19px;
-  padding: 30px;
-  box-shadow: 0 8px 30px rgba(48, 35, 79, 0.045);
-}
-
-/* Pestañas */
-.reservas-tabs {
+.reservas-filtros {
   display: flex;
-  gap: 26px;
-  border-bottom: 1px solid #eeeaf5;
-  margin-bottom: 23px;
+  flex-wrap: wrap;
+  gap: var(--sv-esp-4);
+  margin-bottom: var(--sv-esp-5);
 }
 
-.reservas-tabs button {
-  position: relative;
-  border: none;
-  background: transparent;
-  padding: 12px 2px;
-  color: #9690a5;
-  font-size: 14px;
-  font-weight: 600;
-  transition: color 0.2s ease;
+.reservas-filtros > div {
+  flex: 0 1 220px;
+  min-width: 160px;
 }
 
-.reservas-tabs button.active {
-  color: #7452bd;
-  font-weight: 800;
+.reserva-info-principal {
+  min-width: 0;
 }
 
-.reservas-tabs button.active::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 3px;
-  background: #7452bd;
-  border-radius: 5px 5px 0 0;
-}
-
-/* Tarjetas de reserva */
-.reservas-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-}
-
-.reserva-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 19px 20px;
-  background: #fff;
-  border: 1px solid #eeeaf5;
-  border-radius: 14px;
-  transition: all 0.2s ease;
-}
-
-.reserva-card:hover {
-  border-color: #cfc0ec;
-  box-shadow: 0 5px 17px rgba(85, 61, 139, 0.07);
-}
-
-.reserva-info-principal h3 {
-  color: #34284f;
-  font-size: 16px;
-  font-weight: 750;
-  margin: 0 0 5px;
-}
-
-.reserva-info-principal p {
-  color: #9690a5;
-  font-size: 13px;
-  margin: 0;
-}
-
-/* Etiquetas y tiempo */
 .reserva-estado-container {
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: var(--sv-esp-2);
 }
 
 .reserva-badge {
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 11px;
+  padding: 4px 11px;
+  border-radius: var(--sv-radio-pill);
+  background: #f0eef3;
+  color: #6f6880;
+  font-size: var(--sv-texto-xs);
   font-weight: 800;
-  text-transform: capitalize;
+  white-space: nowrap;
 }
 
-.reserva-badge.pendiente { background: #fff8e1; color: #b7791f; }
-.reserva-badge.confirmada { background: #eaf6ef; color: #37865b; }
-.reserva-badge.cancelada { background: #f0eef3; color: #817b8d; }
-.reserva-badge.rechazada_vencimiento { background: #fff0f0; color: #c84b58; }
+.reserva-badge.pendiente { background: var(--sv-aviso-fondo); color: var(--sv-aviso); }
+.reserva-badge.confirmada { background: var(--sv-exito-fondo); color: var(--sv-exito); }
+.reserva-badge.completada { background: var(--sv-info-fondo); color: var(--sv-info); }
+.reserva-badge.cancelada { background: #f0eef3; color: #6f6880; }
+.reserva-badge.rechazada,
+.reserva-badge.rechazada_vencimiento { background: var(--sv-peligro-fondo); color: var(--sv-peligro); }
 
 .reserva-tiempo {
-  font-size: 12px;
-  font-weight: 700;
-  color: #7452bd;
-  background: #f1ecfa;
-  padding: 4px 8px;
+  padding: 4px 9px;
   border-radius: 8px;
+  background: var(--sv-acento-suave);
+  color: var(--sv-acento);
+  font-size: var(--sv-texto-xs);
+  font-weight: 700;
+  white-space: nowrap;
 }
-.reserva-badge.rechazada { background: #fff0f0; color: #c84b58; }
-.reserva-badge.completada { background: #eaf0fb; color: #355b8c; }
+
+@media (max-width: 650px) {
+  .reservas-filtros > div {
+    flex: 1 1 100%;
+  }
+
+  .reserva-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reserva-estado-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
