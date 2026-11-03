@@ -176,13 +176,6 @@
   line-height: 1.5;
 }
 
-.panel-separador {
-  margin: var(--sv-esp-5) 0;
-  border: 0;
-  border-top: 1px solid var(--sv-borde);
-  opacity: 1;
-}
-
 /* Contador o insignia en forma de píldora */
 .panel-contador,
 .panel-insignia {
@@ -201,9 +194,6 @@
 
 .panel-insignia--exito { background: var(--sv-exito-fondo); color: var(--sv-exito); }
 .panel-insignia--aviso { background: var(--sv-aviso-fondo); color: var(--sv-aviso); }
-.panel-insignia--peligro { background: var(--sv-peligro-fondo); color: var(--sv-peligro); }
-.panel-insignia--info { background: var(--sv-info-fondo); color: var(--sv-info); }
-.panel-insignia--neutro { background: #f0eef3; color: #6f6880; }
 
 /* ---------- Pestañas ---------- */
 
@@ -298,8 +288,7 @@
 
 .btn-servia-primary,
 .btn-servia-secondary,
-.btn-servia-danger,
-.btn-servia-link-danger {
+.btn-servia-danger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
