@@ -286,6 +286,23 @@
   font-weight: 500;
 }
 
+.form-footer a {
+  color: #ffffff;
+  text-decoration: underline;
+  font-weight: 600;
+  border-radius: 2px;
+  transition: opacity 0.2s;
+}
+
+.form-footer a:hover {
+  opacity: 0.8;
+}
+
+.form-footer a:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
 /* Lado Derecho (Hero) */
 .login-hero-side {
   display: none;
