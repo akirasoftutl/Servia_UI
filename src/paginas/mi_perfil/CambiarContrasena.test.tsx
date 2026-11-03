@@ -104,6 +104,17 @@ describe('MVP-04 cambiar la contraseña con la sesión iniciada', () => {
     expect(actualizar).not.toHaveBeenCalled()
   })
 
+  it('borde: si Firebase rechaza la nueva por débil (auth/weak-password) avisa junto a la nueva', async () => {
+    reautenticar.mockResolvedValue({} as never)
+    actualizar.mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/weak-password' }))
+    await llenar('vieja-1234', 'nueva-5678')
+    const campo = screen.getByLabelText('Contraseña nueva')
+    expect(await screen.findByRole('alert')).toHaveTextContent('La contraseña nueva es muy débil. Elige otra más segura.')
+    expect(campo).toHaveAccessibleDescription('La contraseña nueva es muy débil. Elige otra más segura.')
+    expect(campo).toHaveFocus()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
   it('borde: 8 caracteres exactos sí son válidos', async () => {
     reautenticar.mockResolvedValue({} as never)
     actualizar.mockResolvedValue(undefined)
