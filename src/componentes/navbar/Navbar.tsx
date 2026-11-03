@@ -22,6 +22,7 @@ function Navbar() {
 
   const handleRegistrarClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    setMenuOpen(false);
     navigate('/registro-negocio');
   };
 
@@ -113,8 +114,8 @@ function Navbar() {
           Marketplace
         </a>
 
-        <a href="#registro" className="btn btn--dark" onClick={handleRegistrarClick}>
-          Regístrate
+        <a href="/login" className="btn btn--dark" onClick={handleLoginClick}>
+          Inicia sesión
         </a>
 
         <div className="menu-container" ref={menuRef}>
@@ -135,8 +136,8 @@ function Navbar() {
           <div className={`menu-dropdown ${menuOpen ? 'is-visible' : ''}`}>
             <div className="menu-dropdown__section">
               <span className="menu-dropdown__title">Para empresas</span>
-              <a href="/login" className="menu-dropdown__link--purple" onClick={handleLoginClick}>
-                Inicia sesión 
+              <a href="/registro-negocio" className="menu-dropdown__link--purple" onClick={handleRegistrarClick}>
+                Regístrate
               </a>
               <a href="#casa" onClick={() => setMenuOpen(false)}>Casa</a>
               <a href="#descarga" onClick={() => setMenuOpen(false)}>Descarga la aplicación</a>
