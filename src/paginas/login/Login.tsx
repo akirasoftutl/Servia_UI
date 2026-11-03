@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../servicios/firebase';
 import { api } from '../../servicios/api';
@@ -211,7 +211,10 @@ export function Login() {
 
         {/* Footer */}
         <div className="form-footer">
-          <p>Acceso exclusivo para negocios registrados.</p>
+          <p>
+            ¿No tienes cuenta?{' '}
+            <Link to="/registro-negocio">Regístrate aquí</Link>
+          </p>
         </div>
       </div>
 
