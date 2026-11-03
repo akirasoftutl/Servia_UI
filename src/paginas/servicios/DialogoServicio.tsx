@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import { Power, Trash2 } from 'lucide-react';
 
 export function DialogoServicio({ texto, accion, ocupado, alConfirmar, alCancelar }: {
   texto: string; accion: string; ocupado: boolean; alConfirmar: () => void;
@@ -23,7 +24,9 @@ export function DialogoServicio({ texto, accion, ocupado, alConfirmar, alCancela
       }
     }}>
     <div className="panel-dialogo">
-      <div className={`panel-dialogo-icono ${accion === 'Eliminar' ? 'panel-dialogo-icono--peligro' : 'panel-dialogo-icono--aviso'}`} aria-hidden="true">!</div>
+      <div className={`panel-dialogo-icono ${accion === 'Eliminar' ? 'panel-dialogo-icono--peligro' : 'panel-dialogo-icono--aviso'}`} aria-hidden="true">
+        {accion === 'Eliminar' ? <Trash2 aria-hidden="true" /> : <Power aria-hidden="true" />}
+      </div>
       <h2 id={titulo} className="panel-dialogo-titulo">{accion} servicio</h2>
       <p id={descripcion} className="panel-dialogo-texto">{texto}</p>
       <div className="panel-dialogo-acciones">

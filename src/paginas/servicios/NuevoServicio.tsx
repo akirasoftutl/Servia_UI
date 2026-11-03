@@ -6,7 +6,8 @@ import {
   type ChangeEvent
 } from 'react';
 
-import { ShieldAlert } from 'lucide-react';
+import { CircleAlert, ImagePlus, PackagePlus, ShieldAlert } from 'lucide-react';
+import { EsqueletoEncabezado, EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import { Link, useNavigate, useParams } from 'react-router'; // <-- Agregamos useParams
 import { api, ErrorApi } from '../../servicios/api';
 import './Servicios.css';
@@ -160,12 +161,18 @@ export function NuevoServicio() {
 
   if (cargando) {
     return (
-      <div className="panel-pagina panel-pagina--centrada">
-        <div className="panel-estado">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
+      <div className="panel-pagina">
+        <div className="panel-contenedor">
+          <EsqueletoEncabezado />
+          <div className="panel-tarjeta panel-cargando">
+            <EsqueletoLista filas={2} />
+            <div className="panel-cargando-texto">
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+              <p className="m-0">Preparando formulario...</p>
+            </div>
           </div>
-          <p className="panel-estado-texto">Preparando formulario...</p>
         </div>
       </div>
     );
@@ -173,12 +180,14 @@ export function NuevoServicio() {
 
   if (errorCarga) return <div className="panel-pagina">
     <div className="panel-contenedor">
-      <div className="panel-tarjeta panel-estado">
-        <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
+      <div className="panel-estado panel-estado--error">
+        <IlustracionEstado icono={CircleAlert} error />
+        <div className="panel-estado-cuerpo">
         <p role="alert" className="panel-estado-texto">{errorCarga}</p>
-        <div className="servicio-estado-acciones">
+        <div className="panel-estado-acciones">
           {errorCarga !== 'Este servicio no existe.' && <button className="btn-servia-primary" onClick={() => { setCargando(true); setErrorCarga(''); setIntento(intento + 1); }}>Intentar de nuevo</button>}
           <Link to="/servicios" className="btn-servia-secondary">Volver a Mis servicios</Link>
+        </div>
         </div>
       </div>
     </div>
@@ -203,10 +212,21 @@ export function NuevoServicio() {
 
         <div inert={servicioPublicado}>
             <header className="panel-encabezado">
-              <div>
-                <span className="panel-eyebrow">PANEL DE NEGOCIO</span>
+              <div className="panel-encabezado-textos">
+                <span className="panel-eyebrow"><PackagePlus aria-hidden="true" />PANEL DE NEGOCIO</span>
                 <h1 className="panel-titulo">{esEdicion ? 'Editar servicio' : 'Nuevo servicio'}</h1>
                 <p className="panel-subtitulo">{esEdicion ? 'Actualiza la información de tu servicio.' : 'Agrega un nuevo servicio a tu negocio y permite que más clientes conozcan lo que ofreces.'}</p>
+                {/* Vista previa de cómo se verá el servicio en el catálogo */}
+                {(form.precio !== '' || form.duracion !== '') && <dl className="panel-metricas">
+                  {form.precio !== '' && Number(form.precio) >= 0 && <div className="panel-metrica">
+                    <dt>precio</dt>
+                    <dd>{`$${Number(form.precio).toFixed(2)}`}</dd>
+                  </div>}
+                  {form.duracion !== '' && <div className="panel-metrica">
+                    <dt>min</dt>
+                    <dd>{form.duracion}</dd>
+                  </div>}
+                </dl>}
               </div>
             </header>
 
@@ -277,7 +297,7 @@ export function NuevoServicio() {
                     <input type="file" id="fotos-servicio" accept="image/*" multiple className="d-none" onChange={handleFotosChange} />
                     {fotosPreview.length === 0 ? (
                       <label htmlFor="fotos-servicio" className="servicio-fotos-vacio">
-                        <div className="servicio-fotos-icono"><span>↑</span></div>
+                        <div className="servicio-fotos-icono" aria-hidden="true"><ImagePlus aria-hidden="true" /></div>
                         <strong>Agrega fotografías de tu servicio</strong>
                         <span className="panel-ayuda">Haz clic para seleccionar imágenes de tu dispositivo.</span>
                         <span className="servicio-fotos-enlace">Seleccionar fotografías</span>

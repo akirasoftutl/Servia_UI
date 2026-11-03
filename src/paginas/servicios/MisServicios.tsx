@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
+import { CircleAlert, Clock, Plus, Tags } from 'lucide-react';
 import { api } from '../../servicios/api';
+import { EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
+
+// Iniciales del servicio para la ficha decorativa de cada tarjeta.
+function iniciales(nombre: string) {
+  const palabras = nombre.trim().split(/\s+/);
+  const importantes = palabras.filter((palabra) => palabra.length > 2);
+  return (importantes.length ? importantes : palabras).slice(0, 2).map((palabra) => palabra.charAt(0).toUpperCase()).join('');
+}
 
 interface Servicio {
   id: string;
@@ -23,12 +32,17 @@ export function MisServicios() {
   const [alerta, setAlerta] = useState<string>(state?.mensaje ?? '');
 
   const [revision, setRevision] = useState(0);
+  // Resumen del catálogo completo para el encabezado; solo se actualiza con la vista «Todos».
+  const [resumen, setResumen] = useState<{ total: number; activos: number } | null>(null);
   useEffect(() => {
     let vigente = true;
     let ruta = '/negocios/mio/servicios';
     if (filtro !== 'todos') ruta += `?estado=${filtro}`;
     void api<Servicio[]>(ruta).then(data => {
-      if (vigente) { setServicios(data); setError(''); }
+      if (vigente) {
+        setServicios(data); setError('');
+        if (filtro === 'todos') setResumen({ total: data.length, activos: data.filter((s) => s.activo).length });
+      }
     }).catch(() => {
       if (vigente) setError('No pudimos cargar tus servicios. Intenta nuevamente.');
     }).finally(() => { if (vigente) setCargando(false); });
@@ -50,12 +64,24 @@ export function MisServicios() {
         {alerta && <div role="status" className="panel-alerta panel-alerta--info">{alerta}</div>}
 
         <header className="panel-encabezado">
-          <div>
-            <span className="panel-eyebrow">ADMINISTRACIÓN</span>
+          <div className="panel-encabezado-textos">
+            <span className="panel-eyebrow"><Tags aria-hidden="true" />ADMINISTRACIÓN</span>
             <h1 className="panel-titulo">Mis servicios</h1>
             <p className="panel-subtitulo">Organiza y administra los servicios de tu negocio.</p>
+            <dl className="panel-metricas">
+              <div className="panel-metrica">
+                <dt>En catálogo</dt>
+                <dd>{resumen?.total ?? '—'}</dd>
+              </div>
+              <div className="panel-metrica">
+                <dt>Activos</dt>
+                <dd>{resumen?.activos ?? '—'}</dd>
+              </div>
+            </dl>
           </div>
-          <Link to="/servicios/nuevo" className="btn-servia-primary">Crear servicio</Link>
+          <div className="panel-encabezado-acciones">
+            <Link to="/servicios/nuevo" className="btn-servia-primary"><Plus aria-hidden="true" />Crear servicio</Link>
+          </div>
         </header>
 
         <section className="panel-tarjeta">
@@ -76,26 +102,33 @@ export function MisServicios() {
           </div>
 
           {cargando && (
-            <div className="panel-estado">
-              <div className="spinner-border" role="status"></div>
-              <p className="panel-estado-texto">Cargando tus servicios...</p>
+            <div className="panel-cargando">
+              <EsqueletoLista filas={3} />
+              <div className="panel-cargando-texto">
+                <div className="spinner-border" role="status"></div>
+                <p className="m-0">Cargando tus servicios...</p>
+              </div>
             </div>
           )}
 
           {!cargando && error && (
-            <div className="panel-estado">
-              <div className="panel-estado-icono panel-estado-icono--error">!</div>
-              <h3 className="panel-estado-titulo">Algo salió mal</h3>
-              <p className="panel-estado-texto">{error}</p>
-              <button className="btn-servia-secondary" onClick={() => { setCargando(true); setError(''); void cargarServicios(); }}>Intentar de nuevo</button>
+            <div className="panel-estado panel-estado--error">
+              <IlustracionEstado icono={CircleAlert} error />
+              <div className="panel-estado-cuerpo">
+                <h3 className="panel-estado-titulo">Algo salió mal</h3>
+                <p className="panel-estado-texto">{error}</p>
+                <button className="btn-servia-secondary" onClick={() => { setCargando(true); setError(''); void cargarServicios(); }}>Intentar de nuevo</button>
+              </div>
             </div>
           )}
 
           {!cargando && !error && servicios.length === 0 && (
             <div className="panel-estado">
-              <div className="panel-estado-icono">✦</div>
+              <IlustracionEstado icono={Tags} />
+              <div className="panel-estado-cuerpo">
               <h3 className="panel-estado-titulo">{filtro === 'todos' ? 'Tu catálogo está vacío' : `No tienes servicios ${filtro}`}</h3>
               <p className="panel-estado-texto">{filtro === 'todos' ? 'Comienza agregando tu primer servicio para que tus clientes puedan descubrirlo.' : 'No encontramos servicios en esta categoría.'}</p>
+            </div>
             </div>
           )}
 
@@ -106,7 +139,7 @@ export function MisServicios() {
                   
                   {/* Hacemos clic en el área principal para editar */}
                   <Link className="servicio-card-principal" to={`/servicios/${srv.id}`}>
-                    <div className="servicio-icono"><span>✦</span></div>
+                    <div className={`servicio-icono ${srv.activo ? '' : 'servicio-icono--inactivo'}`} aria-hidden="true">{iniciales(srv.nombre)}</div>
                     <div className="servicio-informacion">
                       <div className="servicio-titulo-fila">
                         <h3>{srv.nombre}</h3>
@@ -118,7 +151,7 @@ export function MisServicios() {
                       <div className="servicio-datos">
                         <span><small>Precio</small><strong>${srv.precio.toFixed(2)}</strong></span>
                         <span className="servicio-dato-separador" />
-                        <span><small>Duración</small><strong>{srv.duracionMin} min</strong></span>
+                        <span><small>Duración</small><strong><Clock aria-hidden="true" />{srv.duracionMin} min</strong></span>
                       </div>
                     </div>
                   </Link>
