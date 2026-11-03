@@ -141,3 +141,23 @@
     gap: var(--sv-esp-2);
   }
 }
+
+/* Cambiar contraseña (MVP-04): tarjeta aparte, debajo del formulario del perfil */
+.perfil-tarjeta-contrasena {
+  margin-top: var(--sv-esp-5);
+  /* En pantallas angostas el texto se parte antes que salirse de la tarjeta */
+  overflow-wrap: anywhere;
+}
+
+.perfil-contrasena-acciones {
+  justify-content: flex-end;
+  margin-top: var(--sv-esp-5);
+}
+
+@media (max-width: 650px) {
+  .perfil-contrasena-acciones > .btn-servia-primary {
+    width: 100%;
+    height: auto;
+    white-space: normal;
+  }
+}
