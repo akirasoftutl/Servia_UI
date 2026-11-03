@@ -37,7 +37,7 @@
   --sv-titulo: #221839;
   --sv-texto: #2e2445;
   --sv-texto-suave: #635c78;
-  --sv-texto-tenue: #7f7894;
+  --sv-texto-tenue: #6e6783; /* ≥ 4.6:1 sobre blanco, --sv-fondo y superficies tenues (AA) */
 
   /* Semánticos */
   --sv-exito: #1f7a4a;
@@ -64,7 +64,7 @@
   --sv-texto-md: 14px;
   --sv-texto-lg: 16px;
   --sv-titulo-seccion: 19px;
-  --sv-titulo-pagina: 34px;
+  --sv-titulo-pagina: 26px;
 
   /* Espacios */
   --sv-esp-1: 4px;
@@ -113,10 +113,6 @@
 .panel-contenedor {
   max-width: var(--sv-ancho-contenedor);
   margin: 0 auto;
-}
-
-.panel-num {
-  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Encabezado de página (compacto, como en los paneles de agenda) ---------- */
@@ -177,7 +173,7 @@
   margin: 0 0 4px;
   color: var(--sv-titulo);
   font-family: var(--sv-fuente-titulos);
-  font-size: 26px;
+  font-size: var(--sv-titulo-pagina);
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -235,29 +231,6 @@
   font-size: var(--sv-texto-2xs);
   font-weight: 600;
 }
-
-/* Chip de estado: punto de color y texto */
-.panel-metrica--estado dd {
-  align-items: center;
-  gap: 6px;
-}
-
-.panel-metrica--estado dd::before {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  content: '';
-}
-
-.panel-metrica--estado dt {
-  display: none;
-}
-
-.panel-metrica--exito { border-color: var(--sv-exito-borde); background: var(--sv-exito-fondo); }
-.panel-metrica--exito dd { color: var(--sv-exito); }
-.panel-metrica--aviso { border-color: var(--sv-aviso-borde); background: var(--sv-aviso-fondo); }
-.panel-metrica--aviso dd { color: var(--sv-aviso); }
 
 /* ---------- Tarjeta / panel ---------- */
 
@@ -453,47 +426,6 @@
   font-size: var(--sv-texto-sm);
   font-variant-numeric: tabular-nums;
   line-height: 1.45;
-}
-
-/* Ficha lateral de un elemento (fecha, hora o iniciales) */
-.panel-ficha {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 58px;
-  height: 58px;
-  border: 1px solid rgba(109, 63, 192, 0.16);
-  border-radius: var(--sv-radio-md);
-  background: linear-gradient(160deg, #fbf9ff, #f1ecfa);
-  color: var(--sv-acento);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.panel-ficha strong {
-  font-family: var(--sv-fuente-titulos);
-  font-size: 19px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.panel-ficha small {
-  margin-top: 4px;
-  color: var(--sv-texto-tenue);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.panel-item-cuerpo {
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  gap: var(--sv-esp-4);
-  min-width: 0;
 }
 
 /* ---------- Botones ---------- */
@@ -789,6 +721,7 @@ fieldset:disabled .btn-servia-secondary {
 .panel-alerta--exito { border-color: var(--sv-exito-borde); background: var(--sv-exito-fondo); color: var(--sv-exito); }
 .panel-alerta--aviso { border-color: var(--sv-aviso-borde); background: var(--sv-aviso-fondo); color: var(--sv-aviso); }
 .panel-alerta--error { border-color: var(--sv-peligro-borde); background: var(--sv-peligro-fondo); color: var(--sv-peligro); }
+.panel-alerta--info { border-color: var(--sv-info-borde); background: var(--sv-info-fondo); color: var(--sv-info); }
 
 .panel-alerta-icono {
   display: grid;
@@ -878,6 +811,67 @@ fieldset:disabled .btn-servia-secondary {
 .panel-estado-acciones .btn-servia-primary,
 .panel-estado-acciones .btn-servia-secondary {
   margin-top: 0;
+}
+
+/* Estado apilado y centrado: cuando no hay ilustración + cuerpo
+   (spinner, icono, título, texto y botón uno debajo de otro) */
+.panel-estado:not(:has(> .panel-estado-cuerpo)) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sv-esp-3);
+  text-align: center;
+}
+
+.panel-estado:not(:has(> .panel-estado-cuerpo)) > .panel-estado-titulo {
+  margin: 0;
+}
+
+.panel-estado:not(:has(> .panel-estado-cuerpo)) > .btn-servia-primary,
+.panel-estado:not(:has(> .panel-estado-cuerpo)) > .btn-servia-secondary {
+  margin-top: var(--sv-esp-1);
+}
+
+.panel-estado .spinner-border {
+  width: 2rem;
+  height: 2rem;
+  border-width: 3px;
+  color: var(--sv-acento);
+}
+
+/* Icono del estado: ficha con el color de la marca */
+.panel-estado-icono {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(109, 63, 192, 0.18);
+  border-radius: var(--sv-radio-md);
+  background: linear-gradient(160deg, #fbf9ff, var(--sv-acento-suave));
+  color: var(--sv-acento);
+  font-family: var(--sv-fuente-titulos);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.panel-estado-icono--error {
+  border-color: var(--sv-peligro-borde);
+  background: var(--sv-peligro-fondo);
+  color: var(--sv-peligro);
+}
+
+/* Página que solo muestra un estado (p. ej. la carga inicial), centrado en la vista */
+.panel-pagina--centrada {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-pagina--centrada > .panel-estado {
+  width: min(100%, 420px);
 }
 
 /* Ilustración: dos fichas superpuestas con el icono del módulo */

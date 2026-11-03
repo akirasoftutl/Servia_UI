@@ -182,13 +182,6 @@
   font-size: var(--sv-texto-sm);
 }
 
-.servicio-estado-acciones {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-}
-
 .servicio-seccion {
   margin-bottom: var(--sv-esp-6);
   padding-bottom: var(--sv-esp-6);
