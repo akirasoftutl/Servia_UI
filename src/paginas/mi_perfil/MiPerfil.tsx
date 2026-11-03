@@ -3,6 +3,15 @@ import { Link } from 'react-router';
 import { ShieldAlert } from 'lucide-react'
 import './MiPerfil.css';
 import { api } from '../../servicios/api';
+import {
+  DIRECCION_VACIA,
+  ESTADOS_MEXICO,
+  direccionAForm,
+  direccionParaApi,
+  validarDireccion,
+  type Direccion,
+  type DireccionForm,
+} from './direccion';
 
 interface Categoria {
   id: string;
@@ -15,10 +24,16 @@ interface PerfilNegocio {
   categoriaId: string;
   telefono: string;
   correoContacto: string;
-  direccion: string;
   perfilCompleto: boolean;
   camposFaltantes: string[];
 }
+
+// Respuesta de `GET`/`PUT /negocios/mio`: `direccion` es null en negocios con
+// dirección vieja en texto, que llega en `direccionTexto`.
+type RespuestaPerfil = Partial<PerfilNegocio> & {
+  direccion?: Direccion | null;
+  direccionTexto?: string;
+};
 
 export function MiPerfil() {
 
@@ -31,7 +46,6 @@ export function MiPerfil() {
     categoriaId: '',
     telefono: '',
     correoContacto: '',
-    direccion: '',
     perfilCompleto: false,
     camposFaltantes: [],
   });
@@ -39,12 +53,13 @@ export function MiPerfil() {
   // Estados adicionales para los campos extendidos de la UI
   const [camposExtra, setCamposExtra] = useState({
     email: '',
-    colonia: '',
-    codigoPostal: '',
-    ciudad: '',
-    estado: '',
     referencias: '',
   });
+
+  const [direccion, setDireccion] = useState<DireccionForm>(DIRECCION_VACIA);
+  // Texto de una dirección guardada antes de capturarla por campos.
+  const [direccionVieja, setDireccionVieja] = useState('');
+  const [errorApi, setErrorApi] = useState('');
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [errores, setErrores] = useState<Record<string, string>>({});
@@ -63,7 +78,7 @@ export function MiPerfil() {
         const cats = await api<Categoria[]>('/categorias');
         setCategorias(cats);
 
-        const perfil = await api<Partial<PerfilNegocio>>('/negocios/mio');
+        const perfil = await api<RespuestaPerfil>('/negocios/mio');
         setForm((prev) => ({
           ...prev,
           ...perfil,
@@ -72,10 +87,14 @@ export function MiPerfil() {
           categoriaId: perfil.categoriaId ?? '',
           telefono: perfil.telefono ?? '',
           correoContacto: perfil.correoContacto ?? '',
-          direccion: perfil.direccion ?? '',
           perfilCompleto: perfil.perfilCompleto ?? false,
           camposFaltantes: perfil.camposFaltantes ?? [],
         }));
+        if (perfil.direccion) {
+          setDireccion(direccionAForm(perfil.direccion));
+        } else if (perfil.direccionTexto) {
+          setDireccionVieja(perfil.direccionTexto);
+        }
       } catch (error) {
         console.error('Error al cargar datos:', error);
       } finally {
@@ -87,11 +106,17 @@ export function MiPerfil() {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (['email', 'colonia', 'codigoPostal', 'ciudad', 'estado', 'referencias'].includes(name)) {
+    if (['email', 'referencias'].includes(name)) {
       setCamposExtra({ ...camposExtra, [name]: value });
     } else {
       setForm({ ...form, [name]: value });
     }
+    setErrores({ ...errores, [name]: '' });
+  };
+
+  const handleDireccionChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setDireccion({ ...direccion, [name]: value });
     setErrores({ ...errores, [name]: '' });
   };
 
@@ -123,10 +148,7 @@ export function MiPerfil() {
     }
 
     if (paso === 2) {
-      if (!form.direccion.trim()) nuevosErrores.direccion = 'La calle y número son obligatorios';
-      if (!camposExtra.codigoPostal.trim()) nuevosErrores.codigoPostal = 'El código postal es obligatorio';
-      if (!camposExtra.ciudad.trim()) nuevosErrores.ciudad = 'La ciudad es obligatoria';
-      if (!camposExtra.estado.trim()) nuevosErrores.estado = 'El estado es obligatorio';
+      Object.assign(nuevosErrores, validarDireccion(direccion));
     }
 
     if (paso === 3) {
@@ -153,16 +175,17 @@ export function MiPerfil() {
     e.preventDefault();
     setMensajeExito('');
     setMostrarModalExito(false);
+    setErrorApi('');
 
     if (pasoActual !== 3) return;
     if (!validarPaso(3)) return;
 
     setGuardando(true);
     try {
-      const { nombre, descripcion, categoriaId, telefono, correoContacto, direccion } = form;
-      const respuesta = await api<PerfilNegocio>('/negocios/mio', {
+      const { nombre, descripcion, categoriaId, telefono, correoContacto } = form;
+      const respuesta = await api<RespuestaPerfil>('/negocios/mio', {
         method: 'PUT',
-        body: JSON.stringify({ nombre, descripcion, categoriaId, telefono, correoContacto, direccion }),
+        body: JSON.stringify({ nombre, descripcion, categoriaId, telefono, correoContacto, direccion: direccionParaApi(direccion) }),
       });
 
       setForm((prev) => ({
@@ -173,14 +196,17 @@ export function MiPerfil() {
         categoriaId: respuesta.categoriaId ?? prev.categoriaId ?? '',
         telefono: respuesta.telefono ?? prev.telefono ?? '',
         correoContacto: respuesta.correoContacto ?? prev.correoContacto ?? '',
-        direccion: respuesta.direccion ?? prev.direccion ?? '',
         perfilCompleto: respuesta.perfilCompleto ?? prev.perfilCompleto ?? false,
         camposFaltantes: respuesta.camposFaltantes ?? prev.camposFaltantes ?? [],
       }));
+      if (respuesta.direccion) {
+        setDireccion(direccionAForm(respuesta.direccion));
+        setDireccionVieja('');
+      }
       setMensajeExito('Perfil actualizado correctamente');
       setMostrarModalExito(true);
     } catch (error: any) {
-      alert(error.message || 'Error al guardar el perfil');
+      setErrorApi(error.message || 'Error al guardar el perfil');
     } finally {
       setGuardando(false);
     }
@@ -572,65 +598,96 @@ export function MiPerfil() {
 
                   <div className="row g-3">
 
-                    <div className="col-12">
-                      <label
-                        htmlFor="direccion"
-                        className="form-label"
-                      >
-                        Calle y número *
+                    {direccionVieja && (
+                      <div className="col-12">
+                        <div className="alert alert-warning border-0 rounded-4 p-3 mb-0" role="status">
+                          <strong className="d-block mb-1">
+                            Tu dirección está guardada como texto. Captúrala por campos para actualizarla
+                          </strong>
+                          <span className="small text-secondary">{direccionVieja}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="col-12 col-md-6">
+                      <label htmlFor="calle" className="form-label">
+                        Calle *
                       </label>
 
                       <input
-                        id="direccion"
+                        id="calle"
                         type="text"
-                        name="direccion"
-                        className={`form-control ${errores.direccion ? 'is-invalid' : ''
-                          }`}
-                        value={form.direccion}
-                        onChange={handleChange}
-                        placeholder="Ej. Avenida Juárez 123"
+                        name="calle"
+                        className={`form-control ${errores.calle ? 'is-invalid' : ''}`}
+                        value={direccion.calle}
+                        onChange={handleDireccionChange}
+                        placeholder="Ej. Avenida Juárez"
                         autoComplete="street-address"
-                        required
                       />
 
-                      {errores.direccion && (
-                        <div className="invalid-feedback">
-                          {errores.direccion}
-                        </div>
+                      {errores.calle && (
+                        <div className="invalid-feedback">{errores.calle}</div>
                       )}
                     </div>
+                    <div className="col-6 col-md-3">
+                      <label htmlFor="numeroExterior" className="form-label">
+                        Número exterior *
+                      </label>
 
+                      <input
+                        id="numeroExterior"
+                        type="text"
+                        name="numeroExterior"
+                        className={`form-control ${errores.numeroExterior ? 'is-invalid' : ''}`}
+                        value={direccion.numeroExterior}
+                        onChange={handleDireccionChange}
+                        placeholder="Ej. 123"
+                      />
+
+                      {errores.numeroExterior && (
+                        <div className="invalid-feedback">{errores.numeroExterior}</div>
+                      )}
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <label htmlFor="numeroInterior" className="form-label">
+                        Número interior
+                      </label>
+
+                      <input
+                        id="numeroInterior"
+                        type="text"
+                        name="numeroInterior"
+                        className={`form-control ${errores.numeroInterior ? 'is-invalid' : ''}`}
+                        value={direccion.numeroInterior}
+                        onChange={handleDireccionChange}
+                        placeholder="Ej. 4"
+                      />
+
+                      {errores.numeroInterior && (
+                        <div className="invalid-feedback">{errores.numeroInterior}</div>
+                      )}
+                    </div>
                     <div className="col-12 col-md-6">
-                      <label
-                        htmlFor="colonia"
-                        className="form-label"
-                      >
-                        Colonia / Asentamiento
+                      <label htmlFor="colonia" className="form-label">
+                        Colonia *
                       </label>
 
                       <input
                         id="colonia"
                         type="text"
                         name="colonia"
-                        className={`form-control ${errores.colonia ? 'is-invalid' : ''
-                          }`}
-                        value={camposExtra.colonia}
-                        onChange={handleChange}
+                        className={`form-control ${errores.colonia ? 'is-invalid' : ''}`}
+                        value={direccion.colonia}
+                        onChange={handleDireccionChange}
                         placeholder="Ej. Centro"
                       />
 
                       {errores.colonia && (
-                        <div className="invalid-feedback">
-                          {errores.colonia}
-                        </div>
+                        <div className="invalid-feedback">{errores.colonia}</div>
                       )}
                     </div>
-
                     <div className="col-12 col-md-6">
-                      <label
-                        htmlFor="codigoPostal"
-                        className="form-label"
-                      >
+                      <label htmlFor="codigoPostal" className="form-label">
                         Código postal *
                       </label>
 
@@ -640,75 +697,60 @@ export function MiPerfil() {
                         name="codigoPostal"
                         inputMode="numeric"
                         maxLength={5}
-                        className={`form-control ${errores.codigoPostal ? 'is-invalid' : ''
-                          }`}
-                        value={camposExtra.codigoPostal}
-                        onChange={handleChange}
+                        className={`form-control ${errores.codigoPostal ? 'is-invalid' : ''}`}
+                        value={direccion.codigoPostal}
+                        onChange={handleDireccionChange}
                         placeholder="Ej. 37000"
                         autoComplete="postal-code"
-                        required
                       />
 
                       {errores.codigoPostal && (
-                        <div className="invalid-feedback">
-                          {errores.codigoPostal}
-                        </div>
+                        <div className="invalid-feedback">{errores.codigoPostal}</div>
                       )}
                     </div>
-
                     <div className="col-12 col-md-6">
-                      <label
-                        htmlFor="ciudad"
-                        className="form-label"
-                      >
-                        Ciudad / Municipio *
+                      <label htmlFor="municipio" className="form-label">
+                        Municipio *
                       </label>
 
                       <input
-                        id="ciudad"
+                        id="municipio"
                         type="text"
-                        name="ciudad"
-                        className={`form-control ${errores.ciudad ? 'is-invalid' : ''
-                          }`}
-                        value={camposExtra.ciudad}
-                        onChange={handleChange}
+                        name="municipio"
+                        className={`form-control ${errores.municipio ? 'is-invalid' : ''}`}
+                        value={direccion.municipio}
+                        onChange={handleDireccionChange}
                         placeholder="Ej. León"
                         autoComplete="address-level2"
-                        required
                       />
 
-                      {errores.ciudad && (
-                        <div className="invalid-feedback">
-                          {errores.ciudad}
-                        </div>
+                      {errores.municipio && (
+                        <div className="invalid-feedback">{errores.municipio}</div>
                       )}
                     </div>
-
                     <div className="col-12 col-md-6">
-                      <label
-                        htmlFor="estado"
-                        className="form-label"
-                      >
+                      <label htmlFor="estado" className="form-label">
                         Estado *
                       </label>
 
-                      <input
+                      <select
                         id="estado"
-                        type="text"
                         name="estado"
-                        className={`form-control ${errores.estado ? 'is-invalid' : ''
-                          }`}
-                        value={camposExtra.estado}
-                        onChange={handleChange}
-                        placeholder="Ej. Guanajuato"
+                        className={`form-select ${errores.estado ? 'is-invalid' : ''}`}
+                        value={direccion.estado}
+                        onChange={handleDireccionChange}
                         autoComplete="address-level1"
-                        required
-                      />
+                      >
+                        <option value="">Selecciona un estado</option>
+                        {ESTADOS_MEXICO.map((nombre) => (
+                          <option key={nombre} value={nombre}>
+                            {nombre}
+                          </option>
+                        ))}
+                      </select>
 
                       {errores.estado && (
-                        <div className="invalid-feedback">
-                          {errores.estado}
-                        </div>
+                        <div className="invalid-feedback">{errores.estado}</div>
                       )}
                     </div>
 
@@ -829,6 +871,12 @@ export function MiPerfil() {
                     Puedes seleccionar una sola categoría.
                   </p>
                 </section>
+              )}
+
+              {errorApi && (
+                <div className="alert alert-danger py-2 small mt-3" role="alert">
+                  {errorApi}
+                </div>
               )}
 
               <div className="perfil-actions">
