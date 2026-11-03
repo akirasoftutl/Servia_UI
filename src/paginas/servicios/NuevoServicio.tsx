@@ -1,13 +1,14 @@
 import {
   useState,
   useEffect,
+  useRef,
   type FormEvent,
   type ChangeEvent
 } from 'react';
 
 import { ShieldAlert } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router'; // <-- Agregamos useParams
-import { api } from '../../servicios/api';
+import { api, ErrorApi } from '../../servicios/api';
 import './Servicios.css';
 
 interface PerfilNegocio {
@@ -34,6 +35,12 @@ export function NuevoServicio() {
   const [perfilCompleto, setPerfilCompleto] = useState(true);
   const [camposFaltantes, setCamposFaltantes] = useState<string[]>([]);
   const [fotosPreview, setFotosPreview] = useState<string[]>([]);
+  const [errorCarga, setErrorCarga] = useState('');
+  const [intento, setIntento] = useState(0);
+  const botonExito = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (servicioPublicado) botonExito.current?.focus();
+  }, [servicioPublicado]);
   const [mensajeExito, setMensajeExito] = useState('');
 
   const handleFotosChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -48,31 +55,31 @@ export function NuevoServicio() {
   };
 
   useEffect(() => {
+    let vigente = true;
     const cargarDatos = async () => {
       try {
-        const perfil = await api<PerfilNegocio>('/negocios/mio');
-        setPerfilCompleto(perfil.perfilCompleto);
-        setCamposFaltantes(perfil.camposFaltantes || []);
-
-        // Si es edición, cargamos los datos del servicio
         if (esEdicion && id) {
+          // La edición no depende de la disponibilidad del perfil.
           const servicio = await api<{ nombre: string; descripcion: string; precio: number; duracionMin: number }>(`/negocios/mio/servicios/${id}`);
-          setForm({
-            nombre: servicio.nombre,
-            descripcion: servicio.descripcion,
-            precio: String(servicio.precio),
-            duracion: String(servicio.duracionMin),
-          });
+          if (!vigente) return;
+          setForm({ nombre: servicio.nombre, descripcion: servicio.descripcion,
+            precio: String(servicio.precio), duracion: String(servicio.duracionMin) });
+        } else {
+          const perfil = await api<PerfilNegocio>('/negocios/mio');
+          if (!vigente) return;
+          setPerfilCompleto(perfil.perfilCompleto);
+          setCamposFaltantes(perfil.camposFaltantes || []);
         }
       } catch (error) {
-        console.error('Error al verificar perfil o cargar servicio:', error);
+        if (vigente) setErrorCarga(error instanceof ErrorApi && error.estado === 404 && esEdicion
+          ? 'Este servicio no existe.' : 'No pudimos cargar los datos. Intenta de nuevo.');
       } finally {
-        setCargando(false);
+        if (vigente) setCargando(false);
       }
     };
-
-    cargarDatos();
-  }, [esEdicion, id]);
+    void cargarDatos();
+    return () => { vigente = false; };
+  }, [esEdicion, id, intento]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -158,6 +165,12 @@ export function NuevoServicio() {
     );
   }
 
+  if (errorCarga) return <div className="perfil-page">
+    <p role="alert">{errorCarga}</p>
+    {errorCarga !== 'Este servicio no existe.' && <button onClick={() => { setCargando(true); setErrorCarga(''); setIntento(intento + 1); }}>Intentar de nuevo</button>}
+    <Link to="/servicios">Volver a Mis servicios</Link>
+  </div>;
+
   return (
     <div className="perfil-page">
       <div className="perfil-container">
@@ -180,7 +193,7 @@ export function NuevoServicio() {
         )}
 
         <div className="perfil-card">
-          <div className="perfil-card-body">
+          <div className="perfil-card-body" inert={servicioPublicado}>
             <header className="perfil-header">
               <span className="rounded-pill px-3 py-2 small fw-semibold d-inline-block mb-3" style={{ color: '#7e22ce', background: '#f5eaff' }}>✦ PANEL DE NEGOCIO</span>
               <h1 className="perfil-title">{esEdicion ? 'Editar servicio' : 'Nuevo servicio'}</h1>
@@ -287,7 +300,14 @@ export function NuevoServicio() {
         </div>
 
         {servicioPublicado && (
-          <div className="servicio-alerta-overlay" role="alertdialog" aria-modal="true">
+          <div className="servicio-alerta-overlay" role="alertdialog" aria-modal="true" aria-labelledby="servicio-alerta-titulo" aria-describedby="servicio-alerta-texto"
+            onKeyDown={(event) => {
+              if (event.key === 'Tab') {
+                const botones = event.currentTarget.querySelectorAll<HTMLButtonElement>('button');
+                const destino = event.shiftKey ? botones[botones.length - 1] : botones[0];
+                if (document.activeElement === (event.shiftKey ? botones[0] : botones[botones.length - 1])) { event.preventDefault(); destino?.focus(); }
+              }
+            }}>
             <div className="servicio-alerta-card">
               <div className="servicio-alerta-icono" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
@@ -295,9 +315,9 @@ export function NuevoServicio() {
                <h2 id="servicio-alerta-titulo" className="servicio-alerta-titulo">
   {mensajeExito}
 </h2>
-              <p className="servicio-alerta-texto"><strong>{form.nombre}</strong> ya forma parte de tu catálogo. Tus clientes podrán encontrarlo y reservarlo.</p>
+              <p id="servicio-alerta-texto" className="servicio-alerta-texto"><strong>{form.nombre}</strong> ya forma parte de tu catálogo. Tus clientes podrán encontrarlo y reservarlo.</p>
               <div className="servicio-alerta-acciones">
-                <button type="button" className="btn-servia-primary" onClick={() => navigate('/servicios')}>Ver mis servicios</button>
+                <button ref={botonExito} type="button" className="btn-servia-primary" onClick={() => navigate('/servicios')}>Ver mis servicios</button>
                 {!esEdicion && <button type="button" className="btn-servia-secondary" onClick={crearOtroServicio}>Crear otro servicio</button>}
               </div>
             </div>
