@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router'
 import { Inicio } from './paginas/Inicio'
 import { MiPerfil } from './paginas/mi_perfil/MiPerfil.tsx'
 import { RutaProtegida } from './componentes/RutaProtegida'
+import { RutaSoloVisitantes } from './componentes/RutaSoloVisitantes'
 import { Login } from './paginas/login/Login'
 import { RegistroNegocio } from './paginas/registro_negocio/RegistroNegocio'
 import { Layout } from './componentes/layout/Layout.tsx'
@@ -19,8 +20,15 @@ export const rutas: RouteObject[] = [
     element: <Layout />,
     children: [
       { index: true, element: <Inicio /> },
-      { path: 'registro-negocio', element: <RegistroNegocio /> },
-      { path: 'login', element: <Login /> },
+
+      // Con sesión abierta no tiene sentido ver el login ni el registro: va al panel
+      {
+        element: <RutaSoloVisitantes />,
+        children: [
+          { path: 'registro-negocio', element: <RegistroNegocio /> },
+          { path: 'login', element: <Login /> },
+        ],
+      },
 
       // RUTAS PROTEGIDAS: si no hay sesión, no entran aquí
       {
