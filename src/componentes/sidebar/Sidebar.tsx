@@ -73,6 +73,7 @@ export const Sidebar: React.FC = () => {
     {
       title: 'OPERACIONES',
       items: [
+        { id: 'bloqueos', label: 'Bloqueos', ruta: '/bloqueos', icon: <span aria-hidden="true">▣</span> },
         {
           id: 'horario',
           label: 'Horario',
