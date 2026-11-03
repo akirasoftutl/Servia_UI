@@ -12,7 +12,7 @@ export function DialogoServicio({ texto, accion, ocupado, alConfirmar, alCancela
     aceptar.current?.focus();
     return () => anterior?.focus();
   }, []);
-  return <div className="servicio-alerta-overlay" role="alertdialog" aria-modal="true"
+  return <div className="panel-dialogo-fondo" role="alertdialog" aria-modal="true"
     aria-labelledby={titulo} aria-describedby={descripcion} onKeyDown={event => {
       if (event.key === 'Escape' && !ocupado) alCancelar();
       if (event.key === 'Tab') {
@@ -22,11 +22,14 @@ export function DialogoServicio({ texto, accion, ocupado, alConfirmar, alCancela
         botones[(indice + (event.shiftKey ? botones.length - 1 : 1)) % botones.length]?.focus();
       }
     }}>
-    <div className="servicio-alerta-card">
-      <h2 id={titulo}>{accion} servicio</h2>
-      <p id={descripcion}>{texto}</p>
-      <button className="btn-servia-primary" ref={aceptar} type="button" disabled={ocupado} onClick={alConfirmar}>{accion}</button>
-      <button className="btn-servia-secondary" type="button" disabled={ocupado} onClick={alCancelar}>Cancelar</button>
+    <div className="panel-dialogo">
+      <div className={`panel-dialogo-icono ${accion === 'Eliminar' ? 'panel-dialogo-icono--peligro' : 'panel-dialogo-icono--aviso'}`} aria-hidden="true">!</div>
+      <h2 id={titulo} className="panel-dialogo-titulo">{accion} servicio</h2>
+      <p id={descripcion} className="panel-dialogo-texto">{texto}</p>
+      <div className="panel-dialogo-acciones">
+        <button className={accion === 'Eliminar' ? 'btn-servia-danger' : 'btn-servia-primary'} ref={aceptar} type="button" disabled={ocupado} onClick={alConfirmar}>{accion}</button>
+        <button className="btn-servia-secondary" type="button" disabled={ocupado} onClick={alCancelar}>Cancelar</button>
+      </div>
     </div>
   </div>;
 }

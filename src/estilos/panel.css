@@ -373,7 +373,9 @@ fieldset:disabled .btn-servia-secondary {
   box-shadow: none;
 }
 
-.btn-servia-sm {
+.btn-servia-primary.btn-servia-sm,
+.btn-servia-secondary.btn-servia-sm,
+.btn-servia-danger.btn-servia-sm {
   min-height: 36px;
   padding: 7px 15px;
   font-size: var(--sv-texto-sm);
@@ -475,6 +477,37 @@ fieldset:disabled .btn-servia-secondary {
   color: var(--sv-texto-suave);
   font-size: var(--sv-texto-xs);
   line-height: 1.45;
+}
+
+/* Barra de acciones al pie de un formulario */
+.panel-formulario-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sv-esp-3);
+  margin-top: var(--sv-esp-2);
+  padding-top: var(--sv-esp-5);
+  border-top: 1px solid var(--sv-borde);
+}
+
+/* Nota breve al pie de una tarjeta */
+.panel-nota-pie {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sv-esp-2);
+  margin-top: var(--sv-esp-5);
+  padding-top: var(--sv-esp-4);
+  border-top: 1px solid var(--sv-borde);
+  color: var(--sv-texto-suave);
+  font-size: var(--sv-texto-sm);
+  text-align: center;
+}
+
+.panel-nota-pie-punto {
+  color: #9333ea;
+  font-size: 10px;
 }
 
 /* ---------- Alertas ---------- */
@@ -748,6 +781,16 @@ fieldset:disabled .btn-servia-secondary {
 
 .panel-dialogo--amplio .panel-dialogo-acciones {
   justify-content: flex-end;
+}
+
+.panel-dialogo .btn-servia-danger {
+  background: var(--sv-peligro);
+  color: #fff;
+}
+
+.panel-dialogo .btn-servia-danger:hover {
+  background: #8f2230;
+  border-color: #8f2230;
 }
 
 .panel-dialogo-acciones--columna {

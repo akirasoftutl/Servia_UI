@@ -44,68 +44,68 @@ export function MisServicios() {
   };
 
   return (
-    <div className="servicios-page">
-      <div className="servicios-container">
+    <div className="panel-pagina">
+      <div className="panel-contenedor">
         
-        {alerta && <div role="status" className="alert alert-info rounded-4 mb-3">{alerta}</div>}
+        {alerta && <div role="status" className="panel-alerta panel-alerta--info">{alerta}</div>}
 
-        <header className="servicios-header">
+        <header className="panel-encabezado">
           <div>
-            <span className="servicios-eyebrow">ADMINISTRACIÓN</span>
-            <h1>Mis servicios</h1>
-            <p>Organiza y administra los servicios de tu negocio.</p>
+            <span className="panel-eyebrow">ADMINISTRACIÓN</span>
+            <h1 className="panel-titulo">Mis servicios</h1>
+            <p className="panel-subtitulo">Organiza y administra los servicios de tu negocio.</p>
           </div>
           <Link to="/servicios/nuevo" className="btn-servia-primary">Crear servicio</Link>
         </header>
 
-        <section className="servicios-panel">
-          <div className="servicios-panel-header">
+        <section className="panel-tarjeta">
+          <div className="panel-tarjeta-encabezado">
             <div>
-              <h2>Tu catálogo</h2>
-              <p>Consulta los servicios que tienes publicados.</p>
+              <h2 className="panel-tarjeta-titulo">Tu catálogo</h2>
+              <p className="panel-tarjeta-subtitulo">Consulta los servicios que tienes publicados.</p>
             </div>
             {!cargando && !error && (
-              <span className="servicios-contador">{servicios.length} {servicios.length === 1 ? 'servicio' : 'servicios'}</span>
+              <span className="panel-contador">{servicios.length} {servicios.length === 1 ? 'servicio' : 'servicios'}</span>
             )}
           </div>
 
-          <div className="servicios-tabs">
+          <div className="panel-pestanas">
             <button className={filtro === 'todos' ? 'active' : ''} onClick={() => cambiarFiltro('todos')}>Todos</button>
             <button className={filtro === 'activos' ? 'active' : ''} onClick={() => cambiarFiltro('activos')}>Activos</button>
             <button className={filtro === 'inactivos' ? 'active' : ''} onClick={() => cambiarFiltro('inactivos')}>Inactivos</button>
           </div>
 
           {cargando && (
-            <div className="servicios-feedback">
+            <div className="panel-estado">
               <div className="spinner-border" role="status"></div>
-              <p>Cargando tus servicios...</p>
+              <p className="panel-estado-texto">Cargando tus servicios...</p>
             </div>
           )}
 
           {!cargando && error && (
-            <div className="servicios-feedback">
-              <div className="servicios-feedback-icon error">!</div>
-              <h3>Algo salió mal</h3>
-              <p>{error}</p>
-              <button className="servicios-btn-secundario" onClick={() => { setCargando(true); setError(''); void cargarServicios(); }}>Intentar de nuevo</button>
+            <div className="panel-estado">
+              <div className="panel-estado-icono panel-estado-icono--error">!</div>
+              <h3 className="panel-estado-titulo">Algo salió mal</h3>
+              <p className="panel-estado-texto">{error}</p>
+              <button className="btn-servia-secondary" onClick={() => { setCargando(true); setError(''); void cargarServicios(); }}>Intentar de nuevo</button>
             </div>
           )}
 
           {!cargando && !error && servicios.length === 0 && (
-            <div className="servicios-feedback">
-              <div className="servicios-feedback-icon">✦</div>
-              <h3>{filtro === 'todos' ? 'Tu catálogo está vacío' : `No tienes servicios ${filtro}`}</h3>
-              <p>{filtro === 'todos' ? 'Comienza agregando tu primer servicio para que tus clientes puedan descubrirlo.' : 'No encontramos servicios en esta categoría.'}</p>
+            <div className="panel-estado">
+              <div className="panel-estado-icono">✦</div>
+              <h3 className="panel-estado-titulo">{filtro === 'todos' ? 'Tu catálogo está vacío' : `No tienes servicios ${filtro}`}</h3>
+              <p className="panel-estado-texto">{filtro === 'todos' ? 'Comienza agregando tu primer servicio para que tus clientes puedan descubrirlo.' : 'No encontramos servicios en esta categoría.'}</p>
             </div>
           )}
 
           {!cargando && !error && servicios.length > 0 && (
-            <div className="servicios-lista">
+            <div className="panel-lista">
               {servicios.map((srv) => (
-                <article key={srv.id} className="servicio-card">
+                <article key={srv.id} className="panel-item servicio-card">
                   
                   {/* Hacemos clic en el área principal para editar */}
-                  <Link className="servicio-card-principal text-decoration-none text-reset" to={`/servicios/${srv.id}`}>
+                  <Link className="servicio-card-principal" to={`/servicios/${srv.id}`}>
                     <div className="servicio-icono"><span>✦</span></div>
                     <div className="servicio-informacion">
                       <div className="servicio-titulo-fila">
@@ -124,8 +124,8 @@ export function MisServicios() {
                   </Link>
 
                   {/* Botones de acción */}
-                  <div className="d-flex gap-2 pe-3 align-items-center">
-                    <button onClick={() => navigate(`/servicios/${srv.id}`)} className="btn btn-sm btn-servia-secondary">Editar</button>
+                  <div className="servicio-acciones">
+                    <button onClick={() => navigate(`/servicios/${srv.id}`)} className="btn-servia-secondary btn-servia-sm">Editar</button>
                     <AccionesServicio id={srv.id} nombre={srv.nombre} activo={srv.activo}
                       alMensaje={setAlerta}
                       alCambiarEstado={activo => {
