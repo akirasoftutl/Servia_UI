@@ -9,7 +9,8 @@ import { NoEncontrado } from './paginas/noEncontrado/NoEncontrado'
 import { NuevoServicio } from './paginas/servicios/NuevoServicio.tsx'
 import { MisServicios } from './paginas/servicios/MisServicios.tsx'
 import { Horario } from './paginas/horario/Horario.tsx'
-import { Bloqueos } from './paginas/bloqueos/Bloqueos';
+import { Bloqueos } from './paginas/bloqueos/Bloqueos.tsx'
+import { Reservas } from './paginas/reservas/Reservas.tsx'
 
 // Rutas del panel. Aquí se agregan las páginas de cada historia (registro, sesión, perfil…).
 export const rutas: RouteObject[] = [
@@ -31,8 +32,7 @@ export const rutas: RouteObject[] = [
           { path: 'servicios/:id', element: <NuevoServicio /> },
           { path: 'horario', element: <Horario /> },
           { path: 'bloqueos', element: <Bloqueos /> },
-          
-
+          { path: 'reservas', element: <Reservas /> },
         ],
       },
 
