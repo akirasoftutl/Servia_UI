@@ -24,7 +24,7 @@ function leerReservas(datos: unknown): ReservaConflicto[] {
     typeof r.servicio?.nombre === 'string' && typeof r.estado === 'string');
 }
 
-function Dialogo({ titulo, cerrar, children }: { titulo: string; cerrar: () => void; children: ReactNode }) {
+function Dialogo({ titulo, cerrar, children, amplio = false }: { titulo: string; cerrar: () => void; children: ReactNode; amplio?: boolean }) {
   const panel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const anterior = document.activeElement as HTMLElement | null;
@@ -34,9 +34,9 @@ function Dialogo({ titulo, cerrar, children }: { titulo: string; cerrar: () => v
       else document.getElementById('bloquear')?.focus();
     };
   }, []);
-  return <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1050 }}>
+  return <div className="panel-dialogo-fondo">
     <div ref={panel} role="alertdialog" aria-modal="true" aria-labelledby="titulo-dialogo" aria-describedby="descripcion-dialogo"
-      className="bg-white rounded-4 shadow-lg p-4" style={{ maxWidth: '600px', width: '90%' }}
+      className={`panel-dialogo ${amplio ? 'panel-dialogo--amplio' : ''}`}
       onKeyDown={(e) => {
         if (e.key === 'Escape') { e.preventDefault(); cerrar(); }
         if (e.key === 'Tab') {
@@ -47,7 +47,7 @@ function Dialogo({ titulo, cerrar, children }: { titulo: string; cerrar: () => v
           else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero?.focus(); }
         }
       }}>
-      <h2 id="titulo-dialogo">{titulo}</h2>{children}
+      <h2 id="titulo-dialogo" className="panel-dialogo-titulo">{titulo}</h2>{children}
     </div>
   </div>;
 }
@@ -201,25 +201,28 @@ export function Bloqueos() {
   };
 
   return (
-    <div className="bloqueos-page">
-      <div className="bloqueos-container" inert={mostrarConflicto || quitarId !== null}>
-        
-        <header className="bloqueos-header">
-          <h1>Bloqueos de horario</h1>
-          <p>Administra los días u horas en los que no atenderás.</p>
+    <div className="panel-pagina">
+      <div className="panel-contenedor bloqueos-container" inert={mostrarConflicto || quitarId !== null}>
+
+        <header className="panel-encabezado">
+          <div>
+            <span className="panel-eyebrow">OPERACIONES</span>
+            <h1 className="panel-titulo">Bloqueos de horario</h1>
+            <p className="panel-subtitulo">Administra los días u horas en los que no atenderás.</p>
+          </div>
         </header>
 
-        {alerta && <div role="status" className="alert alert-success rounded-4 mb-4">{alerta}</div>}
-        {error && <div role="alert" className="alert alert-danger rounded-4 mb-4">{error} <button onClick={() => void cargarBloqueos()}>Reintentar</button></div>}
+        {alerta && <div role="status" className="panel-alerta panel-alerta--exito">{alerta}</div>}
+        {error && <div role="alert" className="panel-alerta panel-alerta--error bloqueos-alerta-error">{error} <button className="btn-servia-secondary btn-servia-sm" onClick={() => void cargarBloqueos()}>Reintentar</button></div>}
 
-        <div className="bloqueos-panel">
+        <div className="panel-tarjeta">
           <div className="bloqueos-grid">
             
             {/* FORMULARIO */}
             <div className="bloqueos-form">
-              <h2 className="bloqueos-form-title">Nuevo bloqueo</h2>
+              <h2 className="panel-tarjeta-titulo bloqueos-columna-titulo">Nuevo bloqueo</h2>
               <form onSubmit={handleSubmit} noValidate>
-                {errorGuardar && <p role="alert">{errorGuardar}</p>}
+                {errorGuardar && <p role="alert" className="panel-alerta panel-alerta--error">{errorGuardar}</p>}
                 <div className="mb-3">
                   <label htmlFor="tipo" className="form-label">Tipo de bloqueo</label>
                   <select id="tipo" className="form-select" value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)}>
@@ -261,10 +264,10 @@ export function Bloqueos() {
                 <div className="mb-4">
                   <label htmlFor="motivo" className="form-label">Motivo (opcional)</label>
                   <input id="motivo" aria-invalid={!!errores.motivo} aria-describedby={errores.motivo ? "error-motivo" : undefined} type="text" maxLength={200} className="form-control" placeholder="Ej. Vacaciones" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
-                  {errores.motivo && <p id="error-motivo" role="alert">{errores.motivo}</p>}
+                  {errores.motivo && <p id="error-motivo" role="alert" className="panel-error-campo">{errores.motivo}</p>}
                 </div>
 
-                <button id="bloquear" type="submit" className="bloqueos-btn" disabled={creando}>
+                <button id="bloquear" type="submit" className="btn-servia-primary btn-servia-bloque" disabled={creando}>
                   {creando ? 'Creando...' : 'Bloquear'}
                 </button>
               </form>
@@ -272,25 +275,31 @@ export function Bloqueos() {
 
             {/* LISTA DE BLOQUEOS */}
             <div className="bloqueos-list">
-              <h2 className="bloqueos-list-title">Tus bloqueos</h2>
-              
-              {cargando && <p>Cargando...</p>}
-              {!cargando && !error && bloqueos.length === 0 && <div className="bloqueos-empty">No tienes bloqueos.</div>}
+              <h2 className="panel-tarjeta-titulo bloqueos-columna-titulo">Tus bloqueos</h2>
+
+              {cargando && <div className="panel-estado">
+                <div className="spinner-border" aria-hidden="true" />
+                <p className="panel-estado-texto">Cargando...</p>
+              </div>}
+              {!cargando && !error && bloqueos.length === 0 && <div className="panel-estado bloqueos-vacio">
+                <div className="panel-estado-icono" aria-hidden="true">✦</div>
+                <p className="panel-estado-texto">No tienes bloqueos.</p>
+              </div>}
 
               {!cargando && !error && bloqueos.length > 0 && (
-                <div className="bloqueos-lista">
+                <div className="panel-lista">
                   {bloqueos.map((b) => {
                     const completo = formatearHora(b.inicio) === '00:00' && formatearHora(b.fin) === '00:00';
                     // La API devuelve fin exclusivo; para días completos mostrar el último día incluido.
                     const finVisible = completo ? new Date(new Date(b.fin).getTime() - 1).toISOString() : b.fin;
                     return (
-                    <div key={b.id} className="bloqueo-card">
+                    <div key={b.id} className="panel-item bloqueo-card">
                       <div className="bloqueo-info">
-                        <h3>
+                        <h3 className="panel-item-titulo">
                           {formatearFecha(b.inicio)}
                           {formatearFecha(b.inicio) !== formatearFecha(finVisible) && ` - ${formatearFecha(finVisible)}`}
                         </h3>
-                        <p>
+                        <p className="panel-item-texto">
                           {/* Los límites a medianoche representan días completos. */}
                           {!completo
                             ? `${formatearHora(b.inicio)} a ${formatearHora(b.fin)}`
@@ -299,7 +308,7 @@ export function Bloqueos() {
                           {b.motivo && ` · ${b.motivo}`}
                         </p>
                       </div>
-                      <button onClick={() => setQuitarId(b.id)} className="bloqueo-btn-quitar">Quitar</button>
+                      <button onClick={() => setQuitarId(b.id)} className="btn-servia-danger btn-servia-sm">Quitar</button>
                     </div>
                   ); })}
                 </div>
@@ -311,10 +320,10 @@ export function Bloqueos() {
       </div>
         {/* MODAL DE CONFLICTO 409 */}
         {mostrarConflicto && (
-          <Dialogo titulo="No se puede bloquear" cerrar={() => setMostrarConflicto(false)}>
-              <p id="descripcion-dialogo">No se puede bloquear este periodo porque tiene reservas activas. Recházalas o cancélalas primero:</p>
-              <div className="table-responsive mt-3">
-                <table className="table table-sm">
+          <Dialogo amplio titulo="No se puede bloquear" cerrar={() => setMostrarConflicto(false)}>
+              <p id="descripcion-dialogo" className="panel-dialogo-texto">No se puede bloquear este periodo porque tiene reservas activas. Recházalas o cancélalas primero:</p>
+              <div className="panel-tabla-contenedor">
+                <table className="panel-tabla">
                   <thead>
                     <tr><th>Folio</th><th>Fecha</th><th>Hora</th><th>Servicio</th><th>Estado</th></tr>
                   </thead>
@@ -325,15 +334,17 @@ export function Bloqueos() {
                   </tbody>
                 </table>
               </div>
-              <div className="text-end mt-4">
+              <div className="panel-dialogo-acciones">
                 <button className="btn-servia-secondary" onClick={() => setMostrarConflicto(false)}>Entendido</button>
               </div>
           </Dialogo>
         )}
         {quitarId && <Dialogo titulo="Quitar bloqueo" cerrar={() => { if (!quitando) setQuitarId(null); }}>
-          <p id="descripcion-dialogo">¿Quitar este bloqueo? Los clientes podrán volver a reservar en ese periodo.</p>
-          <button disabled={quitando} onClick={() => setQuitarId(null)}>Cancelar</button>
-          <button disabled={quitando} onClick={() => void handleQuitar()}>Quitar</button>
+          <p id="descripcion-dialogo" className="panel-dialogo-texto">¿Quitar este bloqueo? Los clientes podrán volver a reservar en ese periodo.</p>
+          <div className="panel-dialogo-acciones">
+            <button className="btn-servia-secondary" disabled={quitando} onClick={() => setQuitarId(null)}>Cancelar</button>
+            <button className="btn-servia-danger" disabled={quitando} onClick={() => void handleQuitar()}>Quitar</button>
+          </div>
         </Dialogo>}
     </div>
   );
