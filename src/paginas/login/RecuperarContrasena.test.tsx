@@ -83,6 +83,18 @@ describe('MVP-04 recuperar la contraseña desde el login del panel', () => {
     expect(enviarCorreo).not.toHaveBeenCalled()
   })
 
+  it('borde: si Firebase responde auth/invalid-email avisa junto al campo, sin el mensaje de enviado', async () => {
+    enviarCorreo.mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/invalid-email' }))
+    const usuario = await abrirRecuperar()
+    const campo = screen.getByLabelText('Correo electrónico')
+    await usuario.type(campo, 'barberia@ejemplo.com')
+    await usuario.click(screen.getByRole('button', { name: 'Enviar enlace' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Escribe un correo válido.')
+    expect(campo).toHaveAccessibleDescription('Escribe un correo válido.')
+    expect(campo).toHaveFocus()
+    expect(screen.queryByText(MENSAJE)).not.toBeInTheDocument()
+  })
+
   it.each(['auth/network-request-failed', 'auth/too-many-requests'])(
     'borde: con %s muestra un aviso genérico que no revela la cuenta', async (code) => {
       enviarCorreo.mockRejectedValue(Object.assign(new Error('x'), { code }))

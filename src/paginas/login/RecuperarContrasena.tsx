@@ -23,11 +23,20 @@ export function RecuperarContrasena({ correoInicial = '', onVolver }: Props) {
   const [enviando, setEnviando] = useState(false);
   const titulo = useRef<HTMLHeadingElement>(null);
   const campoCorreo = useRef<HTMLInputElement>(null);
+  const enfocarCorreo = useRef(false);
 
   // Al abrir la vista, el foco pasa a su título para que el lector de pantalla anuncie el cambio.
   useEffect(() => {
     titulo.current?.focus();
   }, []);
+
+  // Tras la respuesta de Firebase el campo sigue deshabilitado; el foco se aplica ya habilitado.
+  useEffect(() => {
+    if (!enviando && enfocarCorreo.current) {
+      enfocarCorreo.current = false;
+      campoCorreo.current?.focus();
+    }
+  });
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -50,7 +59,7 @@ export function RecuperarContrasena({ correoInicial = '', onVolver }: Props) {
         setEnviado(true);
       } else if (codigo === 'auth/invalid-email') {
         setErrorCorreo(MENSAJE_CORREO_INVALIDO);
-        campoCorreo.current?.focus();
+        enfocarCorreo.current = true;
       } else {
         // Red, demasiados intentos u otro: un aviso genérico que tampoco revela nada de la cuenta.
         setErrorEnvio(MENSAJE_ERROR_ENVIO);
