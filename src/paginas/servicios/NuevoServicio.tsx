@@ -10,6 +10,7 @@ import { ShieldAlert } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router'; // <-- Agregamos useParams
 import { api, ErrorApi } from '../../servicios/api';
 import './Servicios.css';
+import { AccionesServicio } from './AccionesServicio';
 
 interface PerfilNegocio {
   perfilCompleto: boolean;
@@ -28,6 +29,9 @@ export function NuevoServicio() {
     duracion: '',
   });
 
+  const [activo, setActivo] = useState(true);
+  const [aviso, setAviso] = useState('');
+  const [errorGuardar, setErrorGuardar] = useState('');
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [cargando, setCargando] = useState(true);
   const [publicando, setPublicando] = useState(false);
@@ -60,8 +64,9 @@ export function NuevoServicio() {
       try {
         if (esEdicion && id) {
           // La edición no depende de la disponibilidad del perfil.
-          const servicio = await api<{ nombre: string; descripcion: string; precio: number; duracionMin: number }>(`/negocios/mio/servicios/${id}`);
+          const servicio = await api<{ nombre: string; descripcion: string; precio: number; duracionMin: number; activo: boolean }>(`/negocios/mio/servicios/${id}`);
           if (!vigente) return;
+          setActivo(servicio.activo);
           setForm({ nombre: servicio.nombre, descripcion: servicio.descripcion,
             precio: String(servicio.precio), duracion: String(servicio.duracionMin) });
         } else {
@@ -111,6 +116,7 @@ export function NuevoServicio() {
     if (!validar()) return;
 
     setPublicando(true);
+    setErrorGuardar('');
     try {
       const payload = {
         nombre: form.nombre,
@@ -121,21 +127,21 @@ export function NuevoServicio() {
 
       if (esEdicion) {
         await api(`/negocios/mio/servicios/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
-        setMensajeExito('Cambios guardados.');
+        navigate('/servicios', { state: { mensaje: 'Cambios guardados.' } });
+        return;
       } else {
         await api('/negocios/mio/servicios', { method: 'POST', body: JSON.stringify(payload) });
         setMensajeExito('Servicio publicado.');
       }
       setServicioPublicado(true);
 
-    } catch (error: any) {
-      if (error.estado === 409) {
+    } catch (error) {
+      if (!esEdicion && error instanceof ErrorApi && error.estado === 409) {
         setPerfilCompleto(false);
-        if (error.message) setCamposFaltantes([error.message]);
-      } else if (error.estado === 400) {
-        alert(error.message || 'Revisa los datos del formulario.');
+        setCamposFaltantes([error.message]);
       } else {
-        alert('No pudimos guardar el servicio. Intenta de nuevo.');
+        setErrorGuardar(esEdicion ? 'No pudimos guardar los cambios. Intenta de nuevo.'
+          : error instanceof ErrorApi && error.estado === 400 ? error.message || 'Revisa los datos del formulario.' : 'No pudimos guardar el servicio. Intenta de nuevo.');
       }
     } finally {
       setPublicando(false);
@@ -200,6 +206,14 @@ export function NuevoServicio() {
               <p className="perfil-subtitle">{esEdicion ? 'Actualiza la información de tu servicio.' : 'Agrega un nuevo servicio a tu negocio y permite que más clientes conozcan lo que ofreces.'}</p>
             </header>
 
+            {aviso && <p role="status">{aviso}</p>}
+            {errorGuardar && <p role="alert">{errorGuardar}</p>}
+            {esEdicion && <section aria-label="Estado del servicio">
+              <p>Estado: {activo ? 'Activo' : 'Inactivo'}</p>
+              <AccionesServicio key={id} id={id!} nombre={form.nombre} activo={activo}
+                alCambiarEstado={setActivo} alMensaje={setAviso}
+                alEliminar={mensaje => navigate('/servicios', { state: { mensaje } })} />
+            </section>}
             <form onSubmit={handleSubmit} noValidate>
               <fieldset disabled={(!perfilCompleto && !esEdicion) || publicando}>
                 <section className="borde-personalizado">
@@ -248,6 +262,7 @@ export function NuevoServicio() {
                   </div>
                 </section>
 
+                {esEdicion && <p>Los cambios de precio o duración no afectan las reservas que ya existen.</p>}
                 <section className="mb-4">
                   <div className="mb-3">
                     <h2 className="perfil-section-title mb-2">Fotografías del servicio</h2>

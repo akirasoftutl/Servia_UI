@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { api } from '../../servicios/api';
 import './Servicios.css';
+import { AccionesServicio } from './AccionesServicio';
 
 interface Servicio {
   id: string;
@@ -18,72 +19,35 @@ export function MisServicios() {
   const [filtro, setFiltro] = useState<'todos' | 'activos' | 'inactivos'>('todos');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
-  const [alerta, setAlerta] = useState('');
+  const { state } = useLocation();
+  const [alerta, setAlerta] = useState<string>(state?.mensaje ?? '');
 
-  const cargarServicios = async () => {
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    let vigente = true;
+    let ruta = '/negocios/mio/servicios';
+    if (filtro !== 'todos') ruta += `?estado=${filtro}`;
+    void api<Servicio[]>(ruta).then(data => {
+      if (vigente) { setServicios(data); setError(''); }
+    }).catch(() => {
+      if (vigente) setError('No pudimos cargar tus servicios. Intenta nuevamente.');
+    }).finally(() => { if (vigente) setCargando(false); });
+    return () => { vigente = false; };
+  }, [filtro, revision]);
+  const cargarServicios = () => setRevision(prev => prev + 1);
+
+  const cambiarFiltro = (nuevo: typeof filtro) => {
+    if (nuevo === filtro) return;
     setCargando(true);
     setError('');
-    try {
-      let ruta = '/negocios/mio/servicios';
-      if (filtro === 'activos') ruta += '?estado=activos';
-      if (filtro === 'inactivos') ruta += '?estado=inactivos';
-      const data = await api<Servicio[]>(ruta);
-      setServicios(data);
-    } catch {
-      setError('No pudimos cargar tus servicios. Intenta nuevamente.');
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  useEffect(() => {
-    cargarServicios();
-  }, [filtro]);
-
-  const handleToggleEstado = async (id: string, estadoActual: boolean, nombre: string) => {
-    const accion = estadoActual ? 'desactivar' : 'activar';
-    if (!window.confirm(`¿Seguro que quieres ${accion} "${nombre}"?`)) return;
-
-    try {
-      const respuesta = await api<{ visible: boolean }>(`/negocios/mio/servicios/${id}/estado`, {
-        method: 'PATCH',
-        body: JSON.stringify({ activo: !estadoActual }),
-      });
-      
-      if (respuesta.visible === false) {
-        setAlerta('Ya no tienes servicios activos: tu negocio no aparece para los clientes hasta que actives uno.');
-      } else {
-        setAlerta(`Servicio ${estadoActual ? 'desactivado' : 'activado'}.`);
-      }
-      cargarServicios();
-    } catch (error: any) {
-      alert(error.message || 'Error al cambiar el estado del servicio.');
-    }
-  };
-
-  const handleEliminar = async (id: string, nombre: string) => {
-    if (!window.confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) return;
-
-    try {
-      await api(`/negocios/mio/servicios/${id}`, { method: 'DELETE' });
-      setAlerta('Servicio eliminado.');
-      cargarServicios();
-    } catch (error: any) {
-      if (error.estado === 409) {
-        if (window.confirm('Este servicio ya tuvo reservas, así que no se puede eliminar. ¿Quieres desactivarlo para que deje de ofrecerse?')) {
-          await handleToggleEstado(id, true, nombre);
-        }
-      } else {
-        alert(error.message || 'Error al eliminar el servicio.');
-      }
-    }
+    setFiltro(nuevo);
   };
 
   return (
     <div className="servicios-page">
       <div className="servicios-container">
         
-        {alerta && <div className="alert alert-info rounded-4 mb-3">{alerta}</div>}
+        {alerta && <div role="status" className="alert alert-info rounded-4 mb-3">{alerta}</div>}
 
         <header className="servicios-header">
           <div>
@@ -106,9 +70,9 @@ export function MisServicios() {
           </div>
 
           <div className="servicios-tabs">
-            <button className={filtro === 'todos' ? 'active' : ''} onClick={() => setFiltro('todos')}>Todos</button>
-            <button className={filtro === 'activos' ? 'active' : ''} onClick={() => setFiltro('activos')}>Activos</button>
-            <button className={filtro === 'inactivos' ? 'active' : ''} onClick={() => setFiltro('inactivos')}>Inactivos</button>
+            <button className={filtro === 'todos' ? 'active' : ''} onClick={() => cambiarFiltro('todos')}>Todos</button>
+            <button className={filtro === 'activos' ? 'active' : ''} onClick={() => cambiarFiltro('activos')}>Activos</button>
+            <button className={filtro === 'inactivos' ? 'active' : ''} onClick={() => cambiarFiltro('inactivos')}>Inactivos</button>
           </div>
 
           {cargando && (
@@ -123,7 +87,7 @@ export function MisServicios() {
               <div className="servicios-feedback-icon error">!</div>
               <h3>Algo salió mal</h3>
               <p>{error}</p>
-              <button className="servicios-btn-secundario" onClick={cargarServicios}>Intentar de nuevo</button>
+              <button className="servicios-btn-secundario" onClick={() => { setCargando(true); setError(''); void cargarServicios(); }}>Intentar de nuevo</button>
             </div>
           )}
 
@@ -141,7 +105,7 @@ export function MisServicios() {
                 <article key={srv.id} className="servicio-card">
                   
                   {/* Hacemos clic en el área principal para editar */}
-                  <div className="servicio-card-principal" onClick={() => navigate(`/servicios/${srv.id}`)} style={{ cursor: 'pointer' }}>
+                  <Link className="servicio-card-principal text-decoration-none text-reset" to={`/servicios/${srv.id}`}>
                     <div className="servicio-icono"><span>✦</span></div>
                     <div className="servicio-informacion">
                       <div className="servicio-titulo-fila">
@@ -157,15 +121,18 @@ export function MisServicios() {
                         <span><small>Duración</small><strong>{srv.duracionMin} min</strong></span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Botones de acción */}
                   <div className="d-flex gap-2 pe-3 align-items-center">
                     <button onClick={() => navigate(`/servicios/${srv.id}`)} className="btn btn-sm btn-servia-secondary">Editar</button>
-                    <button onClick={() => handleToggleEstado(srv.id, srv.activo, srv.nombre)} className={`btn btn-sm ${srv.activo ? 'btn-outline-warning' : 'btn-outline-success'}`}>
-                      {srv.activo ? 'Desactivar' : 'Activar'}
-                    </button>
-                    <button onClick={() => handleEliminar(srv.id, srv.nombre)} className="btn btn-sm btn-outline-danger">Eliminar</button>
+                    <AccionesServicio id={srv.id} nombre={srv.nombre} activo={srv.activo}
+                      alMensaje={setAlerta}
+                      alCambiarEstado={activo => {
+                        setServicios(prev => prev.map(servicio => servicio.id === srv.id ? { ...servicio, activo } : servicio));
+                        void cargarServicios();
+                      }}
+                      alEliminar={mensaje => { setAlerta(mensaje); void cargarServicios(); }} />
                   </div>
 
                 </article>
