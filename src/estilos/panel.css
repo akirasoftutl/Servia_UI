@@ -736,6 +736,12 @@ fieldset:disabled .btn-servia-secondary {
   box-shadow: none;
 }
 
+.panel-dialogo-icono--exito {
+  background: #dcfce7;
+  color: #16a34a;
+  box-shadow: none;
+}
+
 .panel-dialogo-icono--peligro {
   background: var(--sv-peligro-fondo);
   color: var(--sv-peligro);
