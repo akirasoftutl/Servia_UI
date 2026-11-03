@@ -96,67 +96,75 @@ export function CambiarContrasena() {
   };
 
   return (
-    <section className="perfil-card mt-4" aria-labelledby="titulo-cambiar-contrasena">
-      <div className="perfil-card-body">
-        <h2 id="titulo-cambiar-contrasena" className="perfil-section-title mb-2">
-          Cambiar contraseña
-        </h2>
-
-        {!entraConContrasena ? (
-          <p className="perfil-subtitle mb-0">
-            Tu cuenta entra con Google; la contraseña se administra en tu cuenta de Google.
+    <section className="panel-tarjeta perfil-tarjeta-contrasena" aria-labelledby="titulo-cambiar-contrasena">
+      <div className="panel-tarjeta-encabezado">
+        <div>
+          <h2 id="titulo-cambiar-contrasena" className="panel-tarjeta-titulo">
+            Cambiar contraseña
+          </h2>
+          <p className="panel-tarjeta-subtitulo">
+            {entraConContrasena
+              ? `Escribe tu contraseña actual y la nueva. La nueva debe tener al menos ${MINIMO} caracteres.`
+              : 'Tu cuenta entra con Google; la contraseña se administra en tu cuenta de Google.'}
           </p>
-        ) : (
-          <>
-            <p className="perfil-subtitle mb-4">
-              Escribe tu contraseña actual y la nueva. La nueva debe tener al menos {MINIMO} caracteres.
-            </p>
-
-            {exito && <div className="alert alert-success border-0 rounded-4 p-3 mb-3" role="status">{exito}</div>}
-            {errorGeneral && <div className="alert alert-danger border-0 rounded-4 p-3 mb-3" role="alert">{errorGeneral}</div>}
-
-            <form onSubmit={handleSubmit} noValidate>
-              <div className="row g-3">
-                {(['actual', 'nueva', 'confirmacion'] as Campo[]).map((campo) => {
-                  const id = `contrasena-${campo}`;
-                  const error = errores[campo];
-                  return (
-                    <div className="col-12 col-md-4" key={campo}>
-                      <label htmlFor={id} className="form-label">{etiquetas[campo]}</label>
-                      <input
-                        ref={campos[campo]}
-                        id={id}
-                        type="password"
-                        autoComplete={campo === 'actual' ? 'current-password' : 'new-password'}
-                        className={`form-control ${error ? 'is-invalid' : ''}`}
-                        value={valores[campo]}
-                        onChange={(e) => {
-                          setValores({ ...valores, [campo]: e.target.value });
-                          setErrores({ ...errores, [campo]: undefined });
-                        }}
-                        disabled={guardando}
-                        aria-invalid={error ? true : undefined}
-                        aria-describedby={error ? `${id}-error` : undefined}
-                      />
-                      {error && (
-                        <div id={`${id}-error`} className="invalid-feedback" role="alert">
-                          {error}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="d-flex justify-content-end mt-4">
-                <button type="submit" className="btn-servia-primary" disabled={guardando}>
-                  {guardando ? 'Cambiando...' : 'Cambiar contraseña'}
-                </button>
-              </div>
-            </form>
-          </>
-        )}
+        </div>
       </div>
+
+      {entraConContrasena && (
+        <>
+          {exito && (
+            <div className="panel-alerta panel-alerta--exito" role="status">
+              <span aria-hidden="true">✓</span>
+              <span>{exito}</span>
+            </div>
+          )}
+          {errorGeneral && (
+            <div className="panel-alerta panel-alerta--error" role="alert">
+              {errorGeneral}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="row g-3">
+              {(['actual', 'nueva', 'confirmacion'] as Campo[]).map((campo) => {
+                const id = `contrasena-${campo}`;
+                const error = errores[campo];
+                return (
+                  <div className="col-12 col-md-4" key={campo}>
+                    <label htmlFor={id} className="form-label">{etiquetas[campo]}</label>
+                    <input
+                      ref={campos[campo]}
+                      id={id}
+                      type="password"
+                      autoComplete={campo === 'actual' ? 'current-password' : 'new-password'}
+                      className={`form-control ${error ? 'is-invalid' : ''}`}
+                      value={valores[campo]}
+                      onChange={(e) => {
+                        setValores({ ...valores, [campo]: e.target.value });
+                        setErrores({ ...errores, [campo]: undefined });
+                      }}
+                      disabled={guardando}
+                      aria-invalid={error ? true : undefined}
+                      aria-describedby={error ? `${id}-error` : undefined}
+                    />
+                    {error && (
+                      <div id={`${id}-error`} className="invalid-feedback" role="alert">
+                        {error}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="panel-formulario-acciones perfil-contrasena-acciones">
+              <button type="submit" className="btn-servia-primary" disabled={guardando}>
+                {guardando ? 'Cambiando...' : 'Cambiar contraseña'}
+              </button>
+            </div>
+          </form>
+        </>
+      )}
     </section>
   );
 }
