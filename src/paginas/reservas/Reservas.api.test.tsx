@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { Reservas } from './Reservas';
+import { MemoryRouter } from 'react-router'; 
 
 vi.mock('../../servicios/firebase', () => ({
   auth: { currentUser: { getIdToken: async () => 'token-negocio-prueba' } },
@@ -7,7 +8,11 @@ vi.mock('../../servicios/firebase', () => ({
 
 it('consulta las reservas del negocio mediante api con su token y sin identificadores ajenos (RN-46/T3)', async () => {
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ items: [], siguiente: null })));
-  render(<Reservas />);
+  render(
+  <MemoryRouter>
+    <Reservas />
+  </MemoryRouter>
+);
   await screen.findByText('No tienes reservas pendientes.');
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
   const [url, opciones] = fetchMock.mock.calls[0];
