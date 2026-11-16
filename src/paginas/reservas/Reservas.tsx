@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../servicios/api';
 import './Reservas.css';
+import { Link } from 'react-router'; 
 
 const estados = {
   pendiente: 'Pendiente',
-  confirmada: 'Confirmada',
+  confirmada: 'Confirmada', 
   rechazada: 'Rechazada',
   rechazada_vencimiento: 'Rechazada por vencimiento',
   cancelada: 'Cancelada',
@@ -154,18 +155,25 @@ export function Reservas() {
               {pestana === 'pendientes' ? 'No tienes reservas pendientes.' : 'No tienes reservas próximas.'}
             </p>
           </div>}
-          {!cargando && !error && <div className="panel-lista">
-            {pagina.items.map((r) => <article key={r.id} className="panel-item reserva-card">
-              <div className="reserva-info-principal">
-                <h3 className="panel-item-titulo">{r.cliente.nombre}</h3>
-                <p className="panel-item-texto">{r.servicio.nombre} · {fecha.format(new Date(r.inicio))} de {hora.format(new Date(r.inicio))} a {hora.format(new Date(r.fin))}</p>
-              </div>
-              <div className="reserva-estado-container">
-                <span className={`reserva-badge ${r.estado}`}>{estados[r.estado]}</span>
-                {r.estado === 'pendiente' && r.venceEn && Date.parse(r.venceEn) > ahora &&
-                  <span className="reserva-tiempo">⏱ {tiempoRestante(r.venceEn, ahora)}</span>}
-              </div>
-            </article>)}
+                    {!cargando && !error && <div className="panel-lista">
+            {pagina.items.map((r) => (
+              <Link 
+                key={r.id} 
+                to={`/reservas/${r.id}`} 
+                className="panel-item reserva-card text-decoration-none"
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'inherit' }}
+              >
+                <div className="reserva-info-principal">
+                  <h3 className="panel-item-titulo">{r.cliente.nombre}</h3>
+                  <p className="panel-item-texto">{r.servicio.nombre} · {fecha.format(new Date(r.inicio))} de {hora.format(new Date(r.inicio))} a {hora.format(new Date(r.fin))}</p>
+                </div>
+                <div className="reserva-estado-container">
+                  <span className={`reserva-badge ${r.estado}`}>{estados[r.estado]}</span>
+                  {r.estado === 'pendiente' && r.venceEn && Date.parse(r.venceEn) > ahora &&
+                    <span className="reserva-tiempo">⏱ {tiempoRestante(r.venceEn, ahora)}</span>}
+                </div>
+              </Link>
+            ))}
           </div>}
           {!cargando && !error && (cursores.length > 1 || pagina.siguiente) && <nav aria-label="Páginas de reservas" className="panel-paginacion">
             <button className="btn-servia-secondary btn-servia-sm" disabled={cursores.length === 1} onClick={() => setConsulta({ ...consulta, cursores: cursores.slice(0, -1) })}>Anterior</button>

@@ -1,0 +1,30 @@
+import { Link } from 'react-router';
+// ... (resto de tus imports)
+import { ESTADOS_CONFIG, formatearFecha, formatearHora, calcularTiempoRestante } from './estados';
+
+// ... dentro del map de reservas:
+              {reservas.map((r) => (
+                <Link 
+                  key={r.id} 
+                  to={`/reservas/${r.id}`} 
+                  className="reserva-card text-decoration-none"
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <div className="reserva-info-principal">
+                    <h3 className="text-dark mb-0">{r.clienteNombre || 'Cliente'}</h3>
+                    <p className="text-muted mb-0">
+                      {r.servicioNombre} · {formatearFecha(r.fecha)} a las {formatearHora(r.hora)}
+                    </p>
+                  </div>
+                  <div className="reserva-estado-container">
+                    <span className={`reserva-badge ${ESTADOS_CONFIG[r.estado]?.className || ''}`}>
+                      {ESTADOS_CONFIG[r.estado]?.label || r.estado}
+                    </span>
+                    {r.estado === 'pendiente' && r.segundosRestantes !== null && (
+                      <span className="reserva-tiempo mt-1">
+                        ⏱ {calcularTiempoRestante(r.segundosRestantes)}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
