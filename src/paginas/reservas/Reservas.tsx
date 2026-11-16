@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../servicios/api';
 import './Reservas.css';
-import { MemoryRouter } from 'react-router'; 
-import { Link } from 'react-router'; 
+import { useNavigate } from 'react-router';
 
 const estados = {
   pendiente: 'Pendiente',
@@ -38,6 +37,8 @@ function tiempoRestante(venceEn: string, ahora: number) {
 }
 
 export function Reservas() {
+  const navigate = useNavigate(); // <-- LÍNEA AGREGADA
+
   const [consulta, setConsulta] = useState({ pestana: 'pendientes' as Pestana, estado: '', fecha: '', cursores: [''] });
   const [pagina, setPagina] = useState<Pagina>({ items: [], siguiente: null });
   const [cargando, setCargando] = useState(true);
@@ -58,7 +59,6 @@ export function Reservas() {
     }
     const cursor = cursores[cursores.length - 1];
     if (cursor) parametros.set('cursor', cursor);
-    // RN-46/T3: la API identifica al negocio por su token y entrega el orden MVP-22.
     const cargar = async () => {
       await Promise.resolve();
       if (!vigente) return;
@@ -90,7 +90,6 @@ export function Reservas() {
     const temporizador = window.setTimeout(() => {
       pendientes.filter((r) => Date.parse(r.venceEn!) <= Date.now()).forEach((r) =>
         vencimientosConsultados.current.add(`${r.id}:${r.venceEn}`));
-      // RN-57/58: pedir el estado efectivo a BE, sin modificarlo en la PWA.
       setConsulta((actual) => ({ ...actual, cursores: [''] }));
     }, Math.max(0, proximoVencimiento - Date.now()));
     return () => window.clearTimeout(temporizador);
@@ -156,13 +155,20 @@ export function Reservas() {
               {pestana === 'pendientes' ? 'No tienes reservas pendientes.' : 'No tienes reservas próximas.'}
             </p>
           </div>}
-                    {!cargando && !error && <div className="panel-lista">
+          {!cargando && !error && <div className="panel-lista">
             {pagina.items.map((r) => (
-              <Link 
-                key={r.id} 
-                to={`/reservas/${r.id}`} 
-                className="panel-item reserva-card text-decoration-none"
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'inherit' }}
+              <article
+                key={r.id}
+                className="panel-item reserva-card"
+                onClick={() => navigate(`/reservas/${r.id}`)}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/reservas/${r.id}`);
+                  }
+                }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
               >
                 <div className="reserva-info-principal">
                   <h3 className="panel-item-titulo">{r.cliente.nombre}</h3>
@@ -173,7 +179,7 @@ export function Reservas() {
                   {r.estado === 'pendiente' && r.venceEn && Date.parse(r.venceEn) > ahora &&
                     <span className="reserva-tiempo">⏱ {tiempoRestante(r.venceEn, ahora)}</span>}
                 </div>
-              </Link>
+              </article>
             ))}
           </div>}
           {!cargando && !error && (cursores.length > 1 || pagina.siguiente) && <nav aria-label="Páginas de reservas" className="panel-paginacion">
