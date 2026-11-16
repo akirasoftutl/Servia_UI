@@ -183,9 +183,10 @@ it('descarta una respuesta antigua que llega después de la vigente', async () =
 });
 
 it('muestra carga, vacío y error, y reintenta conservando los filtros', async () => {
-  apiMock.mockRejectedValueOnce(new Error('Sin conexión')).mockResolvedValueOnce({ items: [], siguiente: null })
-    .mockRejectedValueOnce(new Error('Sin conexión con filtro'))
-    .mockResolvedValue({ items: [reserva()], siguiente: null });
+  apiMock.mockRejectedValueOnce(new Error('Sin conexión'))
+       .mockResolvedValueOnce({ items: [], siguiente: null })
+       .mockRejectedValueOnce(new Error('Sin conexión con filtro'))
+       .mockResolvedValue({ items: [reserva()], siguiente: null });
   render(<Reservas />);
   expect(screen.getByRole('status')).toHaveTextContent('Cargando reservas');
   expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar');
