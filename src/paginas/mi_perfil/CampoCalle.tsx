@@ -40,6 +40,8 @@ export function CampoCalle({ value, error, onChange, onElegir }: Props) {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     onChange(e)
     setActiva(-1)
+    // Si el negocio edita la calle tras elegir, el aviso ya cumplió su papel.
+    setMostrarAviso(false)
     buscar(e.target.value)
   }
 

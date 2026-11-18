@@ -85,6 +85,17 @@ describe('CampoCalle', () => {
     expect(screen.getByRole('status')).toHaveTextContent(AVISO_SUGERENCIA)
   })
 
+  it('el aviso de la sugerencia aparece al elegir y se apaga al editar la calle', async () => {
+    const { usuario, campo } = preparar()
+    const opciones = await abrirSugerencias(usuario, campo)
+    expect(screen.queryByText(AVISO_SUGERENCIA)).not.toBeInTheDocument()
+    await usuario.click(opciones[0])
+    expect(screen.getByRole('status')).toHaveTextContent(AVISO_SUGERENCIA)
+    await usuario.type(campo, ' 120')
+    expect(campo).toHaveValue(`${TEXTOS[0]} 120`)
+    expect(screen.queryByText(AVISO_SUGERENCIA)).not.toBeInTheDocument()
+  })
+
   it('Enter sin opción activa no elige ni se cancela', async () => {
     const { usuario, campo } = preparar()
     await abrirSugerencias(usuario, campo)
