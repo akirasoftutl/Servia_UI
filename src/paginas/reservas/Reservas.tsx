@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../servicios/api';
 import './Reservas.css';
+import { useNavigate } from 'react-router';
 
 const estados = {
   pendiente: 'Pendiente',
-  confirmada: 'Confirmada',
+  confirmada: 'Confirmada', 
   rechazada: 'Rechazada',
   rechazada_vencimiento: 'Rechazada por vencimiento',
   cancelada: 'Cancelada',
@@ -36,6 +37,8 @@ function tiempoRestante(venceEn: string, ahora: number) {
 }
 
 export function Reservas() {
+  const navigate = useNavigate(); // <-- LÍNEA AGREGADA
+
   const [consulta, setConsulta] = useState({ pestana: 'pendientes' as Pestana, estado: '', fecha: '', cursores: [''] });
   const [pagina, setPagina] = useState<Pagina>({ items: [], siguiente: null });
   const [cargando, setCargando] = useState(true);
@@ -56,7 +59,6 @@ export function Reservas() {
     }
     const cursor = cursores[cursores.length - 1];
     if (cursor) parametros.set('cursor', cursor);
-    // RN-46/T3: la API identifica al negocio por su token y entrega el orden MVP-22.
     const cargar = async () => {
       await Promise.resolve();
       if (!vigente) return;
@@ -88,7 +90,6 @@ export function Reservas() {
     const temporizador = window.setTimeout(() => {
       pendientes.filter((r) => Date.parse(r.venceEn!) <= Date.now()).forEach((r) =>
         vencimientosConsultados.current.add(`${r.id}:${r.venceEn}`));
-      // RN-57/58: pedir el estado efectivo a BE, sin modificarlo en la PWA.
       setConsulta((actual) => ({ ...actual, cursores: [''] }));
     }, Math.max(0, proximoVencimiento - Date.now()));
     return () => window.clearTimeout(temporizador);
@@ -155,17 +156,31 @@ export function Reservas() {
             </p>
           </div>}
           {!cargando && !error && <div className="panel-lista">
-            {pagina.items.map((r) => <article key={r.id} className="panel-item reserva-card">
-              <div className="reserva-info-principal">
-                <h3 className="panel-item-titulo">{r.cliente.nombre}</h3>
-                <p className="panel-item-texto">{r.servicio.nombre} · {fecha.format(new Date(r.inicio))} de {hora.format(new Date(r.inicio))} a {hora.format(new Date(r.fin))}</p>
-              </div>
-              <div className="reserva-estado-container">
-                <span className={`reserva-badge ${r.estado}`}>{estados[r.estado]}</span>
-                {r.estado === 'pendiente' && r.venceEn && Date.parse(r.venceEn) > ahora &&
-                  <span className="reserva-tiempo">⏱ {tiempoRestante(r.venceEn, ahora)}</span>}
-              </div>
-            </article>)}
+            {pagina.items.map((r) => (
+              <article
+                key={r.id}
+                className="panel-item reserva-card"
+                onClick={() => navigate(`/reservas/${r.id}`)}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/reservas/${r.id}`);
+                  }
+                }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+              >
+                <div className="reserva-info-principal">
+                  <h3 className="panel-item-titulo">{r.cliente.nombre}</h3>
+                  <p className="panel-item-texto">{r.servicio.nombre} · {fecha.format(new Date(r.inicio))} de {hora.format(new Date(r.inicio))} a {hora.format(new Date(r.fin))}</p>
+                </div>
+                <div className="reserva-estado-container">
+                  <span className={`reserva-badge ${r.estado}`}>{estados[r.estado]}</span>
+                  {r.estado === 'pendiente' && r.venceEn && Date.parse(r.venceEn) > ahora &&
+                    <span className="reserva-tiempo">⏱ {tiempoRestante(r.venceEn, ahora)}</span>}
+                </div>
+              </article>
+            ))}
           </div>}
           {!cargando && !error && (cursores.length > 1 || pagina.siguiente) && <nav aria-label="Páginas de reservas" className="panel-paginacion">
             <button className="btn-servia-secondary btn-servia-sm" disabled={cursores.length === 1} onClick={() => setConsulta({ ...consulta, cursores: cursores.slice(0, -1) })}>Anterior</button>
