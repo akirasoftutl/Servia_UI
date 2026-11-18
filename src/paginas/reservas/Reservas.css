@@ -55,6 +55,83 @@
   white-space: nowrap;
 }
 
+/* Recepción de reservas (sección movida aquí desde el Layout) */
+.reservas-recepcion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sv-esp-4);
+}
+
+.reservas-recepcion-cuerpo {
+  display: flex;
+  flex: 1 1 320px;
+  align-items: center;
+  gap: var(--sv-esp-3);
+  min-width: 0;
+}
+
+.reservas-recepcion-cuerpo .panel-alerta-icono {
+  color: var(--sv-acento);
+}
+
+.reservas-recepcion-textos {
+  min-width: 0;
+}
+
+.reservas-recepcion-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sv-esp-3);
+}
+
+.reservas-recepcion-mensaje {
+  padding: 5px 11px;
+  border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-pill);
+  background: var(--sv-superficie-suave);
+  color: var(--sv-texto-suave);
+  font-size: var(--sv-texto-xs);
+  font-weight: 700;
+}
+
+.reservas-recepcion-mensaje--error {
+  border-color: var(--sv-peligro-borde);
+  background: var(--sv-peligro-fondo);
+  color: var(--sv-peligro);
+}
+
+.reservas-recepcion .panel-alerta {
+  flex: 1 1 100%;
+}
+
+.reservas-recepcion .form-check-input {
+  flex: 0 0 auto;
+  width: 2.25em;
+  margin: 0;
+  cursor: pointer;
+}
+
+.reservas-recepcion .form-check-input:checked {
+  border-color: var(--sv-acento);
+  background-color: var(--sv-acento);
+}
+
+.reservas-recepcion .form-check-input:focus {
+  border-color: var(--sv-acento);
+  box-shadow: 0 0 0 0.25rem rgba(109, 63, 192, 0.2);
+}
+
+.reservas-recepcion .form-check-label {
+  color: var(--sv-titulo);
+  font-size: var(--sv-texto-md);
+  font-weight: 650;
+  cursor: pointer;
+}
+
 @media (max-width: 650px) {
   .reservas-filtros > div {
     flex: 1 1 100%;
@@ -69,5 +146,9 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+  }
+
+  .reservas-recepcion-control {
+    justify-content: flex-start;
   }
 }
