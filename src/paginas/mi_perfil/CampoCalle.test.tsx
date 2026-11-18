@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { api, ErrorApi } from '../../servicios/api'
 import { AVISO_SUGERENCIA, CampoCalle } from './CampoCalle'
 import { NOTA_SIN_SUGERENCIAS } from './useAutocompletarDomicilio'
+import { readFileSync } from 'node:fs'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../servicios/api')>()
@@ -150,5 +151,15 @@ describe('CampoCalle', () => {
     await usuario.type(campo, ' 123')
     expect(campo).toHaveValue('Blvd 123')
     expect(campo).toBeEnabled()
+  })
+
+  it('la atribución usa el estilo que pide Google: Roboto o sans-serif, 400, 12 px, #5E5E5E', () => {
+    // jsdom no aplica el CSS importado; se revisa la regla en la hoja de estilos.
+    const estilosPerfil = readFileSync('src/paginas/mi_perfil/MiPerfil.css', 'utf8')
+    const regla = estilosPerfil.match(/\.perfil-calle-atribucion\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(regla).toMatch(/font-family:\s*Roboto,\s*sans-serif;/)
+    expect(regla).toMatch(/font-weight:\s*400;/)
+    expect(regla).toMatch(/font-size:\s*12px;/)
+    expect(regla).toMatch(/color:\s*#5e5e5e;/i)
   })
 })
