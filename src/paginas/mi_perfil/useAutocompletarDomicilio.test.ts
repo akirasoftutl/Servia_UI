@@ -60,6 +60,24 @@ describe('useAutocompletarDomicilio', () => {
     expect(result.current.abierta).toBe(false)
   })
 
+  it('con 100 letras tras quitar espacios sí pide sugerencias', async () => {
+    apiMock.mockResolvedValue([])
+    const { result } = renderHook(() => useAutocompletarDomicilio())
+    act(() => result.current.buscar(`  ${'a'.repeat(100)}  `))
+    await esperar(300)
+    expect(apiMock).toHaveBeenCalledTimes(1)
+    expect(parametrosDe(0).parametros.get('q')).toBe('a'.repeat(100))
+  })
+
+  it('con 101 letras no pide nada y deja la lista cerrada', async () => {
+    apiMock.mockResolvedValue(sugerencias(3))
+    const { result } = renderHook(() => useAutocompletarDomicilio())
+    act(() => result.current.buscar('a'.repeat(101)))
+    await esperar(1000)
+    expect(apiMock).not.toHaveBeenCalled()
+    expect(result.current.abierta).toBe(false)
+  })
+
   it('manda el texto sin espacios de los extremos', async () => {
     apiMock.mockResolvedValue([])
     const { result } = renderHook(() => useAutocompletarDomicilio())
