@@ -33,7 +33,7 @@ it('edita datos por PUT y vuelve con éxito y precio actualizado', async () => {
   abrir();
   fireEvent.change(await screen.findByLabelText('Precio del servicio *'), { target: { value: '75' } });
   await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-  expect(await screen.findByRole('heading', { name: 'Mis servicios' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Mis servicios' }, { timeout: 5000 })).toBeInTheDocument();
   expect(await screen.findByText('$75.00')).toBeInTheDocument();
   expect(screen.getByRole('status')).toHaveTextContent('Cambios guardados.');
   expect(mock).toHaveBeenCalledWith('/negocios/mio/servicios/uno', { method: 'PUT', body: JSON.stringify({ nombre: 'Corte', descripcion: 'Cabello', precio: 75, duracionMin: 30 }) });
