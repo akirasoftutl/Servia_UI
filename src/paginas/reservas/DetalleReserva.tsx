@@ -150,8 +150,29 @@ export function DetalleReserva() {
 
   return (
     <div className="panel-pagina">
+
       <div className="panel-contenedor" style={{ maxWidth: '900px' }}>
-        
+
+
+        {reserva.estado === 'pendiente' && reserva.segundosRestantes !== null && reserva.segundosRestantes > 0 && (
+          <div className="panel-alerta panel-alerta--aviso" role="status">
+            <span className="panel-alerta-icono" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </span>
+            <div className="panel-alerta-contenido">
+              <strong>Tiempo para responder</strong>
+              <p>Responde antes de que venza la solicitud para no perder el horario.</p>
+            </div>
+            <span className="panel-insignia panel-insignia--aviso panel-alerta-accion">
+              {calcularTiempoRestante(reserva.segundosRestantes)}
+            </span>
+          </div>
+        )}
+
+
         <header className="panel-encabezado d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
           <div>
             <span className="panel-eyebrow">DETALLE DE RESERVA</span>
@@ -180,19 +201,6 @@ export function DetalleReserva() {
             >
               Rechazar Solicitud
             </button>
-          </div>
-        )}
-
-        {reserva.estado === 'pendiente' && reserva.segundosRestantes !== null && reserva.segundosRestantes > 0 && (
-          <div className="alert rounded-4 mb-4 d-flex align-items-center gap-3 border-0 shadow-sm" style={{ background: '#fdf8e4', color: '#b7791f' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            <div>
-              <strong className="d-block">Tiempo para responder:</strong>
-              <span>{calcularTiempoRestante(reserva.segundosRestantes)}</span>
-            </div>
           </div>
         )}
 
