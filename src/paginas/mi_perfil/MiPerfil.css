@@ -212,9 +212,14 @@
   margin: var(--sv-esp-1) 0 0;
   padding: var(--sv-esp-1) var(--sv-esp-3) 0;
   border-top: 1px solid var(--sv-borde);
+  /* Atribución de Google Maps: gris #5E5E5E sobre --sv-superficie (#fff),
+     contraste 6.48:1; 12 px, peso 400, en una sola línea y sin alterar. */
   color: #5e5e5e;
-  font-size: var(--sv-texto-xs);
+  font-size: 12px;
+  font-style: normal;
   font-weight: 400;
+  letter-spacing: normal;
+  white-space: nowrap;
   text-align: right;
 }
 

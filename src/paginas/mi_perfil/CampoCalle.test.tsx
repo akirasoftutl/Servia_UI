@@ -61,7 +61,11 @@ describe('CampoCalle', () => {
     expect(screen.getByRole('listbox')).toHaveAttribute('id', 'calle-sugerencias')
     expect(opciones.map((o) => o.textContent)).toEqual(TEXTOS)
     expect(opciones.every((o) => o.id && o.getAttribute('aria-selected') === 'false')).toBe(true)
-    expect(screen.getByText('Powered by Google')).toBeVisible()
+    // Política vigente de Places API (New): texto «Google Maps» sin traducir.
+    const atribucion = screen.getByText('Google Maps', { exact: true })
+    expect(atribucion).toBeVisible()
+    expect(atribucion).toHaveAttribute('translate', 'no')
+    expect(screen.queryByText(/Powered by Google/)).not.toBeInTheDocument()
   })
 
   it('las flechas mueven la opción activa y Enter la elige', async () => {

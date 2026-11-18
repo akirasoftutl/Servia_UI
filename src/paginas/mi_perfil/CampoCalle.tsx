@@ -117,7 +117,7 @@ export function CampoCalle({ value, error, onChange, onElegir }: Props) {
         <p className="perfil-calle-vacio" aria-live="polite">
           {expandida && sugerencias.length === 0 ? 'Sin sugerencias' : ''}
         </p>
-        <p className="perfil-calle-atribucion" translate="no">Powered by Google</p>
+        <p className="perfil-calle-atribucion" translate="no">Google Maps</p>
       </div>
 
       {error && <div className="invalid-feedback">{error}</div>}
