@@ -23,13 +23,16 @@ export function DetalleReserva() {
   const [reserva, setReserva] = useState<DetalleReservaAPI | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
-  
-  // Estados para los modales y acciones
+
+  // Modales y acciones
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
   const [mostrarRechazar, setMostrarRechazar] = useState(false);
+  const [mostrarModal, setMostrarModal] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState('');
+  const [motivo, setMotivo] = useState('');
   const [errorMotivo, setErrorMotivo] = useState('');
   const [procesando, setProcesando] = useState(false);
+  const [mensajeExito, setMensajeExito] = useState('');
 
   const cargarDetalle = async () => {
     setCargando(true);
@@ -51,12 +54,10 @@ export function DetalleReserva() {
     cargarDetalle();
   }, [id]);
 
-  // Efecto para ocultar botones y recargar cuando el tiempo llegue a 0
+  // Recarga cuando el plazo para responder llega a 0.
   useEffect(() => {
-    if (reserva?.estado === 'pendiente' && reserva.segundosRestantes !== null) {
-      if (reserva.segundosRestantes <= 0) {
-        cargarDetalle(); // Recargar para que el backend actualice el estado a rechazada_vencimiento
-      }
+    if (reserva?.estado === 'pendiente' && reserva.segundosRestantes !== null && reserva.segundosRestantes <= 0) {
+      cargarDetalle();
     }
   }, [reserva?.segundosRestantes]);
 
@@ -69,7 +70,7 @@ export function DetalleReserva() {
       cargarDetalle();
     } catch (err: any) {
       if (err instanceof ErrorApi && err.estado === 409) {
-        alert(err.message); // Muestra el mensaje de la API
+        alert(err.message);
         setMostrarConfirmar(false);
         cargarDetalle();
       } else {
@@ -91,6 +92,7 @@ export function DetalleReserva() {
     }
 
     setProcesando(true);
+    setErrorMotivo('');
     try {
       await api(`/reservas/negocio/${id}/rechazar`, {
         method: 'PATCH',
@@ -113,12 +115,55 @@ export function DetalleReserva() {
     }
   };
 
-  // Manejo de tecla Escape para cerrar modales
+  const handleCancelar = async () => {
+    if (!motivo.trim()) {
+      setErrorMotivo('Escribe el motivo de la cancelación.');
+      return;
+    }
+    if (motivo.length > 500) {
+      setErrorMotivo('El motivo no puede exceder 500 caracteres.');
+      return;
+    }
+
+    setProcesando(true);
+    setErrorMotivo('');
+    try {
+      await api(`/reservas/negocio/${id}/cancelar`, {
+        method: 'PATCH',
+        body: JSON.stringify({ motivo }),
+      });
+      setMensajeExito('Reserva cancelada. El horario quedó libre.');
+      setMostrarModal(false);
+      setMotivo('');
+      cargarDetalle();
+    } catch (err: any) {
+      if (err instanceof ErrorApi) {
+        if (err.estado === 409 || err.estado === 400) {
+          alert(err.message);
+          if (err.estado === 409) {
+            setMostrarModal(false);
+            cargarDetalle();
+          }
+        } else if (err.estado === 404) {
+          alert('Esta reserva ya no está disponible.');
+        } else {
+          alert('No se pudo conectar. Inténtalo de nuevo.');
+        }
+      } else {
+        alert('No se pudo conectar. Inténtalo de nuevo.');
+      }
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  // Cerrar los modales con Escape.
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setMostrarConfirmar(false);
         setMostrarRechazar(false);
+        setMostrarModal(false);
       }
     };
     window.addEventListener('keydown', handleEsc);
@@ -144,15 +189,19 @@ export function DetalleReserva() {
 
   if (!reserva) return null;
   const estadoConfig = ESTADOS_CONFIG[reserva.estado] || { label: reserva.estado, className: '' };
-  
-  // Condición para mostrar los botones
+
   const esPendienteVigente = reserva.estado === 'pendiente' && (reserva.segundosRestantes === null || reserva.segundosRestantes > 0);
+  const puedeCancelar = reserva.estado === 'confirmada' && new Date(reserva.inicio) > new Date();
 
   return (
     <div className="panel-pagina">
-
       <div className="panel-contenedor" style={{ maxWidth: '900px' }}>
 
+        {mensajeExito && (
+          <div className="alert alert-success rounded-4 mb-4 border-0 shadow-sm">
+            {mensajeExito}
+          </div>
+        )}
 
         {reserva.estado === 'pendiente' && reserva.segundosRestantes !== null && reserva.segundosRestantes > 0 && (
           <div className="panel-alerta panel-alerta--aviso" role="status">
@@ -172,7 +221,6 @@ export function DetalleReserva() {
           </div>
         )}
 
-
         <header className="panel-encabezado d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
           <div>
             <span className="panel-eyebrow">DETALLE DE RESERVA</span>
@@ -184,19 +232,18 @@ export function DetalleReserva() {
           </span>
         </header>
 
-        {/* Botones de Acción (Solo si es pendiente y vigente) */}
         {esPendienteVigente && (
           <div className="d-flex gap-3 mb-4">
-            <button 
-              className="btn-servia-primary flex-grow-1 py-3 fw-bold" 
+            <button
+              className="btn-servia-primary flex-grow-1 py-3 fw-bold"
               onClick={() => setMostrarConfirmar(true)}
               style={{ borderRadius: '12px' }}
             >
               Aceptar Reserva
             </button>
-            <button 
-              className="btn btn-outline-danger flex-grow-1 py-3 fw-bold" 
-              onClick={() => setMostrarRechazar(true)}
+            <button
+              className="btn btn-outline-danger flex-grow-1 py-3 fw-bold"
+              onClick={() => { setErrorMotivo(''); setMostrarRechazar(true); }}
               style={{ borderRadius: '12px' }}
             >
               Rechazar Solicitud
@@ -206,7 +253,6 @@ export function DetalleReserva() {
 
         <div className="panel-tarjeta p-0 overflow-hidden" style={{ borderRadius: '19px', border: '1px solid #eeeaf5' }}>
           <div className="row g-0">
-            {/* ... (Resto del código del detalle de la reserva, el que ya tenías) ... */}
             <div className="col-md-6 p-4 p-md-5 border-end" style={{ borderColor: '#eeeaf5' }}>
               <h5 className="fw-bold text-dark mb-4 d-flex align-items-center gap-2">Datos del cliente</h5>
               <div className="mb-3"><span className="text-muted small d-block mb-1">Nombre completo</span><span className="fw-semibold fs-6 text-dark">{reserva.cliente.nombre || 'No especificado'}</span></div>
@@ -235,13 +281,76 @@ export function DetalleReserva() {
               {reserva.motivo && (<div className="mt-4"><h6 className="fw-bold text-danger mb-2">Motivo de rechazo/cancelación</h6><p className="text-danger small mb-0 p-3 rounded-3" style={{ background: '#fff0f0', borderLeft: '3px solid #dc3545' }}>{reserva.motivo}</p></div>)}
             </div>
           </div>
-          <div className="p-4 text-center border-top" style={{ borderColor: '#eeeaf5', background: '#fff' }}>
-            <Link to="/reservas" className="btn-servia-secondary text-decoration-none px-4 py-2" style={{ borderRadius: '50px' }}>Volver a reservas</Link>
+          <div className="p-4 border-top"
+            style={{
+              borderColor: '#eeeaf5', background: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px'
+            }}>
+
+            <Link to="/reservas" className="btn-servia-secondary text-decoration-none px-4" 
+            style={{
+                  borderRadius: '50px',
+                  paddingTop: '10px',
+                  paddingBottom: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                >Volver a reservas</Link>
+
+            {puedeCancelar && (
+              <button
+                type="button"
+                className="btn btn-outline-danger fw-bold px-4"
+                style={{
+                  borderRadius: '50px',
+                  paddingTop: '10px',
+                  paddingBottom: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                onClick={() => { setErrorMotivo(''); setMostrarModal(true); }}
+              >
+                Cancelar reserva
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* MODAL ACEPTAR */}
+      {mostrarModal && (
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: 'rgba(23, 16, 35, 0.55)', zIndex: 1080, backdropFilter: 'blur(4px)' }} role="alertdialog" aria-modal="true">
+          <div className="bg-white p-4 p-md-5 shadow-lg" style={{ maxWidth: '500px', width: '90%', borderRadius: '24px' }}>
+            <h3 className="fw-bold text-dark mb-3">Cancelar reserva</h3>
+            <p className="text-muted small mb-4">
+              El cliente verá este motivo. La reserva quedará cancelada, el horario se liberará y ya no podrá volver a confirmarse.
+            </p>
+            <div className="mb-3">
+              <label className="form-label fw-semibold text-secondary">Motivo de la cancelación *</label>
+              <textarea
+                className={`form-control ${errorMotivo ? 'is-invalid' : ''}`}
+                rows={3}
+                maxLength={500}
+                value={motivo}
+                onChange={(e) => { setMotivo(e.target.value); setErrorMotivo(''); }}
+                placeholder="Explica al cliente por qué se cancela la reserva..."
+                disabled={procesando}
+              ></textarea>
+              <div className="d-flex justify-content-between mt-1">
+                {errorMotivo ? <span className="text-danger small">{errorMotivo}</span> : <span></span>}
+                <span className="text-muted small">{motivo.length}/500</span>
+              </div>
+            </div>
+            <div className="d-flex justify-content-end gap-3 mt-4">
+              <button className="btn btn-light px-4 py-2 fw-semibold" style={{ borderRadius: '12px', border: '1px solid #dfe3ec' }} onClick={() => setMostrarModal(false)} disabled={procesando}>Volver</button>
+              <button className="btn btn-danger px-4 py-2 fw-semibold" style={{ borderRadius: '12px' }} onClick={handleCancelar} disabled={procesando}>
+                {procesando ? 'Cancelando...' : 'Cancelar reserva'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {mostrarConfirmar && (
         <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: 'rgba(23, 16, 35, 0.55)', zIndex: 1080, backdropFilter: 'blur(4px)' }} role="alertdialog" aria-modal="true">
           <div className="bg-white p-4 p-md-5 shadow-lg" style={{ maxWidth: '450px', width: '90%', borderRadius: '24px' }}>
@@ -266,11 +375,11 @@ export function DetalleReserva() {
             <h3 className="fw-bold text-dark mb-3">Rechazar solicitud</h3>
             <div className="mb-3">
               <label className="form-label fw-semibold text-secondary">Motivo del rechazo *</label>
-              <textarea 
-                className={`form-control ${errorMotivo ? 'is-invalid' : ''}`} 
-                rows={3} 
+              <textarea
+                className={`form-control ${errorMotivo ? 'is-invalid' : ''}`}
+                rows={3}
                 maxLength={500}
-                value={motivoRechazo} 
+                value={motivoRechazo}
                 onChange={(e) => { setMotivoRechazo(e.target.value); setErrorMotivo(''); }}
                 placeholder="Explica al cliente por qué no puedes aceptar la reserva..."
                 disabled={procesando}

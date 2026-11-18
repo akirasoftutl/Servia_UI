@@ -1,0 +1,297 @@
+import { act, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Route, Routes } from 'react-router';
+import { vi } from 'vitest';
+import { api, ErrorApi } from '../../servicios/api';
+import { DetalleReserva } from './DetalleReserva';
+import { calcularTiempoRestante, formatearFecha, formatearHora } from './estados';
+
+vi.mock('../../servicios/api', () => ({
+  api: vi.fn(),
+  ErrorApi: class ErrorApi extends Error {
+    estado: number;
+    datos?: unknown;
+    constructor(estado: number, mensaje: string, datos?: unknown) {
+      super(mensaje);
+      this.name = 'ErrorApi';
+      this.estado = estado;
+      this.datos = datos;
+    }
+  },
+}));
+
+const apiMock = vi.mocked(api);
+
+function reserva(extra: Record<string, unknown> = {}) {
+  return {
+    id: 'r1',
+    folio: 'SRV-123',
+    estado: 'pendiente',
+    inicio: '2030-11-04T02:00:00Z',
+    fin: '2030-11-04T03:00:00Z',
+    servicio: { nombre: 'Corte de cabello', precio: 100, duracionMin: 60 },
+    cliente: { nombre: 'Ana López', telefono: '5512345678', correo: 'ana@example.com' },
+    venceEn: '2030-11-03T15:00:00Z',
+    segundosRestantes: 61,
+    observaciones: 'Prefiere tarde',
+    ...extra,
+  };
+}
+
+function pendiente<T>() {
+  let resolver!: (valor: T) => void;
+  let rechazar!: (error: Error) => void;
+  const promesa = new Promise<T>((resolve, reject) => { resolver = resolve; rechazar = reject; });
+  return { promesa, resolver, rechazar };
+}
+
+let colaDetalle: unknown[] = [];
+let respuestaPatch: unknown | Promise<unknown> | Error | null = null;
+let alerta: ReturnType<typeof vi.spyOn>;
+
+function responderDetalle(...respuestas: unknown[]) { colaDetalle = respuestas; }
+function responderPatch(respuesta: unknown | Promise<unknown> | Error | null) { respuestaPatch = respuesta; }
+function llamadas(ruta: string) { return apiMock.mock.calls.filter(([rutaLlamada]) => rutaLlamada === ruta); }
+
+beforeEach(() => {
+  apiMock.mockReset();
+  colaDetalle = [reserva()];
+  respuestaPatch = null;
+  alerta = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  apiMock.mockImplementation(async (ruta, opciones) => {
+    if (opciones?.method === 'PATCH') {
+      if (respuestaPatch instanceof Error) throw respuestaPatch;
+      if (respuestaPatch instanceof Promise) return respuestaPatch;
+      const motivo = opciones.body ? JSON.parse(String(opciones.body)).motivo : undefined;
+      if (ruta.endsWith('/aceptar')) colaDetalle[colaDetalle.length - 1] = reserva({ estado: 'confirmada', segundosRestantes: null });
+      if (ruta.endsWith('/rechazar')) colaDetalle[colaDetalle.length - 1] = reserva({ estado: 'rechazada', segundosRestantes: null, motivo });
+      if (ruta.endsWith('/cancelar')) colaDetalle[colaDetalle.length - 1] = reserva({ estado: 'cancelada', segundosRestantes: null, motivo });
+      return {};
+    }
+    const respuesta = colaDetalle.length > 1 ? colaDetalle.shift() : colaDetalle[0];
+    if (respuesta instanceof Error) throw respuesta;
+    return respuesta;
+  });
+});
+
+afterEach(() => vi.restoreAllMocks());
+
+function mostrar() {
+  return render(
+    <MemoryRouter initialEntries={['/reservas/detalle/r1']}>
+      <Routes>
+        <Route path="/reservas/detalle/:id" element={<DetalleReserva />} />
+        <Route path="/reservas" element={<h1>Lista de reservas</h1>} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+async function listo(datos?: unknown) {
+  if (datos !== undefined) responderDetalle(datos);
+  mostrar();
+  await screen.findByRole('heading', { name: 'Reserva SRV-123' });
+}
+
+describe('DetalleReserva', () => {
+  it('muestra el estado de carga mientras llega el detalle', async () => {
+    const carga = pendiente();
+    responderDetalle(carga.promesa);
+    mostrar();
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Reserva SRV-123' })).not.toBeInTheDocument();
+    await act(async () => carga.resolver(reserva()));
+    expect(await screen.findByRole('heading', { name: 'Reserva SRV-123' })).toBeInTheDocument();
+  });
+
+  it('muestra un error específico y la salida cuando la reserva no existe', async () => {
+    responderDetalle(new ErrorApi(404, 'No encontrada'));
+    mostrar();
+    expect(await screen.findByRole('heading', { name: 'No encontramos esta reserva.' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Volver a reservas' })).toHaveAttribute('href', '/reservas');
+  });
+
+  it('muestra un error genérico si falla la carga', async () => {
+    responderDetalle(new Error('Sin conexión'));
+    mostrar();
+    expect(await screen.findByRole('heading', { name: 'No pudimos cargar la reserva. Intenta de nuevo.' })).toBeInTheDocument();
+  });
+
+  it('muestra los datos del cliente, del servicio y del horario', async () => {
+    await listo();
+    const datos = reserva();
+    expect(screen.getByText('Ana López')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '5512345678' })).toHaveAttribute('href', 'tel:5512345678');
+    expect(screen.getByRole('link', { name: 'ana@example.com' })).toHaveAttribute('href', 'mailto:ana@example.com');
+    expect(screen.getByText('Prefiere tarde')).toBeInTheDocument();
+    expect(screen.getByText('Corte de cabello')).toBeInTheDocument();
+    expect(screen.getByText(/Duración:/)).toHaveTextContent('60 min');
+    expect(screen.getByText(/Precio:/)).toHaveTextContent('$100.00');
+    expect(screen.getByText(formatearFecha(datos.inicio))).toBeInTheDocument();
+    expect(screen.getByText(`${formatearHora(datos.inicio)} - ${formatearHora(datos.fin)}`)).toBeInTheDocument();
+    expect(screen.getByText('Pendiente')).toBeInTheDocument();
+  });
+
+  it('mantiene el tiempo para responder arriba del encabezado', async () => {
+    await listo();
+    const aviso = screen.getByRole('status');
+    expect(aviso).toHaveTextContent('Tiempo para responder');
+    expect(aviso).toHaveTextContent(calcularTiempoRestante(61));
+    const titulo = screen.getByRole('heading', { level: 1, name: 'Reserva SRV-123' });
+    expect(aviso.compareDocumentPosition(titulo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeGreaterThan(0);
+  });
+
+  it('no ofrece acciones ni aviso de tiempo cuando el plazo ya venció', async () => {
+    await listo(reserva({ estado: 'rechazada_vencimiento', segundosRestantes: 0, motivo: 'No se confirmó a tiempo' }));
+    expect(screen.queryByText('Tiempo para responder')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Aceptar Reserva' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Rechazar Solicitud' })).not.toBeInTheDocument();
+    expect(screen.getByText('Rechazada por vencimiento')).toBeInTheDocument();
+    expect(screen.getByText('No se confirmó a tiempo')).toBeInTheDocument();
+  });
+
+  it('recarga el detalle cuando el tiempo restante llega a cero', async () => {
+    responderDetalle(
+      reserva({ segundosRestantes: 0 }),
+      reserva({ estado: 'rechazada_vencimiento', segundosRestantes: null, motivo: 'Venció' })
+    );
+    mostrar();
+    expect(await screen.findByText('Rechazada por vencimiento')).toBeInTheDocument();
+    await waitFor(() => expect(llamadas('/reservas/negocio/r1')).toHaveLength(2));
+  });
+
+  it('confirma una reserva pendiente solo después de confirmar el modal', async () => {
+    const usuario = userEvent.setup();
+    await listo();
+    await usuario.click(screen.getByRole('button', { name: 'Aceptar Reserva' }));
+    const modal = screen.getByRole('alertdialog');
+    expect(modal).toHaveTextContent('Ana López');
+    await usuario.click(within(modal).getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(llamadas('/reservas/negocio/r1/aceptar')).toHaveLength(0);
+
+    await usuario.click(screen.getByRole('button', { name: 'Aceptar Reserva' }));
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' }));
+    await waitFor(() => expect(llamadas('/reservas/negocio/r1/aceptar')).toHaveLength(1));
+    expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/aceptar', { method: 'PATCH' });
+    expect(alerta).toHaveBeenCalledWith('Reserva confirmada.');
+    expect(await screen.findByText('Confirmada')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Aceptar Reserva' })).not.toBeInTheDocument();
+  });
+
+  it('avisa si no se puede guardar la aceptación y mantiene el modal', async () => {
+    responderPatch(new Error('Sin conexión'));
+    const usuario = userEvent.setup();
+    await listo();
+    await usuario.click(screen.getByRole('button', { name: 'Aceptar Reserva' }));
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' }));
+    await waitFor(() => expect(alerta).toHaveBeenCalledWith('No pudimos guardar tu respuesta. Intenta de nuevo.'));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+  });
+
+  it('rechaza requiriendo un motivo y enviándolo en el PATCH', async () => {
+    const usuario = userEvent.setup();
+    await listo();
+    await usuario.click(screen.getByRole('button', { name: 'Rechazar Solicitud' }));
+    const modal = screen.getByRole('alertdialog');
+    await usuario.click(within(modal).getByRole('button', { name: 'Rechazar solicitud' }));
+    expect(await within(modal).findByText('Escribe el motivo del rechazo.')).toBeInTheDocument();
+    expect(llamadas('/reservas/negocio/r1/rechazar')).toHaveLength(0);
+
+    await usuario.type(within(modal).getByRole('textbox'), 'Horario ocupado');
+    await usuario.click(within(modal).getByRole('button', { name: 'Rechazar solicitud' }));
+    await waitFor(() => expect(llamadas('/reservas/negocio/r1/rechazar')).toHaveLength(1));
+    expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/rechazar', {
+      method: 'PATCH', body: JSON.stringify({ motivo: 'Horario ocupado' }),
+    });
+    expect(alerta).toHaveBeenCalledWith('Solicitud rechazada. El horario quedó libre.');
+    expect(await screen.findByText('Rechazada')).toBeInTheDocument();
+    expect(screen.getByText('Horario ocupado')).toBeInTheDocument();
+  });
+
+  it('no ofrece cancelar una reserva pendiente ni una confirmada en el pasado', async () => {
+    await listo();
+    expect(screen.queryByRole('button', { name: 'Cancelar reserva' })).not.toBeInTheDocument();
+  });
+
+  it('no ofrece cancelar una reserva confirmada cuya fecha ya pasó', async () => {
+    await listo(reserva({ estado: 'confirmada', inicio: '2020-01-01T12:00:00Z', fin: '2020-01-01T13:00:00Z', segundosRestantes: null }));
+    expect(screen.queryByRole('button', { name: 'Cancelar reserva' })).not.toBeInTheDocument();
+  });
+
+  it('cancela una reserva confirmada con motivo y muestra el aviso de éxito', async () => {
+    const usuario = userEvent.setup();
+    await listo(reserva({ estado: 'confirmada', segundosRestantes: null }));
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
+    const modal = screen.getByRole('alertdialog');
+    expect(modal).toHaveTextContent('El cliente verá este motivo');
+    await usuario.click(within(modal).getByRole('button', { name: 'Cancelar reserva' }));
+    expect(await within(modal).findByText('Escribe el motivo de la cancelación.')).toBeInTheDocument();
+    expect(llamadas('/reservas/negocio/r1/cancelar')).toHaveLength(0);
+
+    await usuario.type(within(modal).getByRole('textbox'), 'No hay cupo');
+    await usuario.click(within(modal).getByRole('button', { name: 'Cancelar reserva' }));
+    await waitFor(() => expect(llamadas('/reservas/negocio/r1/cancelar')).toHaveLength(1));
+    expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/cancelar', {
+      method: 'PATCH', body: JSON.stringify({ motivo: 'No hay cupo' }),
+    });
+    expect(await screen.findByText('Reserva cancelada. El horario quedó libre.')).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.getByText('Cancelada')).toBeInTheDocument();
+    expect(screen.getByText('No hay cupo')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancelar reserva' })).not.toBeInTheDocument();
+  });
+
+  it('mantiene abierto el modal si el servidor rechaza la cancelación', async () => {
+    responderPatch(new ErrorApi(400, 'No se puede cancelar'));
+    const usuario = userEvent.setup();
+    await listo(reserva({ estado: 'confirmada', segundosRestantes: null }));
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
+    await usuario.type(within(screen.getByRole('alertdialog')).getByRole('textbox'), 'Motivo');
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar reserva' }));
+    await waitFor(() => expect(alerta).toHaveBeenCalledWith('No se puede cancelar'));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(screen.queryByText('Reserva cancelada. El horario quedó libre.')).not.toBeInTheDocument();
+  });
+
+  it('cierra el modal y recarga el detalle ante un conflicto al cancelar', async () => {
+    responderPatch(new ErrorApi(409, 'La reserva ya fue cancelada'));
+    const usuario = userEvent.setup();
+    await listo(reserva({ estado: 'confirmada', segundosRestantes: null }));
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
+    await usuario.type(within(screen.getByRole('alertdialog')).getByRole('textbox'), 'Motivo');
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar reserva' }));
+    await waitFor(() => expect(alerta).toHaveBeenCalledWith('La reserva ya fue cancelada'));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(llamadas('/reservas/negocio/r1')).toHaveLength(2));
+  });
+
+  it('cierra los modales de aceptar y rechazar con Escape sin enviar PATCH', async () => {
+    const usuario = userEvent.setup();
+    await listo();
+    await usuario.click(screen.getByRole('button', { name: 'Aceptar Reserva' }));
+    await usuario.keyboard('{Escape}');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+
+    await usuario.click(screen.getByRole('button', { name: 'Rechazar Solicitud' }));
+    await usuario.keyboard('{Escape}');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(apiMock.mock.calls.filter(([, opciones]) => opciones?.method === 'PATCH')).toHaveLength(0);
+  });
+
+  it('cierra el modal de cancelación con Escape sin enviar PATCH', async () => {
+    const usuario = userEvent.setup();
+    await listo(reserva({ estado: 'confirmada', segundosRestantes: null }));
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
+    await usuario.keyboard('{Escape}');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(llamadas('/reservas/negocio/r1/cancelar')).toHaveLength(0);
+  });
+
+  it('permite volver al listado de reservas', async () => {
+    const usuario = userEvent.setup();
+    await listo();
+    await usuario.click(screen.getByRole('link', { name: 'Volver a reservas' }));
+    expect(await screen.findByRole('heading', { name: 'Lista de reservas' })).toBeInTheDocument();
+  });
+});
