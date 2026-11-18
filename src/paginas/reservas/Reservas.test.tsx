@@ -23,8 +23,12 @@ function reserva(nombre = 'Ana', estado = 'pendiente', extra = {}) {
     venceEn: new Date(Date.now() + 61000).toISOString(), segundosRestantes: 61, ...extra };
 }
 
-function parametros(indice = apiMock.mock.calls.length - 1) {
-  return new URL(apiMock.mock.calls[indice][0], 'http://api.local').searchParams;
+function llamadasLista() {
+  return apiMock.mock.calls.filter(([ruta]) => String(ruta).startsWith('/reservas/negocio'));
+}
+
+function parametros(indice = llamadasLista().length - 1) {
+  return new URL(String(llamadasLista()[indice][0]), 'http://api.local').searchParams;
 }
 
 function diferida() {
@@ -34,15 +38,26 @@ function diferida() {
   return { promesa, resolver, rechazar };
 }
 
+// El componente también consulta /negocios/mio para el interruptor de recepción.
+let cola: unknown[];
+function responder(...respuestas: unknown[]) { cola = respuestas; }
+
 beforeEach(() => {
   apiMock.mockReset();
-  apiMock.mockResolvedValue({ items: [reserva()], siguiente: null });
+  cola = [{ items: [reserva()], siguiente: null }];
+  apiMock.mockImplementation(async (ruta) => {
+    if (ruta === '/negocios/mio') return { aceptaReservas: true };
+    if (!String(ruta).startsWith('/reservas/negocio')) throw new Error(`Ruta inesperada: ${ruta}`);
+    const respuesta = cola.length > 1 ? cola.shift() : cola[0];
+    if (respuesta instanceof Error) throw respuesta;
+    return respuesta;
+  });
 });
 
 afterEach(() => vi.useRealTimers());
 
 it('muestra el contrato de BE con fecha y ambas horas de México y estado en español', async () => {
-  apiMock.mockResolvedValue({ items: [reserva('Ana', 'rechazada_vencimiento')], siguiente: null });
+  responder({ items: [reserva('Ana', 'rechazada_vencimiento')], siguiente: null });
   renderReservas(); // <-- Usamos el helper
   expect(await screen.findByRole('heading', { name: 'Ana' })).toBeInTheDocument();
   expect(screen.getByText('Corte de cabello · 03/11/30 de 20:00 a 21:00')).toBeInTheDocument();
@@ -66,7 +81,7 @@ it('filtra por los seis estados y fecha mediante controles etiquetados', async (
 });
 
 it('mantiene las Pendientes primero según el orden entregado por la API', async () => {
-  apiMock.mockResolvedValue({ items: [reserva('Pendiente'), reserva('Confirmada', 'confirmada')], siguiente: null });
+  responder({ items: [reserva('Pendiente'), reserva('Confirmada', 'confirmada')], siguiente: null });
   renderReservas();
   await screen.findByRole('heading', { name: 'Pendiente' });
   expect(parametros().has('estado')).toBe(false);
@@ -81,7 +96,7 @@ it('normaliza Pendiente al abrir Próximas y conserva la fecha y el orden de BE'
   await waitFor(() => expect(parametros().get('estado')).toBe('pendiente'));
   fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2030-11-03' } });
   await waitFor(() => expect(parametros().get('desde')).toBe('2030-11-03'));
-  apiMock.mockResolvedValue({ items: [reserva('Primera', 'confirmada'), reserva('Segunda', 'confirmada', { inicio: '2030-11-04T04:00:00Z' })], siguiente: null });
+  responder({ items: [reserva('Primera', 'confirmada'), reserva('Segunda', 'confirmada', { inicio: '2030-11-04T04:00:00Z' })], siguiente: null });
   fireEvent.click(screen.getByRole('tab', { name: 'Próximas' }));
   await screen.findByRole('heading', { name: 'Primera' });
   expect(parametros().get('vista')).toBe('proximas');
@@ -107,8 +122,10 @@ it('anuncia la pestaña seleccionada y permite cambiarla con el teclado', async 
 it('actualiza el reloj cada segundo, solo en Pendientes, y consulta al vencer una sola vez', async () => {
   vi.useFakeTimers();
   vi.setSystemTime(ahora);
-  apiMock.mockResolvedValueOnce({ items: [reserva(), reserva('Confirmada', 'confirmada'), reserva('Vencida', 'rechazada_vencimiento')], siguiente: null })
-    .mockResolvedValue({ items: [reserva('Ana', 'rechazada_vencimiento')], siguiente: null });
+  responder(
+    { items: [reserva(), reserva('Confirmada', 'confirmada'), reserva('Vencida', 'rechazada_vencimiento')], siguiente: null },
+    { items: [reserva('Ana', 'rechazada_vencimiento')], siguiente: null }
+  );
   const { unmount } = renderReservas();
   await act(async () => {});
   expect(screen.getAllByText(/restantes/)).toHaveLength(1);
@@ -116,11 +133,11 @@ it('actualiza el reloj cada segundo, solo en Pendientes, y consulta al vencer un
   await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
   expect(screen.getByText(/1m 0s restantes/)).toBeInTheDocument();
   await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
-  expect(apiMock).toHaveBeenCalledTimes(2);
+  expect(llamadasLista()).toHaveLength(2);
   expect(screen.queryByText(/restantes/)).not.toBeInTheDocument();
   expect(screen.getByText('Rechazada por vencimiento', { selector: 'span' })).toBeInTheDocument();
   await act(async () => { await vi.advanceTimersByTimeAsync(10000); });
-  expect(apiMock).toHaveBeenCalledTimes(2);
+  expect(llamadasLista()).toHaveLength(2);
   unmount();
   expect(vi.getTimerCount()).toBe(0);
 });
@@ -128,18 +145,22 @@ it('actualiza el reloj cada segundo, solo en Pendientes, y consulta al vencer un
 it('refresca una Pendiente ya vencida al recibirla sin mostrar un plazo negativo ni entrar en bucle', async () => {
   vi.useFakeTimers();
   vi.setSystemTime(ahora);
-  apiMock.mockResolvedValue({ items: [reserva('Ana', 'pendiente', { venceEn: new Date(ahora - 1000).toISOString() })], siguiente: null });
+  responder({ items: [reserva('Ana', 'pendiente', { venceEn: new Date(ahora - 1000).toISOString() })], siguiente: null });
   renderReservas();
   await act(async () => {});
   await act(async () => { await vi.advanceTimersByTimeAsync(1); });
-  expect(apiMock).toHaveBeenCalledTimes(2);
+  expect(llamadasLista()).toHaveLength(2);
   expect(screen.queryByText(/restantes|Vencida/)).not.toBeInTheDocument();
   await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
-  expect(apiMock).toHaveBeenCalledTimes(2);
+  expect(llamadasLista()).toHaveLength(2);
 });
 
 it('consume el cursor opaco, vuelve a la página anterior y lo reinicia al cambiar filtros o vista', async () => {
-  apiMock.mockImplementation(async (ruta) => ({ items: [reserva(ruta.includes('cursor=') ? 'Página dos' : 'Página uno')], siguiente: ruta.includes('cursor=') ? null : 'v1.+/=' }));
+  apiMock.mockImplementation(async (ruta) => {
+    if (ruta === '/negocios/mio') return { aceptaReservas: true };
+    const conCursor = String(ruta).includes('cursor=');
+    return { items: [reserva(conCursor ? 'Página dos' : 'Página uno')], siguiente: conCursor ? null : 'v1.+/=' };
+  });
   renderReservas();
   await screen.findByRole('heading', { name: 'Página uno' });
   fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
@@ -168,11 +189,11 @@ it('consume el cursor opaco, vuelve a la página anterior y lo reinicia al cambi
 it.each(['éxito', 'error'])('descarta el %s de una petición antigua sin ocultar la carga vigente', async (resultado) => {
   const antigua = diferida();
   const nueva = diferida();
-  apiMock.mockReturnValueOnce(antigua.promesa).mockReturnValueOnce(nueva.promesa);
+  responder(antigua.promesa, nueva.promesa);
   renderReservas();
-  await waitFor(() => expect(apiMock).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(llamadasLista()).toHaveLength(1));
   fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'confirmada' } });
-  await waitFor(() => expect(apiMock).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(llamadasLista()).toHaveLength(2));
   await act(async () => {
     if (resultado === 'éxito') antigua.resolver({ items: [reserva('Antigua')], siguiente: 'viejo' });
     else antigua.rechazar(new Error('Sin conexión'));
@@ -186,9 +207,9 @@ it.each(['éxito', 'error'])('descarta el %s de una petición antigua sin oculta
 
 it('descarta una respuesta antigua que llega después de la vigente', async () => {
   const antigua = diferida();
-  apiMock.mockReturnValueOnce(antigua.promesa).mockResolvedValue({ items: [reserva('Vigente', 'confirmada')], siguiente: null });
+  responder(antigua.promesa, { items: [reserva('Vigente', 'confirmada')], siguiente: null });
   renderReservas();
-  await waitFor(() => expect(apiMock).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(llamadasLista()).toHaveLength(1));
   fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'confirmada' } });
   await screen.findByRole('heading', { name: 'Vigente' });
   await act(async () => antigua.resolver({ items: [reserva('Antigua')], siguiente: 'viejo' }));
@@ -198,10 +219,12 @@ it('descarta una respuesta antigua que llega después de la vigente', async () =
 });
 
 it('muestra carga, vacío y error, y reintenta conservando los filtros', async () => {
-  apiMock.mockRejectedValueOnce(new Error('Sin conexión'))
-       .mockResolvedValueOnce({ items: [], siguiente: null })
-       .mockRejectedValueOnce(new Error('Sin conexión con filtro'))
-       .mockResolvedValue({ items: [reserva()], siguiente: null });
+  responder(
+    new Error('Sin conexión'),
+    { items: [], siguiente: null },
+    new Error('Sin conexión con filtro'),
+    { items: [reserva()], siguiente: null }
+  );
   renderReservas();
   expect(screen.getByRole('status')).toHaveTextContent('Cargando reservas');
   expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar');

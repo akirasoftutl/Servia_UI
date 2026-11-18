@@ -385,7 +385,7 @@ export function Reservas() {
             </p>
             <div className="panel-alerta panel-alerta--aviso mb-0">
               <span className="panel-alerta-icono" aria-hidden="true">!</span>
-              <div className="panel-alerta-contenido">
+              <div id="notaPausa" className="panel-alerta-contenido">
                 <strong>Nota:</strong> Las reservas que ya tienes no cambiarán.
               </div>
             </div>
