@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import './Sidebar.css';
+import '../../estilos/panel.css';
+import { api } from '../../servicios/api';
 import { useAuth } from '../../contextos/AuthContext';
 
 interface NavItem {
@@ -16,11 +18,63 @@ interface NavGroup {
 }
 
 export const Sidebar: React.FC = () => {
+  const [angosta, setAngosta] = useState(() => window.matchMedia?.('(max-width: 650px)').matches ?? false);
+  const [abierta, setAbierta] = useState(false);
+  const botonMenu = useRef<HTMLButtonElement>(null);
+  const barra = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia?.('(max-width: 650px)');
+    if (!media) return;
+    const actualizar = () => { setAngosta(media.matches); setAbierta(false); };
+    media.addEventListener('change', actualizar);
+    return () => media.removeEventListener('change', actualizar);
+  }, []);
+
+  useEffect(() => {
+    if (!angosta || !abierta) return;
+    const activador = botonMenu.current;
+    const contenido = barra.current?.closest('.layout')?.querySelector('main');
+    contenido?.setAttribute('inert', '');
+    const controles = () => Array.from(barra.current?.querySelectorAll<HTMLElement>('button, input') ?? []);
+    controles()[0]?.focus();
+    const teclado = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setAbierta(false); }
+      if (event.key === 'Tab') {
+        const elementos = controles();
+        const primero = elementos[0];
+        const ultimo = elementos.at(-1);
+        if (event.shiftKey && document.activeElement === primero) { event.preventDefault(); ultimo?.focus(); }
+        else if (!event.shiftKey && document.activeElement === ultimo) { event.preventDefault(); primero?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', teclado);
+    return () => {
+      contenido?.removeAttribute('inert');
+      document.removeEventListener('keydown', teclado);
+      activador?.focus();
+    };
+  }, [angosta, abierta]);
+
   const [activeItem, setActiveItem] = useState<string>('dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const { cerrarSesion } = useAuth();
+  const { cerrarSesion, usuario } = useAuth();
+  const [negocio, setNegocio] = useState<{ uid: string; nombre: string } | null>(null);
+  const uid = usuario?.uid;
+  const correo = usuario?.email ?? '';
+  const nombre = negocio?.uid === uid ? negocio?.nombre || correo : correo;
+
+  useEffect(() => {
+    if (!uid) return;
+    let vigente = true;
+    api<{ nombre: string }>('/negocios/mio').then(
+      perfil => { if (vigente) setNegocio({ uid, nombre: perfil.nombre }); },
+      () => { if (vigente) setNegocio(null); },
+    );
+    return () => { vigente = false; };
+  }, [uid]);
   const navigate = useNavigate();
 
   // Cerrar el menú si se hace clic fuera del contenedor 'user-profile'
@@ -106,8 +160,15 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="sidebar">
+    <>
+    <header className="panel-barra-movil">
+      <button ref={botonMenu} className="btn-servia-secondary" aria-label={abierta ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={abierta} aria-controls="panel-navegacion" onClick={() => setAbierta(!abierta)}>☰</button>
+      <span>Servia</span>
+    </header>
+    {angosta && abierta && <button className="panel-menu-fondo" aria-label="Cerrar menú al tocar fuera" tabIndex={-1} onClick={() => setAbierta(false)} />}
+    <aside ref={barra} id="panel-navegacion" aria-label="Navegación del panel" className="sidebar panel-barra-lateral" hidden={angosta && !abierta}>
       <div className="sidebar-header">
+        {angosta && <button className="btn-servia-secondary" aria-label="Cerrar menú" onClick={() => setAbierta(false)}>×</button>}
         <div className="brand">
           <h1 className="brand-title">Servia</h1>
         </div>
@@ -141,6 +202,7 @@ export const Sidebar: React.FC = () => {
                       className={`nav-link ${isActive ? 'active' : ''}`}
                       onClick={() => {
                         setActiveItem(item.id);
+                        setAbierta(false);
                         if (item.ruta) navigate(item.ruta);
                       }}
                     >
@@ -159,7 +221,7 @@ export const Sidebar: React.FC = () => {
       <div className="user-profile" ref={userMenuRef}>
         {isUserMenuOpen && (
           <div className="user-dropdown-menu">
-            <button className="dropdown-item" onClick={() => { setIsUserMenuOpen(false); navigate('/mi-perfil'); }}>
+            <button className="dropdown-item" onClick={() => { setIsUserMenuOpen(false); setAbierta(false); navigate('/mi-perfil'); }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
@@ -167,7 +229,7 @@ export const Sidebar: React.FC = () => {
               <span>Mi Perfil</span>
             </button>
 
-            <button className="dropdown-item" onClick={() => { setIsUserMenuOpen(false); console.log('Configuración'); }}>
+            <button className="dropdown-item" onClick={() => { setIsUserMenuOpen(false); setAbierta(false); console.log('Configuración'); }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -177,7 +239,7 @@ export const Sidebar: React.FC = () => {
 
             <div className="dropdown-divider"></div>
 
-            <button className="dropdown-item danger" onClick={async () => { setIsUserMenuOpen(false); await cerrarSesion(); navigate('/login'); }}>
+            <button className="dropdown-item danger" onClick={async () => { setIsUserMenuOpen(false); setAbierta(false); await cerrarSesion(); navigate('/login'); }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <polyline points="16 17 21 12 16 7" />
@@ -188,15 +250,16 @@ export const Sidebar: React.FC = () => {
           </div>
         )}
 
-        <div 
+        <button type="button"
+          aria-label="Menú de la cuenta"
           className={`user-card ${isUserMenuOpen ? 'open' : ''}`}
           onClick={() => setIsUserMenuOpen((prev) => !prev)}
           style={{ cursor: 'pointer' }}
         >
-          <div className="avatar">U</div>
+          <div className="avatar">{nombre.charAt(0).toLocaleUpperCase()}</div>
           <div className="user-info">
-            <span className="user-name">Urielees</span>
-            <span className="user-email">admin@servia.com</span>
+            <span className="user-name" title={nombre}>{nombre}</span>
+            <span className="user-email" title={correo}>{correo}</span>
           </div>
           <svg 
             className={`chevron-icon ${isUserMenuOpen ? 'rotated' : ''}`} 
@@ -209,8 +272,9 @@ export const Sidebar: React.FC = () => {
           >
             <path d="m9 18 6-6-6-6"/>
           </svg>
-        </div>
+        </button>
       </div>
     </aside>
+    </>
   );
 };
