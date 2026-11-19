@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams } from 'react-router';
 import { api, ErrorApi } from '../../servicios/api';
 import { ESTADOS_CONFIG, formatearFecha, formatearHora, calcularTiempoRestante } from './estados';
@@ -34,8 +34,12 @@ export function DetalleReserva() {
   const [procesando, setProcesando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
 
-  const cargarDetalle = async () => {
+  const [ahora, setAhora] = useState(Date.now);
+  const vencimientosConsultados = useRef(new Set<string>());
+
+  const cargarDetalle = useCallback(async () => {
     setCargando(true);
+    setError('');
     try {
       const data = await api<DetalleReservaAPI>(`/reservas/negocio/${id}`);
       setReserva(data);
@@ -48,18 +52,29 @@ export function DetalleReserva() {
     } finally {
       setCargando(false);
     }
-  };
-
-  useEffect(() => {
-    cargarDetalle();
   }, [id]);
 
-  // Recarga cuando el plazo para responder llega a 0.
   useEffect(() => {
-    if (reserva?.estado === 'pendiente' && reserva.segundosRestantes !== null && reserva.segundosRestantes <= 0) {
-      cargarDetalle();
-    }
-  }, [reserva?.segundosRestantes]);
+    void Promise.resolve().then(cargarDetalle);
+  }, [cargarDetalle]);
+
+  useEffect(() => {
+    const temporizador = window.setInterval(() => setAhora(Date.now()), 1000);
+    return () => window.clearInterval(temporizador);
+  }, []);
+
+  const segundosRestantes = reserva?.venceEn
+    ? Math.max(0, Math.ceil((Date.parse(reserva.venceEn) - ahora) / 1000))
+    : reserva?.segundosRestantes ?? null;
+
+  // RN-58/RN-59: la API decide el estado; consultar cada vencimiento una sola vez.
+  useEffect(() => {
+    if (cargando || error || reserva?.estado !== 'pendiente' || segundosRestantes === null || segundosRestantes > 0) return;
+    const clave = `${id}:${reserva.venceEn ?? 'sin-plazo'}`;
+    if (vencimientosConsultados.current.has(clave)) return;
+    vencimientosConsultados.current.add(clave);
+    void Promise.resolve().then(cargarDetalle);
+  }, [cargando, error, reserva, segundosRestantes, id, cargarDetalle]);
 
   const handleAceptar = async () => {
     setProcesando(true);
@@ -171,27 +186,29 @@ export function DetalleReserva() {
   }, []);
 
   if (cargando) return (
-    <div className="panel-pagina d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
-      <div className="spinner-border" style={{ color: '#9333ea' }} role="status"></div>
-    </div>
+    <div className="panel-pagina"><div className="panel-contenedor panel-estado">
+      <div className="spinner-border" role="status" aria-label="Cargando reserva" />
+    </div></div>
   );
 
   if (error) {
     return (
-      <div className="panel-pagina">
-        <div className="panel-contenedor text-center py-5">
-          <h3 className="text-muted mb-4">{error}</h3>
-          <Link to="/reservas" className="btn-servia-primary text-decoration-none">Volver a reservas</Link>
+      <div className="panel-pagina"><div className="panel-contenedor">
+        <div className="panel-estado">
+          <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
+          <p className="panel-estado-texto" role="alert">{error}</p>
+          <button className="btn-servia-primary" onClick={cargarDetalle}>Reintentar</button>
+          <Link to="/reservas" className="btn-servia-secondary text-decoration-none">Volver a reservas</Link>
         </div>
-      </div>
+      </div></div>
     );
   }
 
   if (!reserva) return null;
   const estadoConfig = ESTADOS_CONFIG[reserva.estado] || { label: reserva.estado, className: '' };
 
-  const esPendienteVigente = reserva.estado === 'pendiente' && (reserva.segundosRestantes === null || reserva.segundosRestantes > 0);
-  const puedeCancelar = reserva.estado === 'confirmada' && new Date(reserva.inicio) > new Date();
+  const esPendienteVigente = reserva.estado === 'pendiente' && (segundosRestantes === null || segundosRestantes > 0);
+  const puedeCancelar = reserva.estado === 'confirmada' && Date.parse(reserva.inicio) > ahora;
 
   return (
     <div className="panel-pagina">
@@ -203,7 +220,7 @@ export function DetalleReserva() {
           </div>
         )}
 
-        {reserva.estado === 'pendiente' && reserva.segundosRestantes !== null && reserva.segundosRestantes > 0 && (
+        {reserva.estado === 'pendiente' && segundosRestantes !== null && segundosRestantes > 0 && (
           <div className="panel-alerta panel-alerta--aviso" role="status">
             <span className="panel-alerta-icono" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -216,7 +233,7 @@ export function DetalleReserva() {
               <p>Responde antes de que venza la solicitud para no perder el horario.</p>
             </div>
             <span className="panel-insignia panel-insignia--aviso panel-alerta-accion">
-              {calcularTiempoRestante(reserva.segundosRestantes)}
+              {calcularTiempoRestante(segundosRestantes)}
             </span>
           </div>
         )}

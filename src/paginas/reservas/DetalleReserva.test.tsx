@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { vi } from 'vitest';
@@ -31,7 +31,7 @@ function reserva(extra: Record<string, unknown> = {}) {
     fin: '2030-11-04T03:00:00Z',
     servicio: { nombre: 'Corte de cabello', precio: 100, duracionMin: 60 },
     cliente: { nombre: 'Ana López', telefono: '5512345678', correo: 'ana@example.com' },
-    venceEn: '2030-11-03T15:00:00Z',
+    venceEn: new Date(Date.now() + 61_000).toISOString(),
     segundosRestantes: 61,
     observaciones: 'Prefiere tarde',
     ...extra,
@@ -107,14 +107,14 @@ describe('DetalleReserva', () => {
   it('muestra un error específico y la salida cuando la reserva no existe', async () => {
     responderDetalle(new ErrorApi(404, 'No encontrada'));
     mostrar();
-    expect(await screen.findByRole('heading', { name: 'No encontramos esta reserva.' })).toBeInTheDocument();
+    expect(await screen.findByText('No encontramos esta reserva.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Volver a reservas' })).toHaveAttribute('href', '/reservas');
   });
 
   it('muestra un error genérico si falla la carga', async () => {
     responderDetalle(new Error('Sin conexión'));
     mostrar();
-    expect(await screen.findByRole('heading', { name: 'No pudimos cargar la reserva. Intenta de nuevo.' })).toBeInTheDocument();
+    expect(await screen.findByText('No pudimos cargar la reserva. Intenta de nuevo.')).toBeInTheDocument();
   });
 
   it('muestra los datos del cliente, del servicio y del horario', async () => {
@@ -150,14 +150,47 @@ describe('DetalleReserva', () => {
     expect(screen.getByText('No se confirmó a tiempo')).toBeInTheDocument();
   });
 
-  it('recarga el detalle cuando el tiempo restante llega a cero', async () => {
-    responderDetalle(
-      reserva({ segundosRestantes: 0 }),
-      reserva({ estado: 'rechazada_vencimiento', segundosRestantes: null, motivo: 'Venció' })
-    );
+  it('C1 reintenta la carga tras una falla de red', async () => {
+    responderDetalle(new Error('Sin conexión'), reserva());
     mostrar();
-    expect(await screen.findByText('Rechazada por vencimiento')).toBeInTheDocument();
-    await waitFor(() => expect(llamadas('/reservas/negocio/r1')).toHaveLength(2));
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar');
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(await screen.findByRole('heading', { name: 'Reserva SRV-123' })).toBeInTheDocument();
+    expect(llamadas('/reservas/negocio/r1')).toHaveLength(2);
+  });
+
+  it('C2 avanza la cuenta por venceEn aunque segundosRestantes esté desfasado y limpia el reloj', async () => {
+    vi.useFakeTimers();
+    try {
+      responderDetalle(reserva({ venceEn: new Date(Date.now() + 125_000).toISOString(), segundosRestantes: 9999 }));
+      const vista = mostrar();
+      await act(async () => {});
+      expect(screen.getByText('2m restantes')).toBeInTheDocument();
+      await act(async () => { await vi.advanceTimersByTimeAsync(65_000); });
+      expect(screen.getByText('1m restantes')).toBeInTheDocument();
+      vista.unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('C3 recarga UNA sola vez al llegar a cero incluso si la API aún devuelve pendiente', async () => {
+    vi.useFakeTimers();
+    try {
+      responderDetalle(reserva({ venceEn: new Date(Date.now() + 2000).toISOString(), segundosRestantes: 9999 }));
+      mostrar();
+      await act(async () => {});
+      expect(llamadas('/reservas/negocio/r1')).toHaveLength(1);
+      await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+      expect(llamadas('/reservas/negocio/r1')).toHaveLength(2);
+      expect(screen.queryByRole('button', { name: 'Aceptar Reserva' })).not.toBeInTheDocument();
+      await act(async () => { await vi.advanceTimersByTimeAsync(65_000); });
+      expect(llamadas('/reservas/negocio/r1')).toHaveLength(2);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('usa segundosRestantes de respaldo cuando no hay venceEn', async () => {
+    await listo(reserva({ venceEn: null, segundosRestantes: 120 }));
+    expect(screen.getByText('2m restantes')).toBeInTheDocument();
   });
 
   it('confirma una reserva pendiente solo después de confirmar el modal', async () => {
