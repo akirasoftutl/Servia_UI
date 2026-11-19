@@ -10,12 +10,12 @@ export const ESTADOS_CONFIG: Record<string, { label: string; className: string }
 
 export const formatearFecha = (fechaISO: string) => {
   if (!fechaISO) return '';
-  return new Date(fechaISO).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(fechaISO).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 export const formatearHora = (fechaISO: string) => {
   if (!fechaISO) return '';
-  return new Date(fechaISO).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  return new Date(fechaISO).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hourCycle: 'h23', hour: '2-digit', minute: '2-digit' });
 };
 
 export const calcularTiempoRestante = (segundos: number | null) => {
