@@ -1343,3 +1343,39 @@ fieldset:disabled .btn-servia-secondary {
     width: 100%;
   }
 }
+
+/* Navegación angosta: conserva la barra del escritorio y libera el contenido. */
+.panel-barra-movil { display: none; }
+.panel-barra-lateral .user-card { width: 100%; text-align: left; }
+.panel-barra-lateral .user-card:focus-visible { outline: none; box-shadow: var(--sv-foco); }
+
+@media (max-width: 650px) {
+  .layout.layout--with-sidebar { flex-direction: column; }
+  .panel-barra-movil {
+    display: flex;
+    align-items: center;
+    gap: var(--sv-esp-4);
+    padding: var(--sv-esp-3) var(--sv-esp-4);
+    background: var(--sv-superficie);
+    color: var(--sv-titulo);
+    font-family: var(--sv-fuente-titulos);
+  }
+  .layout.layout--with-sidebar .panel-barra-lateral {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1070;
+    width: min(280px, 100%);
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .panel-barra-lateral[hidden] { display: none; }
+  .panel-menu-fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 1060;
+    border: 0;
+    background: var(--sv-titulo);
+    opacity: 0.6;
+  }
+}
