@@ -7,5 +7,5 @@ export function Inicio() {
 
   if (cargando) return <div className="text-center mt-5"><h3>Cargando...</h3></div>
 
-  return usuario ? <Navigate to="/servicios" replace /> : <Home />
+  return usuario ? <Navigate to="/resumen" replace /> : <Home />
 }
