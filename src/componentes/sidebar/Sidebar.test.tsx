@@ -36,3 +36,11 @@ it('C1 «Resumen» es el primer elemento de Principal y abre /resumen', async ()
   expect(await screen.findByRole('heading', { name: 'Resumen del negocio' })).toBeInTheDocument()
   expect(router.state.location.pathname).toBe('/resumen')
 })
+
+it('UI88 abre Estadísticas desde Operaciones', async () => {
+  render(<MemoryRouter initialEntries={['/']}><Sidebar /><Routes><Route path="/estadisticas" element={<h1>Estadísticas del negocio</h1>} /></Routes></MemoryRouter>)
+  const enlace = screen.getByRole('button', { name: 'Estadísticas' })
+  expect(enlace.closest('.nav-group')).toHaveTextContent('OPERACIONES')
+  await userEvent.click(enlace)
+  expect(await screen.findByRole('heading', { name: 'Estadísticas del negocio' })).toBeVisible()
+})

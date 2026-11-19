@@ -87,6 +87,7 @@ export const Sidebar: React.FC = () => {
     {
       title: 'OPERACIONES',
       items: [
+        { id: 'estadisticas', label: 'Estadísticas', ruta: '/estadisticas', icon: <span aria-hidden="true">▥</span> },
         { id: 'bloqueos', label: 'Bloqueos', ruta: '/bloqueos', icon: <span aria-hidden="true">▣</span> },
         {
           id: 'horario',
