@@ -161,3 +161,70 @@
     white-space: normal;
   }
 }
+
+/* Calle con sugerencias de domicilio (#40) */
+.perfil-calle {
+  position: relative;
+}
+
+.perfil-calle-lista {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--sv-esp-1));
+  left: 0;
+  right: 0;
+  padding: var(--sv-esp-1);
+  border: 1px solid var(--sv-borde-fuerte);
+  border-radius: var(--sv-radio-sm);
+  background: var(--sv-superficie);
+  box-shadow: var(--sv-sombra-item);
+}
+
+.perfil-calle-lista[hidden] {
+  display: none;
+}
+
+.perfil-calle-opcion {
+  padding: var(--sv-esp-2) var(--sv-esp-3);
+  border-radius: var(--sv-radio-xs);
+  color: var(--sv-texto);
+  font-size: var(--sv-texto-md);
+  cursor: pointer;
+}
+
+.perfil-calle-opcion:hover,
+.perfil-calle-opcion.activa {
+  background: var(--sv-acento-suave);
+}
+
+.perfil-calle-vacio {
+  margin: 0;
+  padding: 0 var(--sv-esp-3);
+  color: var(--sv-texto-suave);
+  font-size: var(--sv-texto-sm);
+}
+
+.perfil-calle-vacio:not(:empty) {
+  padding-block: var(--sv-esp-2);
+}
+
+.perfil-calle-atribucion {
+  margin: var(--sv-esp-1) 0 0;
+  padding: var(--sv-esp-1) var(--sv-esp-3) 0;
+  border-top: 1px solid var(--sv-borde);
+  /* Atribución de Google Maps: gris #5E5E5E sobre --sv-superficie (#fff),
+     contraste 6.48:1; Roboto o sans-serif, 12 px, peso 400, en una sola línea
+     y sin alterar. */
+  color: #5e5e5e;
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: normal;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.perfil-calle-nota {
+  margin: var(--sv-esp-1) 0 0;
+}
