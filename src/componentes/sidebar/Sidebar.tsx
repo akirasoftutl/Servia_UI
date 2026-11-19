@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import './Sidebar.css';
+import { api } from '../../servicios/api';
 import { useAuth } from '../../contextos/AuthContext';
 
 interface NavItem {
@@ -20,7 +21,21 @@ export const Sidebar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const { cerrarSesion } = useAuth();
+  const { cerrarSesion, usuario } = useAuth();
+  const [negocio, setNegocio] = useState<{ uid: string; nombre: string } | null>(null);
+  const uid = usuario?.uid;
+  const correo = usuario?.email ?? '';
+  const nombre = negocio?.uid === uid ? negocio?.nombre || correo : correo;
+
+  useEffect(() => {
+    if (!uid) return;
+    let vigente = true;
+    api<{ nombre: string }>('/negocios/mio').then(
+      perfil => { if (vigente) setNegocio({ uid, nombre: perfil.nombre }); },
+      () => { if (vigente) setNegocio(null); },
+    );
+    return () => { vigente = false; };
+  }, [uid]);
   const navigate = useNavigate();
 
   // Cerrar el menú si se hace clic fuera del contenedor 'user-profile'
@@ -193,10 +208,10 @@ export const Sidebar: React.FC = () => {
           onClick={() => setIsUserMenuOpen((prev) => !prev)}
           style={{ cursor: 'pointer' }}
         >
-          <div className="avatar">U</div>
+          <div className="avatar">{nombre.charAt(0).toLocaleUpperCase()}</div>
           <div className="user-info">
-            <span className="user-name">Urielees</span>
-            <span className="user-email">admin@servia.com</span>
+            <span className="user-name" title={nombre}>{nombre}</span>
+            <span className="user-email" title={correo}>{correo}</span>
           </div>
           <svg 
             className={`chevron-icon ${isUserMenuOpen ? 'rotated' : ''}`} 
