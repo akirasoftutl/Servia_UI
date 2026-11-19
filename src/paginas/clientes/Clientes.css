@@ -1,0 +1,5 @@
+.clientes-item { display: block; }
+.clientes-datos { display: grid; gap: var(--sv-esp-2); overflow-wrap: anywhere; }
+.clientes-datos p { margin: 0; }
+.clientes-datos a, .clientes-item a { color: var(--sv-acento); }
+.clientes-mas { margin-top: var(--sv-esp-4); }
