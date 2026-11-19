@@ -1343,3 +1343,48 @@ fieldset:disabled .btn-servia-secondary {
     width: 100%;
   }
 }
+
+/* Referencias visibles de la gráfica del panel. */
+.panel-grafica {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--sv-esp-2);
+}
+
+.panel-grafica-eje {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: right;
+}
+
+.panel-grafica .estadisticas-columna {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.panel-grafica-fechas {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sv-esp-2);
+}
+
+.panel-grafica .estadisticas-barras {
+  gap: 0;
+}
+
+.panel-grafica .estadisticas-barra {
+  width: 80%;
+}
+
+.panel-grafica-fechas > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.panel-grafica-fechas > span:last-child {
+  margin-left: auto;
+  text-align: right;
+}

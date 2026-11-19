@@ -122,7 +122,7 @@ describe('Estadísticas', () => {
 
   it('C4 gráfica con texto alternativo y tabla equivalente con cada valor y altura', async () => {
     render(<Estadisticas />);
-    const grafica = await screen.findByRole('img', { name: /Reservas por día del 2026-11-17 al 2026-11-19: 37 reservas/ });
+    const grafica = await screen.findByRole('img', { name: /Reservas por día del 17\/11\/2026 al 19\/11\/2026: 37 reservas/ });
     const tabla = screen.getByRole('table', { name: 'Reservas por día' });
     expect(tabla).toHaveClass('visually-hidden');
     const filas = within(tabla).getAllByRole('row').slice(1);
@@ -132,6 +132,36 @@ describe('Estadísticas', () => {
       expect(within(filas[i]).getByRole('cell')).toHaveTextContent(String(dia.reservas));
       const columna = grafica.querySelector(`[title="${dia.fecha}: ${dia.reservas} reservas"]`)!;
       expect(columna.firstElementChild).toHaveStyle({ height: `${dia.reservas / 16 * 100}%` });
+    });
+  });
+
+  it.each([
+    ['datos', [9, 12, 16], 16],
+    ['ceros', [0, 0, 0], 0],
+    ['un día', [1], 1],
+    ['sin días', [], 0],
+  ] as const)('F2 muestra referencias y fechas legibles con %s sin alterar la tabla', async (_caso, valores, maximo) => {
+    const datos = estadisticas();
+    const porDia = valores.map((reservas, i) => ({ fecha: datos.porDia[i].fecha, reservas }));
+    apiMock.mockResolvedValue({ ...datos, porDia });
+    render(<Estadisticas />);
+    const grafica = await screen.findByRole('img');
+    expect(screen.getByText('Del 17/11/2026 al 19/11/2026 · Todos los estados.')).toBeVisible();
+    expect(grafica).toHaveAccessibleName(expect.stringContaining('del 17/11/2026 al 19/11/2026'));
+    const eje = grafica.querySelector('.panel-grafica-eje')!;
+    expect(eje).toBeVisible();
+    expect(eje.children[0]).toHaveTextContent(new RegExp(`^${maximo}$`));
+    expect(eje.children[1]).toHaveTextContent(/^0$/);
+    const fechas = grafica.querySelector('.panel-grafica-fechas')!;
+    expect(fechas).toBeVisible();
+    expect(fechas.children[0]).toHaveTextContent('17/11/2026');
+    expect(fechas.children[1]).toHaveTextContent(valores.length === 1 ? '17/11/2026' : '19/11/2026');
+    const filas = within(screen.getByRole('table', { name: 'Reservas por día' })).getAllByRole('row').slice(1);
+    expect(filas).toHaveLength(valores.length);
+    porDia.forEach((dia, i) => {
+      expect(within(filas[i]).getByRole('rowheader')).toHaveTextContent(dia.fecha);
+      expect(within(filas[i]).getByRole('cell')).toHaveTextContent(new RegExp(`^${dia.reservas}$`));
+      expect(grafica.querySelectorAll('.estadisticas-barra')[i]).toHaveStyle({ height: `${dia.reservas / Math.max(1, maximo) * 100}%` });
     });
   });
 

@@ -13,6 +13,10 @@ interface EstadisticasNegocio {
   porDia: { fecha: string; reservas: number }[];
 }
 
+function fechaLegible(fecha: string) {
+  return fecha.split('-').reverse().join('/');
+}
+
 export function Estadisticas() {
   const [seleccion, setSeleccion] = useState('30');
   const [periodo, setPeriodo] = useState(() => periodoPredefinido(30));
@@ -58,7 +62,7 @@ export function Estadisticas() {
     ['Cancelaciones por negocio', datos.cancelaciones.porNegocio],
     ['Clientes atendidos', datos.clientesAtendidos],
   ] as const : [];
-  const maximo = Math.max(1, ...(datos?.porDia.map(dia => dia.reservas) ?? []));
+  const maximo = Math.max(0, ...(datos?.porDia.map(dia => dia.reservas) ?? []));
 
   return <div className="panel-pagina"><div className="panel-contenedor">
     <header className="panel-encabezado"><div>
@@ -118,13 +122,20 @@ export function Estadisticas() {
           <div className="panel-item" key={etiqueta}><dt className="panel-item-texto">{etiqueta}</dt>
             <dd className="estadisticas-numero">{valor}</dd></div>)}</dl>
         <h2 className="panel-tarjeta-titulo">Reservas por día</h2>
-        <p className="panel-subtitulo">Del {datos.periodo.desde} al {datos.periodo.hasta} · Todos los estados.</p>
-        <div className="estadisticas-grafica" role="img"
-          aria-label={`Reservas por día del ${datos.periodo.desde} al ${datos.periodo.hasta}: ${datos.totalReservas} ${datos.totalReservas === 1 ? 'reserva' : 'reservas'}. Detalle en la tabla equivalente.`}>
+        <p className="panel-subtitulo">Del {fechaLegible(datos.periodo.desde)} al {fechaLegible(datos.periodo.hasta)} · Todos los estados.</p>
+        <div className="estadisticas-grafica panel-grafica" role="img"
+          aria-label={`Reservas por día del ${fechaLegible(datos.periodo.desde)} al ${fechaLegible(datos.periodo.hasta)}: ${datos.totalReservas} ${datos.totalReservas === 1 ? 'reserva' : 'reservas'}. Detalle en la tabla equivalente.`}>
+          <div className="panel-grafica-eje panel-ayuda" aria-hidden="true">
+            <span>{maximo}</span><span>0</span>
+          </div>
           <div className="estadisticas-barras" aria-hidden="true">{datos.porDia.map(dia =>
             <div className="estadisticas-columna" key={dia.fecha} title={`${dia.fecha}: ${dia.reservas} ${dia.reservas === 1 ? 'reserva' : 'reservas'}`}>
-              <div className="estadisticas-barra" style={{ height: `${dia.reservas / maximo * 100}%` }} />
+              <div className="estadisticas-barra" style={{ height: `${dia.reservas / Math.max(1, maximo) * 100}%` }} />
             </div>)}</div>
+          <div className="panel-grafica-fechas panel-ayuda" aria-hidden="true">
+            <span>{fechaLegible(datos.porDia[0]?.fecha ?? datos.periodo.desde)}</span>
+            <span>{fechaLegible(datos.porDia.at(-1)?.fecha ?? datos.periodo.hasta)}</span>
+          </div>
         </div>
         <table className="visually-hidden"><caption>Reservas por día</caption>
           <thead><tr><th scope="col">Fecha</th><th scope="col">Reservas</th></tr></thead>
