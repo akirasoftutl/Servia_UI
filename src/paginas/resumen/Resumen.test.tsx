@@ -129,6 +129,42 @@ describe('Resumen', () => {
     expect(alerta).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { caso: 'arreglo vacío', respuesta: [] },
+    { caso: 'objeto vacío', respuesta: {} },
+    { caso: 'pendientes sin próximas citas', respuesta: { pendientes: 3 } },
+  ])('C5 respuesta mal formada: $caso muestra error y permite reintentar', async ({ respuesta }) => {
+    respuestaResumen = respuesta;
+    const router = mostrar();
+
+    const error = await screen.findByRole('alert');
+    expect(error).toHaveTextContent('No pudimos cargar el resumen. Intenta de nuevo.');
+    expect(error).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Resumen', level: 1 })).toBeVisible();
+    expect(router.state.errors).toBeNull();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Números de tu negocio' })).not.toBeInTheDocument();
+    const reintentar = screen.getByRole('button', { name: 'Reintentar' });
+    expect(reintentar).toBeVisible();
+    expect(reintentar).toBeEnabled();
+    const pedidas = () => apiMock.mock.calls.filter(([ruta]) => ruta === '/negocios/mio/resumen').length;
+    expect(pedidas()).toBe(1);
+
+    respuestaResumen = resumen();
+    fireEvent.click(reintentar);
+
+    expect(await screen.findByRole('list', { name: 'Números de tu negocio' })).toBeVisible();
+    expect(pedidas()).toBe(2);
+    expect(numeroDe('Solicitudes pendientes')).toBe('3');
+    expect(numeroDe('Reservas de hoy')).toBe('5');
+    expect(numeroDe('Próximos 7 días')).toBe('8');
+    expect(numeroDe('Servicios publicados')).toBe('4');
+    expect(numeroDe('Clientes atendidos')).toBe('12');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
+    expect(router.state.errors).toBeNull();
+  });
+
   it('C5 sin reservas muestra ceros y «Todavía no tienes reservas.»', async () => {
     respuestaResumen = resumen({ pendientes: 0, hoy: 0, proximos7Dias: 0, serviciosPublicados: 0, clientesAtendidos: 0, proximas: [] });
     mostrar();
