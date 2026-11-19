@@ -120,9 +120,9 @@ export function Estadisticas() {
         <h2 className="panel-tarjeta-titulo">Reservas por día</h2>
         <p className="panel-subtitulo">Del {datos.periodo.desde} al {datos.periodo.hasta} · Todos los estados.</p>
         <div className="estadisticas-grafica" role="img"
-          aria-label={`Reservas por día del ${datos.periodo.desde} al ${datos.periodo.hasta}: ${datos.totalReservas} reservas. Detalle en la tabla equivalente.`}>
+          aria-label={`Reservas por día del ${datos.periodo.desde} al ${datos.periodo.hasta}: ${datos.totalReservas} ${datos.totalReservas === 1 ? 'reserva' : 'reservas'}. Detalle en la tabla equivalente.`}>
           <div className="estadisticas-barras" aria-hidden="true">{datos.porDia.map(dia =>
-            <div className="estadisticas-columna" key={dia.fecha} title={`${dia.fecha}: ${dia.reservas} reservas`}>
+            <div className="estadisticas-columna" key={dia.fecha} title={`${dia.fecha}: ${dia.reservas} ${dia.reservas === 1 ? 'reserva' : 'reservas'}`}>
               <div className="estadisticas-barra" style={{ height: `${dia.reservas / maximo * 100}%` }} />
             </div>)}</div>
         </div>
@@ -134,7 +134,7 @@ export function Estadisticas() {
         {datos.serviciosMasReservados.length === 0 ? <p className="panel-subtitulo">No hay servicios reservados para mostrar.</p> :
           <ul className="panel-lista estadisticas-servicios">{datos.serviciosMasReservados.map(servicio =>
             <li className="panel-item" key={servicio.servicioId}><span className="panel-item-titulo">{servicio.nombre}</span>
-              <span className="panel-item-texto">{servicio.reservas} reservas</span></li>)}</ul>}
+              <span className="panel-item-texto">{servicio.reservas} {servicio.reservas === 1 ? 'reserva' : 'reservas'}</span></li>)}</ul>}
       </>}
     </section>
   </div></div>;

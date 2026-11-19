@@ -43,6 +43,19 @@ describe('Estadísticas', () => {
     expect(screen.getByText(/mientras no existan MVP-27 y MVP-21/)).toBeVisible();
   });
 
+  it.each([0, 1, 2])('F1 usa singular solo para 1 en los tres conteos (%i)', async cantidad => {
+    const datos = estadisticas();
+    apiMock.mockResolvedValue({ ...datos, totalReservas: cantidad,
+      serviciosMasReservados: [{ servicioId: 'corte', nombre: 'Corte de cabello', reservas: cantidad }],
+      porDia: [{ fecha: '2026-11-17', reservas: cantidad }] });
+    render(<Estadisticas />);
+    const texto = `${cantidad} ${cantidad === 1 ? 'reserva' : 'reservas'}`;
+    const grafica = await screen.findByRole('img');
+    expect(grafica).toHaveAccessibleName(expect.stringContaining(`: ${texto}.`));
+    expect(within(grafica).getByTitle(`2026-11-17: ${texto}`)).toBeInTheDocument();
+    expect(within(screen.getByText('Corte de cabello').closest('li')!).getByText(texto, { exact: true })).toBeVisible();
+  });
+
   it('C2 cambia el periodo, borra datos anteriores y muestra una respuesta distinta', async () => {
     render(<Estadisticas />);
     await screen.findByText('Total de reservas');
