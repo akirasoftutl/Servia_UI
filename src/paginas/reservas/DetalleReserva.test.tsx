@@ -191,6 +191,30 @@ describe('DetalleReserva', () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it('F1 recarga una sola vez si cada GET devuelve un objeto nuevo de la misma pendiente vencida', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-11-03T12:00:00Z'));
+    const venceEn = new Date(Date.now() - 1000).toISOString();
+    apiMock.mockImplementation(async () => {
+      // La demora permite observar el bucle sin encadenar promesas indefinidamente.
+      await new Promise(resolve => window.setTimeout(resolve, 100));
+      return reserva({ venceEn, segundosRestantes: 0 });
+    });
+    const vista = mostrar();
+    try {
+      await act(async () => { await vi.advanceTimersByTimeAsync(100); });
+      expect(llamadas('/reservas/negocio/r1')).toHaveLength(2);
+      for (let segundo = 0; segundo < 5; segundo++) {
+        await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+      }
+      expect(llamadas('/reservas/negocio/r1')).toHaveLength(2);
+      expect(screen.getByText('Pendiente')).toBeInTheDocument();
+    } finally {
+      vista.unmount();
+      vi.useRealTimers();
+    }
+  });
+
   it('usa segundosRestantes de respaldo cuando no hay venceEn', async () => {
     await listo(reserva({ venceEn: null, segundosRestantes: 120 }));
     expect(screen.getByText('2m restantes')).toBeInTheDocument();
