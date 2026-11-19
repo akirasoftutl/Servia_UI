@@ -55,7 +55,7 @@ function Historial({ clienteUid }: { clienteUid: string }) {
           {datos?.items.map((reserva) => <article className="panel-item clientes-item" key={reserva.id}>
             <h3 className="panel-item-titulo"><Link to={`/reservas/${encodeURIComponent(reserva.id)}`}>{reserva.servicioNombre} · {reserva.folio}</Link></h3>
             <div className="clientes-datos">
-              <p className="panel-item-texto">{fechaHoraMexico(reserva.inicio)} a {horaMexico.format(new Date(reserva.fin))}</p>
+              <p className="panel-item-texto">{fechaHoraMexico(reserva.inicio)} – {horaMexico.format(new Date(reserva.fin))}</p>
               <p className="panel-item-texto">{ESTADOS_CONFIG[reserva.estado]?.label ?? reserva.estado}</p>
               {reserva.motivo && <p className="panel-item-texto">Motivo: {reserva.motivo}</p>}
             </div>

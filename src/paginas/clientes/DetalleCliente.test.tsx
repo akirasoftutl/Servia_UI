@@ -60,6 +60,6 @@ it('C5 conserva los datos del cliente cuando el historial está vacío', async (
   expect(await screen.findByText('No hay reservas en este historial.')).toBeInTheDocument();
   expect(screen.getByText('Datos del historial')).toBeInTheDocument();
 });
-it('C6 muestra fecha y ambas horas de México aunque el proceso se ejecute en UTC', async () => {
-  abrir(); await waitFor(() => expect(screen.getByText('03/11/30 a las 20:00 a 21:00')).toBeInTheDocument());
+it('F5 muestra fecha y rango horario de México sin repetir la preposición, incluso en UTC', async () => {
+  abrir(); await waitFor(() => expect(screen.getByText('03/11/30 a las 20:00 – 21:00')).toBeInTheDocument());
 });
