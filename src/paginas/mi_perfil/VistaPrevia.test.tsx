@@ -151,12 +151,31 @@ describe('Vista previa', () => {
     expect(alerta).not.toHaveBeenCalled()
   })
 
-  it.each(['/categorias', '/negocios/dueno', '/negocios/dueno/servicios', '/negocios/mio/servicios?estado=activos'])('C5 maneja fallo en %s', async (fallo) => {
+  it.each(['/negocios/dueno', '/negocios/dueno/servicios', '/negocios/mio/servicios?estado=activos'])('C5 maneja fallo en %s', async (fallo) => {
     responder(fallo.includes('?') ? { serviciosActivos: 0 } : {})
     const respuesta = apiMock.getMockImplementation()!
     apiMock.mockImplementation((ruta, opciones) => ruta === fallo ? Promise.reject(new Error('Fallo')) : respuesta(ruta, opciones))
     abrir()
     expect(await screen.findByRole('alert')).toBeInTheDocument()
+  })
+
+  it.each([
+    { caso: 'público con HTTP 500', cambios: {}, fallo: new ErrorApi(500, 'Error del servidor'), nombre: 'Nombre público' },
+    { caso: 'propio con error de red', cambios: { serviciosActivos: 0 }, fallo: new Error('Sin conexión'), nombre: 'Barbería Norte' },
+  ])('F2 muestra el perfil $caso aunque falle /categorias', async ({ cambios, fallo, nombre }) => {
+    responder(cambios)
+    const respuesta = apiMock.getMockImplementation()!
+    apiMock.mockImplementation((ruta, opciones) => ruta === '/categorias'
+      ? Promise.reject(fallo) : respuesta(ruta, opciones))
+    abrir()
+    expect(await screen.findByText(nombre)).toBeInTheDocument()
+    for (const dato of ['Categoría no disponible', 'Cortes y barba', 'Juárez 10, León', '4771234567', 'norte@correo.com', 'Corte clásico', '$150.00 · 30 minutos']) {
+      expect(screen.getByText(dato)).toBeInTheDocument()
+    }
+    expect(screen.queryByText('Servicio retirado')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument()
+    expect(apiMock).toHaveBeenCalledWith('/categorias')
   })
 
   it('contempla dirección estructurada, categoría ausente y servicios vacíos', async () => {

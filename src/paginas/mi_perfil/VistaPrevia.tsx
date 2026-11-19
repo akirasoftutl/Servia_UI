@@ -89,7 +89,7 @@ export function VistaPrevia() {
         }
         const [{ perfil, servicios, vistaPropia }, categorias] = await Promise.all([
           cargarPerfil(),
-          api<{ id: string; nombre: string }[]>('/categorias'),
+          api<{ id: string; nombre: string }[]>('/categorias').catch(() => []),
         ])
         if (vigente) setDatos({ estado, perfil, motivo, vistaPropia,
           servicios: servicios.filter(servicio => servicio.activo !== false),
