@@ -127,36 +127,41 @@ export function VistaPrevia() {
           <div className="spinner-border" aria-hidden="true" />
           <p className="panel-estado-texto" role="status">Cargando vista previa...</p>
         </div> : <>
-          <section className="panel-tarjeta vista-previa-estado" aria-labelledby="estado-app">
-            <h2 id="estado-app">Estado en la app</h2>
-            {datos.vistaPropia ? <>
-              {datos.motivo && <p>No aparece en las búsquedas porque {datos.motivo}.</p>}
-              <strong>Así te verán cuando aparezcas</strong>
-            </> : <p>Tu negocio aparece en las búsquedas.</p>}
-            {(datos.estado.aceptaReservas === false || datos.estado.tieneHorario === false) &&
-              <p>Los clientes verán: <strong>No acepta reservas por ahora</strong></p>}
+          <section className="panel-tarjeta" aria-labelledby="estado-app">
+            <div className={`panel-alerta ${datos.vistaPropia ? 'panel-alerta--aviso' : 'panel-alerta--info'} mb-0`}>
+              <span className="panel-alerta-icono" aria-hidden="true">!</span>
+              <div className="panel-alerta-contenido">
+                <h2 id="estado-app" className="panel-tarjeta-titulo">Estado en la app</h2>
+                {datos.vistaPropia ? <>
+                  {datos.motivo && <p className="panel-item-texto">No aparece en las búsquedas porque {datos.motivo}.</p>}
+                  <strong>Así te verán cuando aparezcas</strong>
+                </> : <p className="panel-item-texto">Tu negocio aparece en las búsquedas.</p>}
+                {(datos.estado.aceptaReservas === false || datos.estado.tieneHorario === false) &&
+                  <p className="panel-item-texto">Los clientes verán: <strong>No acepta reservas por ahora</strong></p>}
+              </div>
+            </div>
           </section>
-          <section className="panel-tarjeta vista-previa-perfil" aria-labelledby="nombre-negocio">
-            <h2 id="nombre-negocio">{datos.perfil.nombre || 'Nombre pendiente'}</h2>
-            <p>{datos.categoria}</p>
-            <p>{datos.perfil.descripcion || 'Descripción pendiente'}</p>
-            <dl>
-              <div><dt>Dirección</dt><dd>{direccionEnTexto(datos.perfil) || 'Dirección pendiente'}</dd></div>
-              <div><dt>Teléfono</dt><dd>{datos.perfil.telefono || 'Teléfono pendiente'}</dd></div>
-              <div><dt>Correo de contacto</dt><dd>{datos.perfil.correoContacto || 'Correo pendiente'}</dd></div>
+          <section className="panel-tarjeta" aria-labelledby="nombre-negocio">
+            <h2 id="nombre-negocio" className="panel-tarjeta-titulo">{datos.perfil.nombre || 'Nombre pendiente'}</h2>
+            <p className="panel-item-texto vista-previa-texto">{datos.categoria}</p>
+            <p className="panel-item-texto vista-previa-texto">{datos.perfil.descripcion || 'Descripción pendiente'}</p>
+            <dl className="vista-previa-datos">
+              <div><dt className="vista-previa-etiqueta">Dirección</dt><dd className="vista-previa-valor">{direccionEnTexto(datos.perfil) || 'Dirección pendiente'}</dd></div>
+              <div><dt className="vista-previa-etiqueta">Teléfono</dt><dd className="vista-previa-valor">{datos.perfil.telefono || 'Teléfono pendiente'}</dd></div>
+              <div><dt className="vista-previa-etiqueta">Correo de contacto</dt><dd className="vista-previa-valor">{datos.perfil.correoContacto || 'Correo pendiente'}</dd></div>
             </dl>
           </section>
-          <section className="panel-tarjeta vista-previa-servicios" aria-labelledby="servicios-activos">
-            <h2 id="servicios-activos">Servicios activos</h2>
+          <section className="panel-tarjeta" aria-labelledby="servicios-activos">
+            <h2 id="servicios-activos" className="panel-tarjeta-titulo">Servicios activos</h2>
             {datos.servicios.length === 0 ? <div className="panel-estado">
               <div className="panel-estado-icono" aria-hidden="true">✦</div>
               <p className="panel-estado-texto">No hay servicios activos para mostrar.</p>
             </div> :
               <ul className="panel-lista list-unstyled mb-0">{datos.servicios.map(servicio => <li className="panel-item" key={servicio.id}>
                 <div>
-                <h3>{servicio.nombre}</h3>
-                <p>{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(servicio.precio)} · {servicio.duracionMin} minutos</p>
-                              </div>
+                  <h3 className="panel-item-titulo">{servicio.nombre}</h3>
+                  <p className="panel-item-texto">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(servicio.precio)} · {servicio.duracionMin} minutos</p>
+                </div>
               </li>)}</ul>}
           </section>
         </>}

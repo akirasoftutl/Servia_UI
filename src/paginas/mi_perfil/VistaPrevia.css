@@ -1,7 +1,32 @@
-.vista-previa .panel-tarjeta { padding: 1.5rem; margin-bottom: 1.25rem; }
-.vista-previa h2 { font-size: 1.35rem; }
-.vista-previa h3 { font-size: 1.1rem; }
-.vista-previa-estado { border-left: 4px solid #e27441; }
-.vista-previa-perfil dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 0; }
-.vista-previa-perfil dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
-.vista-previa-perfil p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.vista-previa-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sv-esp-4);
+  margin: var(--sv-esp-4) 0 0;
+}
+
+.vista-previa-datos > div {
+  flex: 1 1 calc(var(--sv-esp-7) * 4);
+  min-width: 0;
+}
+
+.vista-previa-etiqueta {
+  color: var(--sv-texto-suave);
+  font-size: var(--sv-texto-xs);
+}
+
+.vista-previa-valor {
+  margin: var(--sv-esp-1) 0 0;
+  color: var(--sv-texto);
+  overflow-wrap: anywhere;
+}
+
+.vista-previa-texto {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.vista-previa .panel-item > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
