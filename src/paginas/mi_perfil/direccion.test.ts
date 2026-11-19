@@ -1,6 +1,8 @@
 import {
   DIRECCION_VACIA,
   ESTADOS_MEXICO,
+  aplicarDetalleADireccion,
+  camposSinDato,
   direccionParaApi,
   validarDireccion,
   type DireccionForm,
@@ -85,5 +87,35 @@ describe('direccionParaApi', () => {
 
   it('incluye el interior cuando existe', () => {
     expect(direccionParaApi({ ...valida, numeroInterior: '4' }).numeroInterior).toBe('4')
+  })
+})
+
+describe('aplicarDetalleADireccion', () => {
+  const detalle = {
+    calle: 'Av. Juárez',
+    numeroExterior: '55',
+    colonia: 'Jardines del Moral',
+    codigoPostal: '37160',
+    municipio: 'San Francisco del Rincón',
+    estado: 'Jalisco',
+  }
+  const actual: DireccionForm = { ...valida, numeroInterior: '4B' }
+
+  it('sobrescribe los seis campos con su dato y no toca el número interior', () => {
+    expect(aplicarDetalleADireccion(actual, detalle)).toEqual({ ...detalle, numeroInterior: '4B' })
+    expect(camposSinDato(detalle)).toEqual([])
+  })
+
+  it('un dato vacío conserva el valor actual', () => {
+    const resultado = aplicarDetalleADireccion(actual, { ...detalle, colonia: '', codigoPostal: '  ' })
+    expect(resultado.colonia).toBe('Centro')
+    expect(resultado.codigoPostal).toBe('37000')
+    expect(resultado.calle).toBe('Av. Juárez')
+    expect(camposSinDato({ ...detalle, colonia: '', codigoPostal: '  ' })).toEqual(['colonia', 'codigoPostal'])
+  })
+
+  it('un estado fuera de la lista no cambia el estado actual', () => {
+    expect(aplicarDetalleADireccion(actual, { ...detalle, estado: 'Texas' }).estado).toBe('Guanajuato')
+    expect(camposSinDato({ ...detalle, estado: 'Texas' })).toEqual(['estado'])
   })
 })
