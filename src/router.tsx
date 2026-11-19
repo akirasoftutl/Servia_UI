@@ -1,5 +1,6 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
 import { Inicio } from './paginas/Inicio'
+import { VistaPrevia } from './paginas/mi_perfil/VistaPrevia'
 import { MiPerfil } from './paginas/mi_perfil/MiPerfil.tsx'
 import { RutaProtegida } from './componentes/RutaProtegida'
 import { RutaSoloVisitantes } from './componentes/RutaSoloVisitantes'
@@ -41,6 +42,7 @@ export const rutas: RouteObject[] = [
         children: [
           { path: 'resumen', element: <Resumen /> },
           { path: 'mi-perfil', element: <MiPerfil /> },
+          { path: 'mi-perfil/vista-previa', element: <VistaPrevia /> },
           { path: 'servicios', element: <MisServicios /> },
           { path: 'servicios/nuevo', element: <NuevoServicio /> },
           { path: 'servicios/:id', element: <NuevoServicio /> },

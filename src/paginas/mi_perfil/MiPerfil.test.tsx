@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Routes, Route } from 'react-router'
 import { api, ErrorApi } from '../../servicios/api'
 import { MiPerfil } from './MiPerfil'
 
@@ -160,6 +160,18 @@ describe('Mi perfil: dirección por campos', () => {
     expect(alerta).toHaveTextContent('El estado debe ser una de las 32 entidades federativas de México.')
     await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled())
   })
+})
+
+it('C1 abre la vista previa desde Mi perfil', async () => {
+  responder({ ...perfilBase, direccion: null })
+  render(<MemoryRouter initialEntries={['/mi-perfil']}><Routes>
+    <Route path="/mi-perfil" element={<MiPerfil />} />
+    <Route path="/mi-perfil/vista-previa" element={<h1>Destino de vista previa</h1>} />
+  </Routes></MemoryRouter>)
+  const enlace = await screen.findByRole('link', { name: 'Ver como cliente' })
+  expect(enlace).toHaveAttribute('href', '/mi-perfil/vista-previa')
+  await userEvent.click(enlace)
+  expect(screen.getByText('Destino de vista previa')).toBeInTheDocument()
 })
 
 describe('Mi perfil: sugerencias de domicilio (#40)', () => {
