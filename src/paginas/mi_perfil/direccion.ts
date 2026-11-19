@@ -93,3 +93,38 @@ export function direccionParaApi(d: DireccionForm): Direccion {
     estado: d.estado,
   };
 }
+
+// Detalle de un lugar (`GET /lugares/detalle`, Servia_BE#96): cadena vacía si
+// Google no trae el dato.
+export interface DetalleLugar {
+  calle: string;
+  numeroExterior: string;
+  colonia: string;
+  codigoPostal: string;
+  municipio: string;
+  estado: string;
+}
+
+const CAMPOS_DETALLE = ['calle', 'numeroExterior', 'colonia', 'codigoPostal', 'municipio', 'estado'] as const;
+
+function tieneDato(detalle: DetalleLugar, campo: (typeof CAMPOS_DETALLE)[number]): boolean {
+  const valor = detalle[campo].trim();
+  if (valor === '') return false;
+  // El estado es un selector: uno fuera de la lista no sirve.
+  return campo !== 'estado' || (ESTADOS_MEXICO as readonly string[]).includes(valor);
+}
+
+// Campos del detalle que no se pueden aplicar (vacíos o, en el estado, fuera de la lista).
+export function camposSinDato(detalle: DetalleLugar): string[] {
+  return CAMPOS_DETALLE.filter((campo) => !tieneDato(detalle, campo));
+}
+
+// Sobrescribe cada campo con el dato del detalle si trae valor; lo que no trae
+// conserva el valor actual. El número interior nunca se toca.
+export function aplicarDetalleADireccion(actual: DireccionForm, detalle: DetalleLugar): DireccionForm {
+  const siguiente = { ...actual };
+  for (const campo of CAMPOS_DETALLE) {
+    if (tieneDato(detalle, campo)) siguiente[campo] = detalle[campo].trim();
+  }
+  return siguiente;
+}
