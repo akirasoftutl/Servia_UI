@@ -1,14 +1,24 @@
 import { useState, type ChangeEvent, type KeyboardEvent } from 'react'
+import { camposSinDato, type DetalleLugar } from './direccion'
 import { useAutocompletarDomicilio } from './useAutocompletarDomicilio'
 
 export const AVISO_SUGERENCIA = 'Revisa que la calle quede sin colonia ni ciudad y completa el resto de los campos.'
+
+export const AVISO_REVISAR = 'Revisa los campos: completa lo que falte.'
+
+// Lo que recibe el formulario al elegir: el texto de la sugerencia y, si la API
+// lo dio, el detalle por campos.
+export interface EleccionCalle {
+  texto: string
+  detalle: DetalleLugar | null
+}
 
 interface Props {
   value: string
   error?: string
   onChange: (e: ChangeEvent<HTMLInputElement>) => void
-  // Recibe el texto completo de la sugerencia elegida (decisión A1: sin partirlo).
-  onElegir: (texto: string) => void
+  // Con detalle llena cada campo; sin él, cae a la decisión A1 (texto completo en «Calle»).
+  onElegir: (eleccion: EleccionCalle) => void
 }
 
 const ID_LISTA = 'calle-sugerencias'
@@ -16,9 +26,9 @@ const idOpcion = (indice: number) => `${ID_LISTA}-${indice}`
 
 // Campo «Calle» con sugerencias de domicilio como combobox accesible.
 export function CampoCalle({ value, error, onChange, onElegir }: Props) {
-  const { sugerencias, abierta, nota, buscar, cerrar, terminarSesion } = useAutocompletarDomicilio()
+  const { sugerencias, abierta, nota, buscar, cerrar, terminarSesion, elegir: elegirLugar } = useAutocompletarDomicilio()
   const [activa, setActiva] = useState(-1)
-  const [mostrarAviso, setMostrarAviso] = useState(false)
+  const [aviso, setAviso] = useState('')
 
   const expandida = abierta
   const hayOpciones = expandida && sugerencias.length > 0
@@ -29,19 +39,25 @@ export function CampoCalle({ value, error, onChange, onElegir }: Props) {
   }
 
   const elegir = (indice: number) => {
-    const texto = sugerencias[indice]
-    if (texto === undefined) return
-    onElegir(texto)
-    terminarSesion()
+    const sugerencia = sugerencias[indice]
+    if (sugerencia === undefined) return
     setActiva(-1)
-    setMostrarAviso(true)
+    setAviso('')
+    // El campo sigue editable mientras llega el detalle; si el negocio escribe o
+    // elige otra cosa, la respuesta se descarta.
+    void elegirLugar(sugerencia).then(({ vigente, detalle }) => {
+      if (!vigente) return
+      onElegir({ texto: sugerencia.texto, detalle })
+      if (detalle === null) setAviso(AVISO_SUGERENCIA)
+      else if (camposSinDato(detalle).length > 0) setAviso(AVISO_REVISAR)
+    })
   }
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     onChange(e)
     setActiva(-1)
     // Si el negocio edita la calle tras elegir, el aviso ya cumplió su papel.
-    setMostrarAviso(false)
+    setAviso('')
     buscar(e.target.value)
   }
 
@@ -99,7 +115,7 @@ export function CampoCalle({ value, error, onChange, onElegir }: Props) {
 
       <div className="perfil-calle-lista" hidden={!expandida}>
         <ul id={ID_LISTA} role="listbox" aria-label="Direcciones sugeridas" className="list-unstyled mb-0">
-          {hayOpciones && sugerencias.map((texto, indice) => (
+          {hayOpciones && sugerencias.map(({ texto }, indice) => (
             <li
               key={`${indice}-${texto}`}
               id={idOpcion(indice)}
@@ -125,8 +141,8 @@ export function CampoCalle({ value, error, onChange, onElegir }: Props) {
       {error && <div className="invalid-feedback">{error}</div>}
 
       <p className="panel-ayuda perfil-calle-nota" aria-live="polite">{nota}</p>
-      {mostrarAviso && (
-        <p className="panel-ayuda perfil-calle-nota" role="status">{AVISO_SUGERENCIA}</p>
+      {aviso && (
+        <p className="panel-ayuda perfil-calle-nota" role="status">{aviso}</p>
       )}
     </div>
   )

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ErrorApi } from '../../servicios/api'
+import type { DetalleLugar } from './direccion'
 
 // Sugerencias de domicilio que da la API (`GET /lugares/autocompletar`). La
 // llave de Google vive solo en la API: el panel nunca llama a Google.
@@ -9,8 +10,31 @@ export const MAX_LETRAS = 100
 export const MAX_SUGERENCIAS = 5
 export const NOTA_SIN_SUGERENCIAS = 'No hay sugerencias por ahora; escribe la dirección a mano.'
 
-interface Sugerencia {
+export interface Sugerencia {
   texto: string
+  lugarId: string
+}
+
+// Resultado de elegir una sugerencia. `vigente: false` = el negocio ya eligió o
+// escribió otra cosa y la respuesta se descarta. `detalle: null` = no llegó
+// (503, 429, red o cuerpo raro): se cae a poner el texto en «Calle» (A1).
+export interface ResultadoElegir {
+  vigente: boolean
+  detalle: DetalleLugar | null
+}
+
+function aDetalle(datos: unknown): DetalleLugar | null {
+  if (typeof datos !== 'object' || datos === null || Array.isArray(datos)) return null
+  const crudo = datos as Record<string, unknown>
+  const texto = (campo: string) => (typeof crudo[campo] === 'string' ? (crudo[campo] as string) : '')
+  return {
+    calle: texto('calle'),
+    numeroExterior: texto('numeroExterior'),
+    colonia: texto('colonia'),
+    codigoPostal: texto('codigoPostal'),
+    municipio: texto('municipio'),
+    estado: texto('estado'),
+  }
 }
 
 // Token de sesión de Places: agrupa las peticiones de una misma captura.
@@ -25,7 +49,7 @@ export function nuevoTokenSesion(): string {
 }
 
 export function useAutocompletarDomicilio() {
-  const [sugerencias, setSugerencias] = useState<string[]>([])
+  const [sugerencias, setSugerencias] = useState<Sugerencia[]>([])
   const [abierta, setAbierta] = useState(false)
   const [nota, setNota] = useState('')
 
@@ -34,6 +58,15 @@ export function useAutocompletarDomicilio() {
   // Cada búsqueda nueva sube la versión; una respuesta de otra versión es vieja.
   const version = useRef(0)
   const sesion = useRef<string | null>(null)
+  // Lo mismo para el detalle: elegir otra sugerencia o escribir en la calle lo vuelve viejo.
+  const versionDetalle = useRef(0)
+  const controladorDetalle = useRef<AbortController | null>(null)
+
+  const cancelarDetalle = useCallback(() => {
+    versionDetalle.current += 1
+    controladorDetalle.current?.abort()
+    controladorDetalle.current = null
+  }, [])
 
   const cancelar = useCallback(() => {
     version.current += 1
@@ -43,10 +76,14 @@ export function useAutocompletarDomicilio() {
     controlador.current = null
   }, [])
 
-  useEffect(() => cancelar, [cancelar])
+  useEffect(() => () => {
+    cancelar()
+    cancelarDetalle()
+  }, [cancelar, cancelarDetalle])
 
   const buscar = useCallback((texto: string) => {
     cancelar()
+    cancelarDetalle()
     setNota('')
     if (!sesion.current) sesion.current = nuevoTokenSesion()
 
@@ -65,11 +102,14 @@ export function useAutocompletarDomicilio() {
       try {
         const datos = await api<Sugerencia[]>(`/lugares/autocompletar?${parametros}`, { signal: peticion.signal })
         if (mia !== version.current) return
-        const textos = (Array.isArray(datos) ? datos : [])
-          .map((sugerencia) => sugerencia?.texto)
-          .filter((textoSugerido): textoSugerido is string => typeof textoSugerido === 'string' && textoSugerido.trim() !== '')
+        const elegibles = (Array.isArray(datos) ? datos : [])
+          .filter((sugerencia) => typeof sugerencia?.texto === 'string' && sugerencia.texto.trim() !== '')
+          .map((sugerencia) => ({
+            texto: sugerencia.texto,
+            lugarId: typeof sugerencia.lugarId === 'string' ? sugerencia.lugarId : '',
+          }))
           .slice(0, MAX_SUGERENCIAS)
-        setSugerencias(textos)
+        setSugerencias(elegibles)
         setAbierta(true)
       } catch (error) {
         if (mia !== version.current) return
@@ -81,7 +121,7 @@ export function useAutocompletarDomicilio() {
         }
       }
     }, ESPERA_MS)
-  }, [cancelar])
+  }, [cancelar, cancelarDetalle])
 
   // Escape o Tab: cierra sin borrar lo escrito ni cambiar de sesión.
   const cerrar = useCallback(() => {
@@ -95,5 +135,27 @@ export function useAutocompletarDomicilio() {
     sesion.current = null
   }, [cerrar])
 
-  return { sugerencias, abierta, nota, buscar, cerrar, terminarSesion }
+  // Elegir una sugerencia: termina la sesión de Places y pide el detalle con
+  // ese mismo token (cierra la captura facturable).
+  const elegir = useCallback(async (sugerencia: Sugerencia): Promise<ResultadoElegir> => {
+    const token = sesion.current
+    terminarSesion()
+    cancelarDetalle()
+    const mia = versionDetalle.current
+    if (!sugerencia.lugarId || !token) return { vigente: true, detalle: null }
+
+    const peticion = new AbortController()
+    controladorDetalle.current = peticion
+    const parametros = new URLSearchParams({ lugarId: sugerencia.lugarId, sesion: token })
+    try {
+      const datos = await api<unknown>(`/lugares/detalle?${parametros}`, { signal: peticion.signal })
+      if (mia !== versionDetalle.current) return { vigente: false, detalle: null }
+      return { vigente: true, detalle: aDetalle(datos) }
+    } catch {
+      if (mia !== versionDetalle.current) return { vigente: false, detalle: null }
+      return { vigente: true, detalle: null }
+    }
+  }, [terminarSesion, cancelarDetalle])
+
+  return { sugerencias, abierta, nota, buscar, cerrar, terminarSesion, elegir }
 }

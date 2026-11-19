@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router'
 import { api, ErrorApi } from '../../servicios/api'
 import { MiPerfil } from './MiPerfil'
+import { AVISO_REVISAR, AVISO_SUGERENCIA } from './CampoCalle'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../servicios/api')>()
@@ -243,5 +244,143 @@ describe('Mi perfil: sugerencias de domicilio (#40)', () => {
     const cuerpo = await guardar()
     expect(cuerpo.direccion.calle).toBe('Calle Hidalgo')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+})
+
+describe('Mi perfil: domicilio por campos al elegir una sugerencia (#93)', () => {
+  const SUGERENCIA = 'Blvd. Adolfo López Mateos 1102, Jardines del Moral, León, Gto., México'
+  const OTRA = 'Calle Hidalgo 45, Centro, León, Gto., México'
+  const DETALLE = {
+    calle: 'Blvd. Adolfo López Mateos',
+    numeroExterior: '1102',
+    colonia: 'Jardines del Moral',
+    codigoPostal: '37160',
+    municipio: 'León',
+    estado: 'Jalisco',
+  }
+  const lugares = [
+    { texto: SUGERENCIA, lugarId: 'lugar-1' },
+    { texto: OTRA, lugarId: 'lugar-2' },
+  ]
+
+  function responderConDetalle(detalle: (lugarId: string) => Promise<unknown>) {
+    apiMock.mockImplementation(async (ruta: string, opciones?: RequestInit) => {
+      if (ruta === '/categorias') return [{ id: 'cabello-barba', nombre: 'Cabello y barba' }]
+      if (ruta.startsWith('/lugares/autocompletar')) return lugares
+      if (ruta.startsWith('/lugares/detalle')) return detalle(new URLSearchParams(ruta.split('?')[1]).get('lugarId') ?? '')
+      if (ruta === '/negocios/mio' && opciones?.method === 'PUT') return { ...perfilBase, ...JSON.parse(String(opciones.body)), direccionTexto: '' }
+      return { ...perfilBase, direccion: direccionGuardada, direccionTexto: '' }
+    })
+  }
+
+  async function elegirPrimera() {
+    await escribir('Calle *', 'Blvd López')
+    await screen.findByRole('option', { name: SUGERENCIA })
+    await userEvent.keyboard('{ArrowDown}{Enter}')
+  }
+
+  const valor = (etiqueta: string) => (screen.getByLabelText(etiqueta) as HTMLInputElement).value
+
+  async function guardar() {
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    const put = apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')!
+    return JSON.parse(String(put[1]!.body))
+  }
+
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  it('C1 y C2: llena los seis campos con su dato, conserva el interior y el PUT va por campos', async () => {
+    responderConDetalle(async () => DETALLE)
+    await abrirPaso2()
+    await elegirPrimera()
+    await waitFor(() => expect(valor('Número exterior *')).toBe('1102'))
+    expect(valor('Calle *')).toBe(DETALLE.calle)
+    expect(valor('Colonia *')).toBe(DETALLE.colonia)
+    expect(valor('Código postal *')).toBe(DETALLE.codigoPostal)
+    expect(valor('Municipio *')).toBe(DETALLE.municipio)
+    expect(valor('Estado *')).toBe('Jalisco')
+    expect(valor('Número interior')).toBe('4')
+    expect(screen.queryByText(AVISO_REVISAR)).not.toBeInTheDocument()
+    expect(screen.queryByText(AVISO_SUGERENCIA)).not.toBeInTheDocument()
+    const detalle = apiMock.mock.calls.find(([ruta]) => ruta.startsWith('/lugares/detalle'))!
+    const [, consulta] = detalle[0].split('?')
+    const parametros = new URLSearchParams(consulta)
+    const autocompletar = apiMock.mock.calls.find(([ruta]) => ruta.startsWith('/lugares/autocompletar'))!
+    expect(parametros.get('lugarId')).toBe('lugar-1')
+    expect(parametros.get('sesion')).toBe(new URLSearchParams(autocompletar[0].split('?')[1]).get('sesion'))
+    const cuerpo = await guardar()
+    expect(cuerpo.direccion).toEqual({ ...DETALLE, numeroInterior: '4' })
+  })
+
+  it('C3: un dato vacío del detalle no borra el valor actual y se ve el aviso', async () => {
+    responderConDetalle(async () => ({ ...DETALLE, colonia: '', codigoPostal: '' }))
+    await abrirPaso2()
+    await elegirPrimera()
+    expect(await screen.findByText(AVISO_REVISAR)).toBeInTheDocument()
+    expect(valor('Número exterior *')).toBe('1102')
+    expect(valor('Colonia *')).toBe('Centro')
+    expect(valor('Código postal *')).toBe('37000')
+    expect(screen.getByLabelText('Colonia *')).not.toBeDisabled()
+  })
+
+  it('C4: un estado fuera de la lista no cambia el selector', async () => {
+    responderConDetalle(async () => ({ ...DETALLE, estado: 'Texas' }))
+    await abrirPaso2()
+    await elegirPrimera()
+    expect(await screen.findByText(AVISO_REVISAR)).toBeInTheDocument()
+    expect(valor('Estado *')).toBe('Guanajuato')
+    expect(valor('Colonia *')).toBe('Jardines del Moral')
+  })
+
+  it.each([
+    ['503', () => new ErrorApi(503, 'No se pudo obtener el lugar.')],
+    ['429', () => new ErrorApi(429, 'Demasiadas solicitudes.')],
+    ['red', () => new TypeError('Failed to fetch')],
+  ])('C5: si el detalle falla (%s) cae a la calle con el texto y el aviso, sin bloquear', async (_caso, error) => {
+    responderConDetalle(async () => { throw error() })
+    await abrirPaso2()
+    await elegirPrimera()
+    expect(await screen.findByText(AVISO_SUGERENCIA)).toBeInTheDocument()
+    expect(valor('Calle *')).toBe(SUGERENCIA)
+    expect(valor('Colonia *')).toBe('Centro')
+    expect(valor('Número interior')).toBe('4')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Calle *')).not.toBeDisabled()
+  })
+
+  it('C6: la respuesta tardía no pisa lo que el negocio escribió en la calle', async () => {
+    let resolver: (d: unknown) => void = () => {}
+    responderConDetalle(() => new Promise((r) => { resolver = r }))
+    await abrirPaso2()
+    await elegirPrimera()
+    await escribir('Calle *', 'Calle Nueva')
+    await act(async () => { resolver(DETALLE) })
+    expect(valor('Calle *')).toBe('Calle Nueva')
+    expect(valor('Colonia *')).toBe('Centro')
+    expect(valor('Número exterior *')).toBe('123')
+    expect(screen.queryByText(AVISO_REVISAR)).not.toBeInTheDocument()
+  })
+
+  it('C6: la respuesta tardía de una sugerencia anterior no pisa a la elegida después', async () => {
+    const pendientes: Record<string, (d: unknown) => void> = {}
+    responderConDetalle((id) => new Promise((r) => { pendientes[id] = r }))
+    await abrirPaso2()
+    await elegirPrimera()
+    await escribir('Calle *', 'Calle Hidalgo')
+    await screen.findByRole('option', { name: OTRA })
+    await userEvent.click(screen.getByRole('option', { name: OTRA }))
+    const nueva = { ...DETALLE, calle: 'Calle Hidalgo', numeroExterior: '45', colonia: 'Centro', codigoPostal: '37000', estado: 'Guanajuato' }
+    await act(async () => { pendientes['lugar-2'](nueva) })
+    await waitFor(() => expect(valor('Número exterior *')).toBe('45'))
+    await act(async () => { pendientes['lugar-1'](DETALLE) })
+    expect(valor('Calle *')).toBe('Calle Hidalgo')
+    expect(valor('Número exterior *')).toBe('45')
+    expect(valor('Colonia *')).toBe('Centro')
+    expect(valor('Estado *')).toBe('Guanajuato')
   })
 })

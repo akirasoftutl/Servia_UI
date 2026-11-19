@@ -19,7 +19,7 @@ function Campo({ inicial = '' }: { inicial?: string }) {
   return (
     <>
       <label htmlFor="calle">Calle *</label>
-      <CampoCalle value={calle} onChange={(e) => setCalle(e.target.value)} onElegir={setCalle} />
+      <CampoCalle value={calle} onChange={(e) => setCalle(e.target.value)} onElegir={({ texto }) => setCalle(texto)} />
       <button type="button">Otro</button>
     </>
   )
@@ -43,7 +43,7 @@ beforeEach(() => {
   // shouldAdvanceTime: user-event espera con setTimeout reales entre acciones.
   vi.useFakeTimers({ shouldAdvanceTime: true })
   apiMock.mockReset()
-  apiMock.mockResolvedValue(TEXTOS.map((texto) => ({ texto })))
+  apiMock.mockResolvedValue(TEXTOS.map((texto, i) => ({ texto, lugarId: `lugar-${i + 1}` })))
 })
 
 afterEach(() => {
@@ -90,6 +90,7 @@ describe('CampoCalle', () => {
     const opciones = await abrirSugerencias(usuario, campo)
     expect(screen.queryByText(AVISO_SUGERENCIA)).not.toBeInTheDocument()
     await usuario.click(opciones[0])
+    await esperar(0)
     expect(screen.getByRole('status')).toHaveTextContent(AVISO_SUGERENCIA)
     await usuario.type(campo, ' 120')
     expect(campo).toHaveValue(`${TEXTOS[0]} 120`)
@@ -109,6 +110,7 @@ describe('CampoCalle', () => {
     const { usuario, campo } = preparar()
     const opciones = await abrirSugerencias(usuario, campo)
     await usuario.click(opciones[0])
+    await esperar(0)
     expect(campo).toHaveValue(TEXTOS[0])
     expect(campo).toHaveFocus()
     expect(campo).toHaveAttribute('aria-expanded', 'false')

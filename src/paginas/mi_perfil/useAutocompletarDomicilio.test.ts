@@ -10,7 +10,7 @@ vi.mock('../../servicios/api', async (importOriginal) => {
 const apiMock = vi.mocked(api)
 const TOKEN = /^[A-Za-z0-9_-]{1,36}$/
 
-const sugerencias = (n: number) => Array.from({ length: n }, (_, i) => ({ texto: `Blvd. López Mateos ${i + 1}, León, Gto.` }))
+const sugerencias = (n: number) => Array.from({ length: n }, (_, i) => ({ texto: `Blvd. López Mateos ${i + 1}, León, Gto.`, lugarId: `lugar-${i + 1}` }))
 
 const esperar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
 
@@ -49,6 +49,7 @@ describe('useAutocompletarDomicilio', () => {
     expect(apiMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal)
     expect(result.current.abierta).toBe(true)
     expect(result.current.sugerencias).toHaveLength(5)
+    expect(result.current.sugerencias[0]).toEqual({ texto: 'Blvd. López Mateos 1, León, Gto.', lugarId: 'lugar-1' })
   })
 
   it.each(['', 'ab', '  ab  ', '   '])('con menos de 3 letras tras quitar espacios («%s») no pide nada', async (texto) => {
@@ -100,7 +101,7 @@ describe('useAutocompletarDomicilio', () => {
     let resolverVieja!: (valor: unknown) => void
     apiMock
       .mockImplementationOnce(() => new Promise((resolver) => { resolverVieja = resolver }))
-      .mockResolvedValueOnce([{ texto: 'Nueva' }])
+      .mockResolvedValueOnce([{ texto: 'Nueva', lugarId: 'lugar-nueva' }])
     const { result } = renderHook(() => useAutocompletarDomicilio())
     act(() => result.current.buscar('Viej'))
     await esperar(300)
@@ -108,9 +109,9 @@ describe('useAutocompletarDomicilio', () => {
     act(() => result.current.buscar('Nuev'))
     expect(senalVieja.aborted).toBe(true)
     await esperar(300)
-    expect(result.current.sugerencias).toEqual(['Nueva'])
-    await act(async () => { resolverVieja([{ texto: 'Vieja' }]) })
-    expect(result.current.sugerencias).toEqual(['Nueva'])
+    expect(result.current.sugerencias).toEqual([{ texto: 'Nueva', lugarId: 'lugar-nueva' }])
+    await act(async () => { resolverVieja([{ texto: 'Vieja', lugarId: 'lugar-vieja' }]) })
+    expect(result.current.sugerencias).toEqual([{ texto: 'Nueva', lugarId: 'lugar-nueva' }])
   })
 
   it.each([429, 503])('con %i cierra la lista y deja la nota discreta', async (estado) => {
@@ -208,5 +209,81 @@ describe('nuevoTokenSesion', () => {
     } finally {
       Object.defineProperty(crypto, 'randomUUID', { value: original, configurable: true })
     }
+  })
+})
+
+describe('useAutocompletarDomicilio: detalle del lugar (#93)', () => {
+  it('elegir pide el detalle con el mismo token de sesión y cierra la sesión', async () => {
+    apiMock.mockResolvedValueOnce(sugerencias(2))
+    const { result } = renderHook(() => useAutocompletarDomicilio())
+    act(() => result.current.buscar('Blvd López'))
+    await esperar(300)
+    const detalle = { calle: 'Blvd. López Mateos', numeroExterior: '1', colonia: 'Centro', codigoPostal: '37000', municipio: 'León', estado: 'Guanajuato' }
+    apiMock.mockResolvedValueOnce(detalle)
+    let resultado: Awaited<ReturnType<typeof result.current.elegir>> | undefined
+    await act(async () => { resultado = await result.current.elegir(result.current.sugerencias[1]) })
+    expect(resultado).toEqual({ vigente: true, detalle })
+    const { camino, parametros } = parametrosDe(1)
+    expect(camino).toBe('/lugares/detalle')
+    expect(parametros.get('lugarId')).toBe('lugar-2')
+    expect(parametros.get('sesion')).toBe(parametrosDe(0).parametros.get('sesion'))
+    expect(result.current.abierta).toBe(false)
+    // La captura siguiente usa otra sesión.
+    apiMock.mockResolvedValueOnce([])
+    act(() => result.current.buscar('Blvd López'))
+    await esperar(300)
+    expect(parametrosDe(2).parametros.get('sesion')).not.toBe(parametros.get('sesion'))
+  })
+
+  it('sin lugarId no pide el detalle y devuelve detalle nulo', async () => {
+    apiMock.mockResolvedValueOnce([{ texto: 'Sin identificador' }])
+    const { result } = renderHook(() => useAutocompletarDomicilio())
+    act(() => result.current.buscar('Blvd López'))
+    await esperar(300)
+    let resultado: Awaited<ReturnType<typeof result.current.elegir>> | undefined
+    await act(async () => { resultado = await result.current.elegir(result.current.sugerencias[0]) })
+    expect(resultado).toEqual({ vigente: true, detalle: null })
+    expect(apiMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('si el detalle falla o llega algo raro devuelve detalle nulo', async () => {
+    apiMock.mockResolvedValueOnce(sugerencias(1))
+    const { result } = renderHook(() => useAutocompletarDomicilio())
+    act(() => result.current.buscar('Blvd López'))
+    await esperar(300)
+    apiMock.mockRejectedValueOnce(new ErrorApi(503, 'No disponible'))
+    let falla: Awaited<ReturnType<typeof result.current.elegir>> | undefined
+    await act(async () => { falla = await result.current.elegir({ texto: 'A', lugarId: 'a' }) })
+    expect(falla).toEqual({ vigente: true, detalle: null })
+    apiMock.mockResolvedValueOnce([1, 2])
+    let raro: Awaited<ReturnType<typeof result.current.elegir>> | undefined
+    await act(async () => { raro = await result.current.elegir({ texto: 'A', lugarId: 'a' }) })
+    expect(raro).toEqual({ vigente: true, detalle: null })
+  })
+
+  it('una respuesta de detalle vieja se descarta si se elige otra sugerencia o se escribe', async () => {
+    const { result } = renderHook(() => useAutocompletarDomicilio())
+    act(() => result.current.buscar('Blvd López'))
+    let resolverVieja: (d: unknown) => void = () => {}
+    apiMock.mockReset()
+    apiMock.mockImplementationOnce(() => new Promise((r) => { resolverVieja = r }))
+    let vieja: Promise<unknown> = Promise.resolve()
+    act(() => { vieja = result.current.elegir({ texto: 'A', lugarId: 'a' }) })
+    act(() => result.current.buscar('Blvd'))
+    await act(async () => { resolverVieja({ calle: 'X', numeroExterior: '1', colonia: 'Y', codigoPostal: '37000', municipio: 'Z', estado: 'Jalisco' }) })
+    expect(await vieja).toEqual({ vigente: false, detalle: null })
+  })
+
+  it('un fallo de detalle viejo también se descarta (no pone el texto en la calle)', async () => {
+    const { result } = renderHook(() => useAutocompletarDomicilio())
+    act(() => result.current.buscar('Blvd López'))
+    let fallar: (e: unknown) => void = () => {}
+    apiMock.mockReset()
+    apiMock.mockImplementationOnce(() => new Promise((_, rechazar) => { fallar = rechazar }))
+    let vieja: Promise<unknown> = Promise.resolve()
+    act(() => { vieja = result.current.elegir({ texto: 'A', lugarId: 'a' }) })
+    act(() => result.current.buscar('Blvd'))
+    await act(async () => { fallar(new ErrorApi(503, 'No disponible')) })
+    expect(await vieja).toEqual({ vigente: false, detalle: null })
   })
 })

@@ -5,6 +5,7 @@ import './MiPerfil.css';
 import { api } from '../../servicios/api';
 import {
   DIRECCION_VACIA,
+  aplicarDetalleADireccion,
   ESTADOS_MEXICO,
   direccionAForm,
   direccionParaApi,
@@ -13,7 +14,7 @@ import {
   type DireccionForm,
 } from './direccion';
 import { CambiarContrasena } from './CambiarContrasena';
-import { CampoCalle } from './CampoCalle';
+import { CampoCalle, type EleccionCalle } from './CampoCalle';
 
 interface Categoria {
   id: string;
@@ -122,10 +123,15 @@ export function MiPerfil() {
     setErrores({ ...errores, [name]: '' });
   };
 
-  // Decisión A1: la sugerencia elegida llena solo `calle`, con todo su texto.
-  const handleCalleElegida = (texto: string) => {
-    setDireccion((prev) => ({ ...prev, calle: texto }));
-    setErrores((prev) => ({ ...prev, calle: '' }));
+  // Con detalle llena cada campo (menos el número interior); sin él, decisión A1:
+  // solo `calle`, con todo el texto de la sugerencia.
+  const handleCalleElegida = ({ texto, detalle }: EleccionCalle) => {
+    setDireccion((prev) => (detalle ? aplicarDetalleADireccion(prev, detalle) : { ...prev, calle: texto }));
+    setErrores((prev) => ({
+      ...prev,
+      calle: '',
+      ...(detalle ? { numeroExterior: '', colonia: '', codigoPostal: '', municipio: '', estado: '' } : {}),
+    }));
   };
 
   const handleCategoriaChange = (id: string) => {
