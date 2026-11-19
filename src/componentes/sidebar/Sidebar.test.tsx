@@ -80,6 +80,21 @@ it('C1 «Resumen» es el primer elemento de Principal y abre /resumen', async ()
   expect(await screen.findByRole('heading', { name: 'Resumen del negocio' })).toBeInTheDocument()
   expect(router.state.location.pathname).toBe('/resumen')
 })
+it('abre Clientes desde Principal después de Servicios y Resumen al inicio', async () => {
+  const router = createMemoryRouter([
+    { path: '/', element: <Sidebar /> },
+    { path: '/clientes', element: <h1>Clientes del negocio</h1> },
+  ])
+  render(<RouterProvider router={router} />)
+  const clientes = screen.getByRole('button', { name: 'Clientes' })
+  const grupo = clientes.closest('.nav-group')!
+  expect(grupo).toHaveTextContent('PRINCIPAL')
+  expect([...grupo.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Resumen', 'Reservas', 'Servicios', 'Clientes'])
+  fireEvent.click(clientes)
+  expect(await screen.findByRole('heading', { name: 'Clientes del negocio' })).toBeInTheDocument()
+  expect(router.state.location.pathname).toBe('/clientes')
+})
+
 function pantalla(angosta: boolean) {
   Object.defineProperty(window, 'matchMedia', { configurable: true, value: vi.fn(() => ({ matches: angosta, addEventListener: vi.fn(), removeEventListener: vi.fn() })) })
 }
