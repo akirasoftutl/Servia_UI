@@ -74,7 +74,10 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  expect(alerta).not.toHaveBeenCalled();
+  vi.restoreAllMocks();
+});
 
 function mostrar() {
   return render(
@@ -207,7 +210,7 @@ describe('DetalleReserva', () => {
     await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' }));
     await waitFor(() => expect(llamadas('/reservas/negocio/r1/aceptar')).toHaveLength(1));
     expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/aceptar', { method: 'PATCH' });
-    expect(alerta).toHaveBeenCalledWith('Reserva confirmada.');
+    expect(await screen.findByText('Reserva confirmada.')).toBeInTheDocument();
     expect(await screen.findByText('Confirmada')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aceptar Reserva' })).not.toBeInTheDocument();
   });
@@ -218,7 +221,7 @@ describe('DetalleReserva', () => {
     await listo();
     await usuario.click(screen.getByRole('button', { name: 'Aceptar Reserva' }));
     await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' }));
-    await waitFor(() => expect(alerta).toHaveBeenCalledWith('No pudimos guardar tu respuesta. Intenta de nuevo.'));
+    expect(await within(screen.getByRole('alertdialog')).findByRole('alert')).toHaveTextContent('No pudimos guardar tu respuesta. Intenta de nuevo.');
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
   });
 
@@ -231,15 +234,15 @@ describe('DetalleReserva', () => {
     expect(await within(modal).findByText('Escribe el motivo del rechazo.')).toBeInTheDocument();
     expect(llamadas('/reservas/negocio/r1/rechazar')).toHaveLength(0);
 
-    await usuario.type(within(modal).getByRole('textbox'), 'Horario ocupado');
+    await usuario.type(within(modal).getByRole('textbox'), 'Horario ocupado por mantenimiento');
     await usuario.click(within(modal).getByRole('button', { name: 'Rechazar solicitud' }));
     await waitFor(() => expect(llamadas('/reservas/negocio/r1/rechazar')).toHaveLength(1));
     expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/rechazar', {
-      method: 'PATCH', body: JSON.stringify({ motivo: 'Horario ocupado' }),
+      method: 'PATCH', body: JSON.stringify({ motivo: 'Horario ocupado por mantenimiento' }),
     });
-    expect(alerta).toHaveBeenCalledWith('Solicitud rechazada. El horario quedó libre.');
+    expect(await screen.findByText('Solicitud rechazada. El horario quedó libre.')).toBeInTheDocument();
     expect(await screen.findByText('Rechazada')).toBeInTheDocument();
-    expect(screen.getByText('Horario ocupado')).toBeInTheDocument();
+    expect(screen.getByText('Horario ocupado por mantenimiento')).toBeInTheDocument();
   });
 
   it('no ofrece cancelar una reserva pendiente ni una confirmada en el pasado', async () => {
@@ -262,16 +265,16 @@ describe('DetalleReserva', () => {
     expect(await within(modal).findByText('Escribe el motivo de la cancelación.')).toBeInTheDocument();
     expect(llamadas('/reservas/negocio/r1/cancelar')).toHaveLength(0);
 
-    await usuario.type(within(modal).getByRole('textbox'), 'No hay cupo');
+    await usuario.type(within(modal).getByRole('textbox'), 'No hay cupo por mantenimiento');
     await usuario.click(within(modal).getByRole('button', { name: 'Cancelar reserva' }));
     await waitFor(() => expect(llamadas('/reservas/negocio/r1/cancelar')).toHaveLength(1));
     expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/cancelar', {
-      method: 'PATCH', body: JSON.stringify({ motivo: 'No hay cupo' }),
+      method: 'PATCH', body: JSON.stringify({ motivo: 'No hay cupo por mantenimiento' }),
     });
     expect(await screen.findByText('Reserva cancelada. El horario quedó libre.')).toBeInTheDocument();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(screen.getByText('Cancelada')).toBeInTheDocument();
-    expect(screen.getByText('No hay cupo')).toBeInTheDocument();
+    expect(screen.getByText('No hay cupo por mantenimiento')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cancelar reserva' })).not.toBeInTheDocument();
   });
 
@@ -280,9 +283,10 @@ describe('DetalleReserva', () => {
     const usuario = userEvent.setup();
     await listo(reserva({ estado: 'confirmada', segundosRestantes: null }));
     await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
-    await usuario.type(within(screen.getByRole('alertdialog')).getByRole('textbox'), 'Motivo');
+    await usuario.type(within(screen.getByRole('alertdialog')).getByRole('textbox'), 'Cierre por mantenimiento');
     await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar reserva' }));
-    await waitFor(() => expect(alerta).toHaveBeenCalledWith('No se puede cancelar'));
+    expect(await within(screen.getByRole('alertdialog')).findByRole('alert')).toHaveTextContent('No se puede cancelar');
+    await waitFor(() => expect(llamadas('/reservas/negocio/r1')).toHaveLength(2));
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     expect(screen.queryByText('Reserva cancelada. El horario quedó libre.')).not.toBeInTheDocument();
   });
@@ -292,9 +296,9 @@ describe('DetalleReserva', () => {
     const usuario = userEvent.setup();
     await listo(reserva({ estado: 'confirmada', segundosRestantes: null }));
     await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
-    await usuario.type(within(screen.getByRole('alertdialog')).getByRole('textbox'), 'Motivo');
+    await usuario.type(within(screen.getByRole('alertdialog')).getByRole('textbox'), 'Cierre por mantenimiento');
     await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar reserva' }));
-    await waitFor(() => expect(alerta).toHaveBeenCalledWith('La reserva ya fue cancelada'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('La reserva ya fue cancelada');
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     await waitFor(() => expect(llamadas('/reservas/negocio/r1')).toHaveLength(2));
   });
@@ -326,5 +330,103 @@ describe('DetalleReserva', () => {
     await listo();
     await usuario.click(screen.getByRole('link', { name: 'Volver a reservas' }));
     expect(await screen.findByRole('heading', { name: 'Lista de reservas' })).toBeInTheDocument();
+  });
+});
+
+
+describe('criterios de motivo, avisos y diseño', () => {
+  it.each([
+    ['rechazada', 'Motivo del rechazo'],
+    ['rechazada_vencimiento', 'Motivo del rechazo'],
+    ['cancelada', 'Motivo de la cancelación'],
+  ])('C5 titula el motivo para %s', async (estado, titulo) => {
+    await listo(reserva({ estado, motivo: 'Cierre por mantenimiento' }));
+    expect(screen.getByRole('heading', { name: titulo })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Aceptar Reserva' })).not.toBeInTheDocument();
+  });
+
+  const acciones = [
+    ['rechazar', 'pendiente', 'Rechazar Solicitud', 'Rechazar solicitud'],
+    ['cancelar', 'confirmada', 'Cancelar reserva', 'Cancelar reserva'],
+  ];
+  it.each(acciones)('C6 valida 19, 20, 500 y 501 caracteres recortados al %s', async (accion, estado, abrir, enviar) => {
+    await listo(reserva({ estado }));
+    fireEvent.click(screen.getByRole('button', { name: abrir }));
+    const modal = screen.getByRole('alertdialog');
+    const campo = within(modal).getByRole('textbox');
+    expect(within(modal).getByText('De 20 a 500 caracteres')).toBeInTheDocument();
+    for (const longitud of [19, 501]) {
+      fireEvent.change(campo, { target: { value: `  ${'a'.repeat(longitud)}  ` } });
+      fireEvent.click(within(modal).getByRole('button', { name: enviar }));
+      expect(within(modal).getByRole('alert')).toHaveTextContent(longitud === 19 ? 'al menos 20' : 'exceder 500');
+      expect(llamadas(`/reservas/negocio/r1/${accion}`)).toHaveLength(0);
+    }
+    fireEvent.change(campo, { target: { value: `  ${'a'.repeat(20)}  ` } });
+    expect(within(modal).getByText('20/500')).toBeInTheDocument();
+    fireEvent.click(within(modal).getByRole('button', { name: enviar }));
+    await waitFor(() => expect(llamadas(`/reservas/negocio/r1/${accion}`)).toHaveLength(1));
+    expect(apiMock).toHaveBeenCalledWith(`/reservas/negocio/r1/${accion}`, { method: 'PATCH', body: JSON.stringify({ motivo: 'a'.repeat(20) }) });
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+  });
+
+  it.each(acciones)('C6 permite el límite de 500 caracteres al %s', async (accion, estado, abrir, enviar) => {
+    await listo(reserva({ estado }));
+    fireEvent.click(screen.getByRole('button', { name: abrir }));
+    const modal = screen.getByRole('alertdialog');
+    fireEvent.change(within(modal).getByRole('textbox'), { target: { value: `  ${'a'.repeat(500)}  ` } });
+    fireEvent.click(within(modal).getByRole('button', { name: enviar }));
+    await waitFor(() => expect(llamadas(`/reservas/negocio/r1/${accion}`)).toHaveLength(1));
+    expect(apiMock).toHaveBeenCalledWith(`/reservas/negocio/r1/${accion}`, { method: 'PATCH', body: JSON.stringify({ motivo: 'a'.repeat(500) }) });
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+  });
+
+  const flujos = [
+    ['aceptar', 'pendiente', 'Aceptar Reserva', 'Confirmar'],
+    ...acciones,
+  ];
+  for (const resultado of ['éxito', 'error']) {
+    it.each(flujos)(`C7 avisa dentro de la página al %s con ${resultado}, sin alert`, async (accion, estado, abrir, enviar) => {
+      if (resultado === 'error') responderPatch(new Error('Sin red'));
+      await listo(reserva({ estado }));
+      fireEvent.click(screen.getByRole('button', { name: abrir }));
+      const modal = screen.getByRole('alertdialog');
+      const campo = within(modal).queryByRole('textbox');
+      if (campo) fireEvent.change(campo, { target: { value: 'Cierre por mantenimiento' } });
+      fireEvent.click(within(modal).getByRole('button', { name: enviar }));
+      if (resultado === 'error') {
+        expect(await within(modal).findByRole('alert')).toHaveTextContent('No pudimos guardar tu respuesta');
+      } else {
+        await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+        expect(screen.getAllByRole('status').some(nodo => /confirmada|rechazada|cancelada/.test(nodo.textContent ?? ''))).toBe(true);
+      }
+      expect(llamadas(`/reservas/negocio/r1/${accion}`)).toHaveLength(1);
+      expect(alerta).not.toHaveBeenCalled();
+    });
+  }
+
+  for (const codigo of [400, 409]) {
+    it.each(flujos)(`C8 conserva el aviso ${codigo} y recarga al %s`, async (_accion, estado, abrir, enviar) => {
+      responderPatch(new ErrorApi(codigo, `Mensaje persistente ${codigo}`));
+      await listo(reserva({ estado }));
+      fireEvent.click(screen.getByRole('button', { name: abrir }));
+      const modal = screen.getByRole('alertdialog');
+      const campo = within(modal).queryByRole('textbox');
+      if (campo) fireEvent.change(campo, { target: { value: 'Cierre por mantenimiento' } });
+      fireEvent.click(within(modal).getByRole('button', { name: enviar }));
+      await waitFor(() => expect(llamadas('/reservas/negocio/r1')).toHaveLength(2));
+      await screen.findByRole('heading', { name: 'Reserva SRV-123' });
+      expect(screen.getAllByRole('alert').some(nodo => nodo.textContent === `Mensaje persistente ${codigo}`)).toBe(true);
+      expect(screen.queryByRole('alertdialog') !== null).toBe(codigo === 400);
+    });
+  }
+
+  it('C9 reutiliza los estados de error del panel y los botones compartidos', async () => {
+    responderDetalle(new Error('Sin conexión'));
+    mostrar();
+    const error = await screen.findByRole('alert');
+    expect(error).toHaveClass('panel-estado-texto');
+    expect(error.parentElement).toHaveClass('panel-estado');
+    expect(error.parentElement?.querySelector('.panel-estado-icono--error')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveClass('btn-servia-primary');
   });
 });
