@@ -56,7 +56,7 @@ export function Clientes() {
             <DatosCliente cliente={cliente} />
           </article>)}
         </div>
-        {!cargando && !error && pagina.siguiente && <button className="btn-servia-secondary clientes-mas" onClick={() => {
+        {!cargando && !error && pagina.siguiente && <button className="btn-servia-secondary btn-servia-sm clientes-mas" onClick={() => {
           setCursor(pagina.siguiente!); setCargando(true); setError('');
         }}>Cargar más</button>}
       </div>

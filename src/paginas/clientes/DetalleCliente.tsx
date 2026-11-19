@@ -41,7 +41,7 @@ function Historial({ clienteUid }: { clienteUid: string }) {
       <span className="panel-eyebrow">PRINCIPAL</span>
       <h1 className="panel-titulo">Detalle del cliente</h1>
       <p className="panel-subtitulo">Su historial de reservas con tu negocio.</p>
-    </div><Link className="btn-servia-secondary clientes-volver" to="/clientes">Volver a clientes</Link></header>
+    </div><Link className="btn-servia-secondary btn-servia-sm clientes-volver" to="/clientes">Volver a clientes</Link></header>
     {datos && <section className="panel-tarjeta" aria-label="Datos del cliente">
       <h2 className="panel-tarjeta-titulo">{datos.cliente.nombre || 'Cliente sin nombre'}</h2>
       <DatosCliente cliente={datos.cliente} />
@@ -61,7 +61,7 @@ function Historial({ clienteUid }: { clienteUid: string }) {
             </div>
           </article>)}
         </div>
-        {!cargando && !error && datos?.siguiente && <button className="btn-servia-secondary clientes-mas" onClick={() => {
+        {!cargando && !error && datos?.siguiente && <button className="btn-servia-secondary btn-servia-sm clientes-mas" onClick={() => {
           setCursor(datos.siguiente!); setCargando(true); setError('');
         }}>Cargar más</button>}
       </div>

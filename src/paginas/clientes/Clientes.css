@@ -1,7 +1,8 @@
 .clientes-item { display: block; }
-.clientes-datos { display: grid; gap: var(--sv-esp-2); overflow-wrap: anywhere; }
+.clientes-datos { display: grid; gap: var(--sv-esp-2); overflow-wrap: break-word; }
 .clientes-datos p { margin: 0; }
-.clientes-datos a, .clientes-item a { color: var(--sv-acento); }
+.clientes-item a { color: var(--sv-acento); }
+.clientes-datos a { color: inherit; text-decoration: none; }
 .clientes-mas { margin-top: var(--sv-esp-4); }
 
 .clientes-volver { white-space: normal; }
