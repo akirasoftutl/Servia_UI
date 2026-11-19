@@ -13,6 +13,7 @@ import { MisServicios } from './paginas/servicios/MisServicios.tsx'
 import { Horario } from './paginas/horario/Horario.tsx'
 import { DetalleReserva } from './paginas/reservas/DetalleReserva'
 import { Bloqueos } from './paginas/bloqueos/Bloqueos.tsx'
+import { Estadisticas } from './paginas/estadisticas/Estadisticas.tsx'
 import { Reservas } from './paginas/reservas/Reservas.tsx'
 import { Resumen } from './paginas/resumen/Resumen.tsx'
 
@@ -50,6 +51,7 @@ export const rutas: RouteObject[] = [
           { path: 'clientes/:clienteUid', element: <DetalleCliente /> },
           { path: 'horario', element: <Horario /> },
           { path: 'bloqueos', element: <Bloqueos /> },
+          { path: 'estadisticas', element: <Estadisticas /> },
           { path: 'reservas', element: <Reservas /> },
           { path: 'reservas', element: <Reservas /> },
           { path: 'reservas/:id', element: <DetalleReserva /> }, 
