@@ -9,8 +9,9 @@ export const MAX_LETRAS = 100
 export const MAX_SUGERENCIAS = 5
 export const NOTA_SIN_SUGERENCIAS = 'No hay sugerencias por ahora; escribe la dirección a mano.'
 
-interface Sugerencia {
+export interface Sugerencia {
   texto: string
+  lugarId: string
 }
 
 // Token de sesión de Places: agrupa las peticiones de una misma captura.
@@ -25,7 +26,7 @@ export function nuevoTokenSesion(): string {
 }
 
 export function useAutocompletarDomicilio() {
-  const [sugerencias, setSugerencias] = useState<string[]>([])
+  const [sugerencias, setSugerencias] = useState<Sugerencia[]>([])
   const [abierta, setAbierta] = useState(false)
   const [nota, setNota] = useState('')
 
@@ -65,11 +66,14 @@ export function useAutocompletarDomicilio() {
       try {
         const datos = await api<Sugerencia[]>(`/lugares/autocompletar?${parametros}`, { signal: peticion.signal })
         if (mia !== version.current) return
-        const textos = (Array.isArray(datos) ? datos : [])
-          .map((sugerencia) => sugerencia?.texto)
-          .filter((textoSugerido): textoSugerido is string => typeof textoSugerido === 'string' && textoSugerido.trim() !== '')
+        const elegibles = (Array.isArray(datos) ? datos : [])
+          .filter((sugerencia) => typeof sugerencia?.texto === 'string' && sugerencia.texto.trim() !== '')
+          .map((sugerencia) => ({
+            texto: sugerencia.texto,
+            lugarId: typeof sugerencia.lugarId === 'string' ? sugerencia.lugarId : '',
+          }))
           .slice(0, MAX_SUGERENCIAS)
-        setSugerencias(textos)
+        setSugerencias(elegibles)
         setAbierta(true)
       } catch (error) {
         if (mia !== version.current) return

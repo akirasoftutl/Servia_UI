@@ -29,7 +29,7 @@ export function CampoCalle({ value, error, onChange, onElegir }: Props) {
   }
 
   const elegir = (indice: number) => {
-    const texto = sugerencias[indice]
+    const texto = sugerencias[indice]?.texto
     if (texto === undefined) return
     onElegir(texto)
     terminarSesion()
@@ -99,7 +99,7 @@ export function CampoCalle({ value, error, onChange, onElegir }: Props) {
 
       <div className="perfil-calle-lista" hidden={!expandida}>
         <ul id={ID_LISTA} role="listbox" aria-label="Direcciones sugeridas" className="list-unstyled mb-0">
-          {hayOpciones && sugerencias.map((texto, indice) => (
+          {hayOpciones && sugerencias.map(({ texto }, indice) => (
             <li
               key={`${indice}-${texto}`}
               id={idOpcion(indice)}

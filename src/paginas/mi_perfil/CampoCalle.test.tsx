@@ -43,7 +43,7 @@ beforeEach(() => {
   // shouldAdvanceTime: user-event espera con setTimeout reales entre acciones.
   vi.useFakeTimers({ shouldAdvanceTime: true })
   apiMock.mockReset()
-  apiMock.mockResolvedValue(TEXTOS.map((texto) => ({ texto })))
+  apiMock.mockResolvedValue(TEXTOS.map((texto, i) => ({ texto, lugarId: `lugar-${i + 1}` })))
 })
 
 afterEach(() => {

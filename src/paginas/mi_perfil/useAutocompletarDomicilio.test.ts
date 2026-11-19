@@ -10,7 +10,7 @@ vi.mock('../../servicios/api', async (importOriginal) => {
 const apiMock = vi.mocked(api)
 const TOKEN = /^[A-Za-z0-9_-]{1,36}$/
 
-const sugerencias = (n: number) => Array.from({ length: n }, (_, i) => ({ texto: `Blvd. López Mateos ${i + 1}, León, Gto.` }))
+const sugerencias = (n: number) => Array.from({ length: n }, (_, i) => ({ texto: `Blvd. López Mateos ${i + 1}, León, Gto.`, lugarId: `lugar-${i + 1}` }))
 
 const esperar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
 
@@ -49,6 +49,7 @@ describe('useAutocompletarDomicilio', () => {
     expect(apiMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal)
     expect(result.current.abierta).toBe(true)
     expect(result.current.sugerencias).toHaveLength(5)
+    expect(result.current.sugerencias[0]).toEqual({ texto: 'Blvd. López Mateos 1, León, Gto.', lugarId: 'lugar-1' })
   })
 
   it.each(['', 'ab', '  ab  ', '   '])('con menos de 3 letras tras quitar espacios («%s») no pide nada', async (texto) => {
@@ -100,7 +101,7 @@ describe('useAutocompletarDomicilio', () => {
     let resolverVieja!: (valor: unknown) => void
     apiMock
       .mockImplementationOnce(() => new Promise((resolver) => { resolverVieja = resolver }))
-      .mockResolvedValueOnce([{ texto: 'Nueva' }])
+      .mockResolvedValueOnce([{ texto: 'Nueva', lugarId: 'lugar-nueva' }])
     const { result } = renderHook(() => useAutocompletarDomicilio())
     act(() => result.current.buscar('Viej'))
     await esperar(300)
@@ -108,9 +109,9 @@ describe('useAutocompletarDomicilio', () => {
     act(() => result.current.buscar('Nuev'))
     expect(senalVieja.aborted).toBe(true)
     await esperar(300)
-    expect(result.current.sugerencias).toEqual(['Nueva'])
-    await act(async () => { resolverVieja([{ texto: 'Vieja' }]) })
-    expect(result.current.sugerencias).toEqual(['Nueva'])
+    expect(result.current.sugerencias).toEqual([{ texto: 'Nueva', lugarId: 'lugar-nueva' }])
+    await act(async () => { resolverVieja([{ texto: 'Vieja', lugarId: 'lugar-vieja' }]) })
+    expect(result.current.sugerencias).toEqual([{ texto: 'Nueva', lugarId: 'lugar-nueva' }])
   })
 
   it.each([429, 503])('con %i cierra la lista y deja la nota discreta', async (estado) => {
