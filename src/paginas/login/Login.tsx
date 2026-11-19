@@ -51,7 +51,7 @@ export function Login() {
       setExito('¡Inicio de sesión exitoso! Redirigiendo...');
       
       setTimeout(() => {
-        navigate('/mi-perfil');
+        navigate('/resumen');
       }, 1500);
 
     } catch (error: any) {

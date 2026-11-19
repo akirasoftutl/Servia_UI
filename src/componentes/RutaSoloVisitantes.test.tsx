@@ -55,14 +55,14 @@ beforeEach(() => {
 })
 
 describe('RutaSoloVisitantes', () => {
-  it.each(['/login', '/registro-negocio'])('con sesión, %s reemplaza por /servicios sin mostrar el formulario', async (ruta) => {
+  it.each(['/login', '/registro-negocio'])('con sesión, %s reemplaza por /resumen sin mostrar el formulario', async (ruta) => {
     sesion.poner({ usuario: { uid: 'negocio' } as User })
     const router = mostrar(ruta)
     expect(formularioLogin()).not.toBeInTheDocument()
     expect(formularioRegistro()).not.toBeInTheDocument()
-    await waitFor(() => expect(router.state.location.pathname).toBe('/servicios'))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/resumen'))
     expect(router.state.historyAction).toBe('REPLACE')
-    expect(await screen.findByRole('heading', { name: 'Mis servicios' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Resumen', level: 1 })).toBeVisible()
   })
 
   it('sin sesión, /login y /registro-negocio muestran su formulario', async () => {
@@ -85,7 +85,7 @@ describe('RutaSoloVisitantes', () => {
     expect(formularioRegistro()).not.toBeInTheDocument()
     expect(router.state.location.pathname).toBe(ruta)
     act(() => sesion.poner({ cargando: false }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/servicios'))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/resumen'))
   })
 
   it('mientras cargando y sin sesión al resolver, muestra el formulario', async () => {
@@ -98,7 +98,7 @@ describe('RutaSoloVisitantes', () => {
     expect(router.state.location.pathname).toBe('/login')
   })
 
-  it('login exitoso desde sin sesión sigue yendo a /mi-perfil', async () => {
+  it('login exitoso desde sin sesión va al Resumen (/resumen)', async () => {
     const usuario = userEvent.setup()
     iniciarSesionFirebase.mockImplementation(async () => { sesion.poner({ usuario: { uid: 'negocio' } as User }) })
     api.mockImplementation(async (ruta: string) => ruta === '/auth/yo' ? { tipo: 'negocio' } : ruta === '/negocios/mio' ? { aceptaReservas: true } : [])
@@ -107,10 +107,10 @@ describe('RutaSoloVisitantes', () => {
     await usuario.type(screen.getByPlaceholderText('Ingresa tu contraseña'), 'secreta123')
     await usuario.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
     await waitFor(() => expect(api).toHaveBeenCalledWith('/auth/yo'))
-    // La sesión ya cambió, pero la guarda no debe mandar a /servicios
+    // La sesión ya cambió, pero la guarda no debe redirigir: el destino lo pone el formulario
     expect(router.state.location.pathname).toBe('/login')
     expect(formularioLogin()).toBeVisible()
-    await waitFor(() => expect(router.state.location.pathname).toBe('/mi-perfil'), { timeout: 4000 })
+    await waitFor(() => expect(router.state.location.pathname).toBe('/resumen'), { timeout: 4000 })
     expect(router.visitadas).not.toContain('/servicios')
   })
 
