@@ -5,7 +5,3 @@
 .vista-previa-perfil dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 0; }
 .vista-previa-perfil dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
 .vista-previa-perfil p { white-space: pre-wrap; overflow-wrap: anywhere; }
-.vista-previa-servicios ul { list-style: none; padding: 0; margin: 0; }
-.vista-previa-servicios li { padding: 1rem 0; border-bottom: 1px solid #e8e8e8; overflow-wrap: anywhere; }
-.vista-previa-servicios li:last-child { border-bottom: 0; }
-.vista-previa-servicios li p { margin-bottom: 0; }

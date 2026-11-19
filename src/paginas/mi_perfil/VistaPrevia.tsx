@@ -119,10 +119,14 @@ export function VistaPrevia() {
           </div>
           <Link to="/mi-perfil" className="btn-servia-secondary">Volver a Mi perfil</Link>
         </header>
-        {error ? <div role="alert" className="panel-alerta panel-alerta--error">
-          <p>No pudimos cargar la vista previa. Intenta nuevamente.</p>
+        {error ? <div className="panel-estado">
+          <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
+          <p className="panel-estado-texto" role="alert">No pudimos cargar la vista previa. Intenta nuevamente.</p>
           <button type="button" className="btn-servia-primary" onClick={reintentar}>Reintentar</button>
-        </div> : !datos ? <p role="status">Cargando vista previa...</p> : <>
+        </div> : !datos ? <div className="panel-estado">
+          <div className="spinner-border" aria-hidden="true" />
+          <p className="panel-estado-texto" role="status">Cargando vista previa...</p>
+        </div> : <>
           <section className="panel-tarjeta vista-previa-estado" aria-labelledby="estado-app">
             <h2 id="estado-app">Estado en la app</h2>
             {datos.vistaPropia ? <>
@@ -144,10 +148,15 @@ export function VistaPrevia() {
           </section>
           <section className="panel-tarjeta vista-previa-servicios" aria-labelledby="servicios-activos">
             <h2 id="servicios-activos">Servicios activos</h2>
-            {datos.servicios.length === 0 ? <p>No hay servicios activos para mostrar.</p> :
-              <ul>{datos.servicios.map(servicio => <li key={servicio.id}>
+            {datos.servicios.length === 0 ? <div className="panel-estado">
+              <div className="panel-estado-icono" aria-hidden="true">✦</div>
+              <p className="panel-estado-texto">No hay servicios activos para mostrar.</p>
+            </div> :
+              <ul className="panel-lista list-unstyled mb-0">{datos.servicios.map(servicio => <li className="panel-item" key={servicio.id}>
+                <div>
                 <h3>{servicio.nombre}</h3>
                 <p>{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(servicio.precio)} · {servicio.duracionMin} minutos</p>
+                              </div>
               </li>)}</ul>}
           </section>
         </>}
