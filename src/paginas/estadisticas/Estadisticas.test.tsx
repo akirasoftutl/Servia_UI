@@ -165,6 +165,44 @@ describe('Estadísticas', () => {
     });
   });
 
+  it('G3 muestra las 366 barras del periodo máximo y rechaza 367 días', async () => {
+    const periodo = { desde: '2028-01-01', hasta: '2028-12-31' };
+    const porDia = Array.from({ length: 366 }, (_, i) => ({
+      fecha: new Date(Date.UTC(2028, 0, i + 1)).toISOString().slice(0, 10), reservas: i + 1,
+    }));
+    apiMock.mockResolvedValue({ ...estadisticas(), periodo, porDia });
+    render(<Estadisticas />);
+    await screen.findByRole('img');
+    cambiar('personalizado');
+    fireEvent.change(screen.getByLabelText('Fecha inicial'), { target: { value: periodo.desde } });
+    fireEvent.change(screen.getByLabelText('Fecha final'), { target: { value: periodo.hasta } });
+    const grafica = await screen.findByRole('img');
+    expect(apiMock).toHaveBeenLastCalledWith('/negocios/mio/estadisticas?desde=2028-01-01&hasta=2028-12-31');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    const barras = grafica.querySelectorAll('.estadisticas-barra');
+    expect(barras).toHaveLength(366);
+    porDia.forEach((dia, i) => {
+      expect(barras[i]).toBeVisible();
+      expect(barras[i].parentElement).toHaveAttribute('title', `${dia.fecha}: ${dia.reservas} ${dia.reservas === 1 ? 'reserva' : 'reservas'}`);
+      expect(barras[i]).toHaveStyle({ height: `${dia.reservas / 366 * 100}%` });
+    });
+    const eje = grafica.querySelector('.panel-grafica-eje')!;
+    expect(eje).toBeVisible();
+    expect(eje.children[0]).toHaveTextContent(/^366$/);
+    expect(eje.children[1]).toHaveTextContent(/^0$/);
+    const fechas = grafica.querySelector('.panel-grafica-fechas')!;
+    expect(fechas.children[0]).toBeVisible();
+    expect(fechas.children[0]).toHaveTextContent(/^01\/01\/2028$/);
+    expect(fechas.children[1]).toBeVisible();
+    expect(fechas.children[1]).toHaveTextContent(/^31\/12\/2028$/);
+    const peticiones = apiMock.mock.calls.length;
+    fireEvent.change(screen.getByLabelText('Fecha final'), { target: { value: '2029-01-01' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('El periodo no puede pasar de 366 días.');
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    await act(async () => {});
+    expect(apiMock).toHaveBeenCalledTimes(peticiones);
+  });
+
   it('C5 cargando usa el estado y spinner compartidos del panel', async () => {
     apiMock.mockReturnValue(new Promise(() => {}));
     render(<Estadisticas />);
