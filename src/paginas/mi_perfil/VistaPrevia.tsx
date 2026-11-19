@@ -1,0 +1,140 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { api } from '../../servicios/api'
+import type { Direccion } from './direccion'
+import './VistaPrevia.css'
+
+interface Perfil {
+  id: string
+  nombre?: string
+  categoriaId?: string
+  descripcion?: string
+  direccion?: Direccion | string | null
+  direccionTexto?: string
+  telefono?: string
+  correoContacto?: string
+}
+interface EstadoNegocio extends Perfil {
+  activo: boolean
+  perfilCompleto: boolean
+  camposFaltantes: string[]
+  serviciosActivos: number
+  aceptaReservas: boolean
+  tieneHorario: boolean
+}
+interface Servicio {
+  id: string
+  nombre: string
+  precio: number
+  duracionMin: number
+  // La consulta pública ya filtra activos y omite este campo.
+  activo?: boolean
+}
+interface Datos {
+  estado: EstadoNegocio
+  perfil: Perfil
+  servicios: Servicio[]
+  categoria: string
+  motivo: string
+}
+
+function motivoNoVisible(estado: EstadoNegocio) {
+  // RN-08, RN-10, RN-11: el visible guardado puede estar desactualizado.
+  if (!estado.activo) return 'tu cuenta está desactivada'
+  if (!estado.perfilCompleto) {
+    const campos = estado.camposFaltantes?.join(', ')
+    return `falta completar el perfil${campos ? `: ${campos}` : ''}`
+  }
+  if (estado.serviciosActivos <= 0) return 'no tienes servicios activos'
+  return ''
+}
+
+function direccionEnTexto(perfil: Perfil) {
+  if (typeof perfil.direccion === 'string') return perfil.direccion || perfil.direccionTexto
+  if (perfil.direccionTexto) return perfil.direccionTexto
+  const d = perfil.direccion
+  return d && [d.calle, d.numeroExterior, d.numeroInterior && `Int. ${d.numeroInterior}`,
+    d.colonia, d.codigoPostal, d.municipio, d.estado].filter(Boolean).join(', ')
+}
+
+export function VistaPrevia() {
+  const [datos, setDatos] = useState<Datos | null>(null)
+  const [error, setError] = useState(false)
+  const [revision, setRevision] = useState(0)
+
+  useEffect(() => {
+    let vigente = true
+    async function cargar() {
+      try {
+        const estado = await api<EstadoNegocio>('/negocios/mio')
+        const motivo = motivoNoVisible(estado)
+        const ruta = motivo ? '/negocios/mio' : `/negocios/${encodeURIComponent(estado.id)}`
+        const [perfil, servicios, categorias] = await Promise.all([
+          motivo ? Promise.resolve(estado) : api<Perfil>(ruta),
+          api<Servicio[]>(`${ruta}/servicios${motivo ? '?estado=activos' : ''}`),
+          api<{ id: string; nombre: string }[]>('/categorias'),
+        ])
+        if (vigente) setDatos({ estado, perfil, motivo,
+          servicios: servicios.filter(servicio => servicio.activo !== false),
+          categoria: categorias.find(c => c.id === perfil.categoriaId)?.nombre ?? 'Categoría no disponible',
+        })
+      } catch {
+        if (vigente) setError(true)
+      }
+    }
+    void cargar()
+    return () => { vigente = false }
+  }, [revision])
+
+  function reintentar() {
+    setDatos(null)
+    setError(false)
+    setRevision(valor => valor + 1)
+  }
+
+  return (
+    <div className="panel-pagina vista-previa">
+      <div className="panel-contenedor">
+        <header className="panel-encabezado">
+          <div>
+            <h1 className="panel-titulo">Vista previa: así te ven tus clientes</h1>
+            <p className="panel-subtitulo">Consulta cómo se muestran tu perfil y tus servicios.</p>
+          </div>
+          <Link to="/mi-perfil" className="btn-servia-secondary">Volver a Mi perfil</Link>
+        </header>
+        {error ? <div role="alert" className="panel-alerta panel-alerta--error">
+          <p>No pudimos cargar la vista previa. Intenta nuevamente.</p>
+          <button type="button" className="btn-servia-primary" onClick={reintentar}>Reintentar</button>
+        </div> : !datos ? <p role="status">Cargando vista previa...</p> : <>
+          <section className="panel-tarjeta vista-previa-estado" aria-labelledby="estado-app">
+            <h2 id="estado-app">Estado en la app</h2>
+            {datos.motivo ? <>
+              <p>No aparece en las búsquedas porque {datos.motivo}.</p>
+              <strong>Así te verán cuando aparezcas</strong>
+            </> : <p>Tu negocio aparece en las búsquedas.</p>}
+            {(datos.estado.aceptaReservas === false || datos.estado.tieneHorario === false) &&
+              <p>Los clientes verán: <strong>No acepta reservas por ahora</strong></p>}
+          </section>
+          <section className="panel-tarjeta vista-previa-perfil" aria-labelledby="nombre-negocio">
+            <h2 id="nombre-negocio">{datos.perfil.nombre || 'Nombre pendiente'}</h2>
+            <p>{datos.categoria}</p>
+            <p>{datos.perfil.descripcion || 'Descripción pendiente'}</p>
+            <dl>
+              <div><dt>Dirección</dt><dd>{direccionEnTexto(datos.perfil) || 'Dirección pendiente'}</dd></div>
+              <div><dt>Teléfono</dt><dd>{datos.perfil.telefono || 'Teléfono pendiente'}</dd></div>
+              <div><dt>Correo de contacto</dt><dd>{datos.perfil.correoContacto || 'Correo pendiente'}</dd></div>
+            </dl>
+          </section>
+          <section className="panel-tarjeta vista-previa-servicios" aria-labelledby="servicios-activos">
+            <h2 id="servicios-activos">Servicios activos</h2>
+            {datos.servicios.length === 0 ? <p>No hay servicios activos para mostrar.</p> :
+              <ul>{datos.servicios.map(servicio => <li key={servicio.id}>
+                <h3>{servicio.nombre}</h3>
+                <p>{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(servicio.precio)} · {servicio.duracionMin} minutos</p>
+              </li>)}</ul>}
+          </section>
+        </>}
+      </div>
+    </div>
+  )
+}
