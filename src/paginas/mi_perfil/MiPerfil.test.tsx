@@ -162,7 +162,6 @@ describe('Mi perfil: dirección por campos', () => {
   })
 })
 
-
 it('C1 abre la vista previa desde Mi perfil', async () => {
   responder({ ...perfilBase, direccion: null })
   render(<MemoryRouter initialEntries={['/mi-perfil']}><Routes>
@@ -173,4 +172,76 @@ it('C1 abre la vista previa desde Mi perfil', async () => {
   expect(enlace).toHaveAttribute('href', '/mi-perfil/vista-previa')
   await userEvent.click(enlace)
   expect(screen.getByText('Destino de vista previa')).toBeInTheDocument()
+})
+
+describe('Mi perfil: sugerencias de domicilio (#40)', () => {
+  const SUGERENCIA = 'Blvd. Adolfo López Mateos 1102, Jardines del Moral, León, Gto., México'
+
+  function responderConLugares(lugares: () => Promise<unknown>) {
+    apiMock.mockImplementation(async (ruta: string, opciones?: RequestInit) => {
+      if (ruta === '/categorias') return [{ id: 'cabello-barba', nombre: 'Cabello y barba' }]
+      if (ruta.startsWith('/lugares/autocompletar')) return lugares()
+      if (ruta === '/negocios/mio' && opciones?.method === 'PUT') return { ...perfilBase, ...JSON.parse(String(opciones.body)), direccionTexto: '' }
+      return { ...perfilBase, direccion: direccionGuardada, direccionTexto: '' }
+    })
+  }
+
+  const llamadasALugares = () => apiMock.mock.calls.filter(([ruta]) => ruta.startsWith('/lugares'))
+
+  async function guardar() {
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    const put = apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')!
+    return JSON.parse(String(put[1]!.body))
+  }
+
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  it('no pide sugerencias al cargar el perfil, solo al teclear en la calle', async () => {
+    responderConLugares(async () => [{ texto: SUGERENCIA }])
+    await abrirPaso2()
+    expect(screen.getByLabelText('Calle *')).toHaveValue('Blvd. Adolfo López Mateos')
+    await new Promise((r) => setTimeout(r, 400))
+    expect(llamadasALugares()).toHaveLength(0)
+    expect(screen.getByLabelText('Calle *')).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('elegir con teclado sobrescribe la calle y el PUT manda la dirección por campos', async () => {
+    responderConLugares(async () => [{ texto: SUGERENCIA }, { texto: 'Otra' }])
+    await abrirPaso2()
+    await escribir('Calle *', 'Blvd López')
+    await screen.findByRole('option', { name: SUGERENCIA })
+    await userEvent.keyboard('{ArrowDown}{Enter}')
+    expect(screen.getByLabelText('Calle *')).toHaveValue(SUGERENCIA)
+    expect(screen.getByLabelText('Calle *')).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByText('Revisa que la calle quede sin colonia ni ciudad y completa el resto de los campos.')).toBeInTheDocument()
+    const cuerpo = await guardar()
+    expect(cuerpo.direccion).toEqual({ ...direccionGuardada, calle: SUGERENCIA })
+  })
+
+  it('escribir a mano y guardar sin elegir manda lo escrito', async () => {
+    responderConLugares(async () => [{ texto: SUGERENCIA }])
+    await abrirPaso2()
+    await escribir('Calle *', 'Calle Hidalgo')
+    await screen.findByRole('option', { name: SUGERENCIA })
+    const cuerpo = await guardar()
+    expect(cuerpo.direccion.calle).toBe('Calle Hidalgo')
+    expect(cuerpo.direccion.colonia).toBe('Centro')
+  })
+
+  it('con 503 deja una nota discreta y se puede guardar sin alerta de error', async () => {
+    responderConLugares(async () => { throw new ErrorApi(503, 'No se pudieron obtener sugerencias. Escribe la dirección a mano.') })
+    await abrirPaso2()
+    await escribir('Calle *', 'Calle Hidalgo')
+    await screen.findByText('No hay sugerencias por ahora; escribe la dirección a mano.')
+    expect(screen.getByLabelText('Calle *')).not.toHaveClass('is-invalid')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    const cuerpo = await guardar()
+    expect(cuerpo.direccion.calle).toBe('Calle Hidalgo')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })

@@ -1,0 +1,79 @@
+/* Resumen de actividad: reutiliza panel.css; aquí solo la cuadrícula de números y la lista. */
+
+.resumen-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--sv-esp-4);
+  margin: 0 0 var(--sv-esp-5);
+  padding: 0;
+  list-style: none;
+}
+
+.resumen-tarjeta-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 20px 22px;
+  border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-lg);
+  background: var(--sv-superficie);
+  box-shadow: var(--sv-sombra-panel);
+  color: var(--sv-texto);
+  text-decoration: none;
+}
+
+.resumen-tarjeta-enlace {
+  transition:
+    border-color var(--sv-rapido) ease,
+    box-shadow var(--sv-rapido) ease,
+    transform var(--sv-rapido) ease;
+}
+
+.resumen-tarjeta-enlace:hover,
+.resumen-tarjeta-enlace:focus-visible {
+  border-color: var(--sv-acento-borde);
+  box-shadow: var(--sv-sombra-item);
+  color: var(--sv-texto);
+  transform: translateY(-1px);
+}
+
+.resumen-numero {
+  color: var(--sv-titulo);
+  font-family: var(--sv-fuente-titulos);
+  font-size: 30px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.resumen-etiqueta {
+  color: var(--sv-texto-suave);
+  font-size: var(--sv-texto-sm);
+  font-weight: 600;
+}
+
+.resumen-tarjeta-enlace .resumen-etiqueta {
+  color: var(--sv-acento);
+}
+
+.resumen-lista {
+  margin: var(--sv-esp-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resumen-cita {
+  color: inherit;
+  text-decoration: none;
+}
+
+.resumen-proximas .panel-estado {
+  margin-top: var(--sv-esp-4);
+}
+
+.resumen-alerta-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sv-esp-2);
+}

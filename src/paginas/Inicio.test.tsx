@@ -54,13 +54,13 @@ describe('Inicio', () => {
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   })
 
-  it('con sesión reemplaza / por /servicios sin mostrar la landing', async () => {
+  it('con sesión reemplaza / por /resumen sin mostrar la landing', async () => {
     sesion.usuario = { uid: 'negocio' } as User
     const { router } = mostrar('/')
     expect(screen.queryByRole('heading', { name: /Una plataforma, infinitas posibilidades/i })).not.toBeInTheDocument()
-    await waitFor(() => expect(router.state.location.pathname).toBe('/servicios'))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/resumen'))
     expect(router.state.historyAction).toBe('REPLACE')
-    expect(await screen.findByRole('heading', { name: 'Mis servicios' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Resumen', level: 1 })).toBeVisible()
   })
 
   it.each([null, { uid: 'negocio' } as User])('no muestra la landing ni redirige mientras cargando con usuario %j', async (usuario) => {
@@ -74,7 +74,7 @@ describe('Inicio', () => {
     sesion.cargando = false
     rerender(<AuthProvider><RouterProvider router={router} /></AuthProvider>)
     if (usuario) {
-      await waitFor(() => expect(router.state.location.pathname).toBe('/servicios'))
+      await waitFor(() => expect(router.state.location.pathname).toBe('/resumen'))
     } else {
       expect(await screen.findByRole('heading', { name: /Una plataforma, infinitas posibilidades/i })).toBeVisible()
       expect(screen.getByRole('banner')).toBeVisible()

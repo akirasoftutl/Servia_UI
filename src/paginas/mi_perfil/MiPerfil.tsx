@@ -13,6 +13,7 @@ import {
   type DireccionForm,
 } from './direccion';
 import { CambiarContrasena } from './CambiarContrasena';
+import { CampoCalle } from './CampoCalle';
 
 interface Categoria {
   id: string;
@@ -119,6 +120,12 @@ export function MiPerfil() {
     const { name, value } = e.target;
     setDireccion({ ...direccion, [name]: value });
     setErrores({ ...errores, [name]: '' });
+  };
+
+  // Decisión A1: la sugerencia elegida llena solo `calle`, con todo su texto.
+  const handleCalleElegida = (texto: string) => {
+    setDireccion((prev) => ({ ...prev, calle: texto }));
+    setErrores((prev) => ({ ...prev, calle: '' }));
   };
 
   const handleCategoriaChange = (id: string) => {
@@ -579,20 +586,12 @@ export function MiPerfil() {
                         Calle *
                       </label>
 
-                      <input
-                        id="calle"
-                        type="text"
-                        name="calle"
-                        className={`form-control ${errores.calle ? 'is-invalid' : ''}`}
+                      <CampoCalle
                         value={direccion.calle}
+                        error={errores.calle}
                         onChange={handleDireccionChange}
-                        placeholder="Ej. Avenida Juárez"
-                        autoComplete="street-address"
+                        onElegir={handleCalleElegida}
                       />
-
-                      {errores.calle && (
-                        <div className="invalid-feedback">{errores.calle}</div>
-                      )}
                     </div>
                     <div className="col-6 col-md-3">
                       <label htmlFor="numeroExterior" className="form-label">

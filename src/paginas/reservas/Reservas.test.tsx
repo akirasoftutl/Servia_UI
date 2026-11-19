@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router'; // <-- IMPORTANTE: Agregado
+import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router'; // <-- IMPORTANTE: Agregado
 import { api } from '../../servicios/api';
 import { Reservas } from './Reservas';
 
@@ -8,9 +8,9 @@ const apiMock = vi.mocked(api);
 const ahora = Date.parse('2030-11-03T14:00:00Z');
 
 // Helper para renderizar con el Router
-function renderReservas() {
+function renderReservas(ruta = '/reservas') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[ruta]}>
       <Reservas />
     </MemoryRouter>
   );
@@ -235,4 +235,29 @@ it('muestra carga, vacío y error, y reintenta conservando los filtros', async (
   fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
   await screen.findByRole('heading', { name: 'Ana' });
   expect(parametros().get('desde')).toBe('2030-11-03');
+});
+it('C3 con ?estado=pendiente abre la lista ya filtrada por Pendiente', async () => {
+  renderReservas('/reservas?estado=pendiente');
+  await screen.findByRole('heading', { name: 'Ana' });
+  expect(llamadasLista()).toHaveLength(1);
+  expect(parametros(0).get('estado')).toBe('pendiente');
+  expect(screen.getByLabelText('Estado')).toHaveValue('pendiente');
+});
+
+it('C3 con un ?estado desconocido no filtra la lista', async () => {
+  renderReservas('/reservas?estado=inventado');
+  await screen.findByRole('heading', { name: 'Ana' });
+  expect(llamadasLista()).toHaveLength(1);
+  expect(parametros(0).has('estado')).toBe(false);
+  expect(screen.getByLabelText('Estado')).toHaveValue('');
+});
+
+it('C3 aplica el filtro de la URL aunque la página ya estuviera abierta', async () => {
+  const router = createMemoryRouter([{ path: '/reservas', element: <Reservas /> }], { initialEntries: ['/reservas'] });
+  render(<RouterProvider router={router} />);
+  await screen.findByRole('heading', { name: 'Ana' });
+  expect(parametros().has('estado')).toBe(false);
+  await act(() => router.navigate('/reservas?estado=pendiente'));
+  await waitFor(() => expect(parametros().get('estado')).toBe('pendiente'));
+  expect(screen.getByLabelText('Estado')).toHaveValue('pendiente');
 });
