@@ -309,6 +309,7 @@ export function MiPerfil() {
                 y haz que más clientes te encuentren en Servia.
               </p>
             </div>
+            <Link to="/mi-perfil/vista-previa" className="btn-servia-secondary">Ver como cliente</Link>
           </header>
 
           {/* Tarjeta principal */}
