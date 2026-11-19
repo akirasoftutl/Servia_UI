@@ -1,10 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
-import { api } from '../../servicios/api'
+import { api, ErrorApi } from '../../servicios/api'
 import { VistaPrevia } from './VistaPrevia'
 
-vi.mock('../../servicios/api', () => ({ api: vi.fn() }))
+vi.mock('../../servicios/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../servicios/api')>()
+  return { ...actual, api: vi.fn() }
+})
 const apiMock = vi.mocked(api)
 const perfil = {
   id: 'dueno', nombre: 'Barbería Norte', categoriaId: 'cabello',
@@ -66,11 +69,39 @@ describe('Vista previa', () => {
     expect(screen.queryByText('Servicio retirado')).not.toBeInTheDocument()
   })
 
-  it('C3 usa visibilidad recalculada aunque visible guardado sea false', async () => {
+  it.each(['/negocios/dueno', '/negocios/dueno/servicios'])('F1 arma la vista desde /mio si %s responde 404 por el desfase de visibilidad', async (fallo) => {
     responder({ visible: false })
+    const respuesta = apiMock.getMockImplementation()!
+    apiMock.mockImplementation((ruta, opciones) => ruta === fallo
+      ? Promise.reject(new ErrorApi(404, 'Negocio no encontrado')) : respuesta(ruta, opciones))
     abrir()
+    expect(await screen.findByText('Barbería Norte')).toBeInTheDocument()
+    expect(screen.getByText('Así te verán cuando aparezcas')).toBeInTheDocument()
+    expect(screen.getByText('Corte clásico')).toBeInTheDocument()
+    expect(screen.getByText('$150.00 · 30 minutos')).toBeInTheDocument()
+    expect(screen.getByText('Cabello y barba')).toBeInTheDocument()
+    expect(screen.queryByText('Servicio retirado')).not.toBeInTheDocument()
+    expect(screen.queryByText('Nombre público')).not.toBeInTheDocument()
+    expect(screen.queryByText('Tu negocio aparece en las búsquedas.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(apiMock).toHaveBeenCalledWith('/negocios/mio')
+    expect(apiMock).toHaveBeenCalledWith(fallo)
+    expect(apiMock).toHaveBeenCalledWith('/negocios/mio/servicios?estado=activos')
+  })
+
+  it.each(['/negocios/dueno', '/negocios/dueno/servicios'])('F1 conserva el error y permite reintentar si %s responde 500', async (fallo) => {
+    responder()
+    const respuesta = apiMock.getMockImplementation()!
+    apiMock.mockImplementation((ruta, opciones) => ruta === fallo
+      ? Promise.reject(new ErrorApi(500, 'Error del servidor')) : respuesta(ruta, opciones))
+    abrir()
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar la vista previa.')
+    expect(screen.queryByText('Así te verán cuando aparezcas')).not.toBeInTheDocument()
+    expect(apiMock).not.toHaveBeenCalledWith('/negocios/mio/servicios?estado=activos')
+    responder()
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(await screen.findByText('Nombre público')).toBeInTheDocument()
-    expect(screen.getByText('Tu negocio aparece en las búsquedas.')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it.each([

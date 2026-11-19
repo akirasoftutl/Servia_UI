@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { api } from '../../servicios/api'
+import { api, ErrorApi } from '../../servicios/api'
 import type { Direccion } from './direccion'
 import './VistaPrevia.css'
 
@@ -36,6 +36,7 @@ interface Datos {
   servicios: Servicio[]
   categoria: string
   motivo: string
+  vistaPropia: boolean
 }
 
 function motivoNoVisible(estado: EstadoNegocio) {
@@ -68,13 +69,29 @@ export function VistaPrevia() {
       try {
         const estado = await api<EstadoNegocio>('/negocios/mio')
         const motivo = motivoNoVisible(estado)
-        const ruta = motivo ? '/negocios/mio' : `/negocios/${encodeURIComponent(estado.id)}`
-        const [perfil, servicios, categorias] = await Promise.all([
-          motivo ? Promise.resolve(estado) : api<Perfil>(ruta),
-          api<Servicio[]>(`${ruta}/servicios${motivo ? '?estado=activos' : ''}`),
+        async function cargarPerfil() {
+          if (!motivo) {
+            const ruta = `/negocios/${encodeURIComponent(estado.id)}`
+            try {
+              const [perfil, servicios] = await Promise.all([
+                api<Perfil>(ruta), api<Servicio[]>(`${ruta}/servicios`),
+              ])
+              return { perfil, servicios, vistaPropia: false }
+            } catch (error) {
+              if (!(error instanceof ErrorApi) || error.estado !== 404) throw error
+            }
+          }
+          return {
+            perfil: estado,
+            servicios: await api<Servicio[]>('/negocios/mio/servicios?estado=activos'),
+            vistaPropia: true,
+          }
+        }
+        const [{ perfil, servicios, vistaPropia }, categorias] = await Promise.all([
+          cargarPerfil(),
           api<{ id: string; nombre: string }[]>('/categorias'),
         ])
-        if (vigente) setDatos({ estado, perfil, motivo,
+        if (vigente) setDatos({ estado, perfil, motivo, vistaPropia,
           servicios: servicios.filter(servicio => servicio.activo !== false),
           categoria: categorias.find(c => c.id === perfil.categoriaId)?.nombre ?? 'Categoría no disponible',
         })
@@ -108,8 +125,8 @@ export function VistaPrevia() {
         </div> : !datos ? <p role="status">Cargando vista previa...</p> : <>
           <section className="panel-tarjeta vista-previa-estado" aria-labelledby="estado-app">
             <h2 id="estado-app">Estado en la app</h2>
-            {datos.motivo ? <>
-              <p>No aparece en las búsquedas porque {datos.motivo}.</p>
+            {datos.vistaPropia ? <>
+              {datos.motivo && <p>No aparece en las búsquedas porque {datos.motivo}.</p>}
               <strong>Así te verán cuando aparezcas</strong>
             </> : <p>Tu negocio aparece en las búsquedas.</p>}
             {(datos.estado.aceptaReservas === false || datos.estado.tieneHorario === false) &&
