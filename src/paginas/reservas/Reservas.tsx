@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../servicios/api';
 import './Reservas.css';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
+import { ESTADOS_CONFIG } from './estados';
 
 const estados = {
   pendiente: 'Pendiente',
@@ -29,6 +30,12 @@ const zonaHoraria = 'America/Mexico_City';
 const fecha = new Intl.DateTimeFormat('es-MX', { timeZone: zonaHoraria, dateStyle: 'short' });
 const hora = new Intl.DateTimeFormat('es-MX', { timeZone: zonaHoraria, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
+// Filtro de estado que llega en la URL (p. ej. desde el Resumen: ?estado=pendiente).
+// Un valor que no es un estado conocido se ignora y la lista queda sin filtro.
+function estadoDeUrl(valor: string | null) {
+  return valor && Object.keys(ESTADOS_CONFIG).includes(valor) ? valor : '';
+}
+
 function tiempoRestante(venceEn: string, ahora: number) {
   const segundos = Math.max(0, Math.ceil((Date.parse(venceEn) - ahora) / 1000));
   const horas = Math.floor(segundos / 3600);
@@ -39,7 +46,15 @@ function tiempoRestante(venceEn: string, ahora: number) {
 export function Reservas() {
   const navigate = useNavigate(); // <-- LÍNEA AGREGADA
 
-  const [consulta, setConsulta] = useState({ pestana: 'pendientes' as Pestana, estado: '', fecha: '', cursores: [''] });
+  const [parametrosUrl] = useSearchParams();
+  const estadoUrl = estadoDeUrl(parametrosUrl.get('estado'));
+  const [consulta, setConsulta] = useState({ pestana: 'pendientes' as Pestana, estado: estadoUrl, fecha: '', cursores: [''] });
+  // Si la URL cambia sin desmontar la página (p. ej. del Resumen a Reservas), se aplica el nuevo filtro.
+  const [estadoUrlAplicado, setEstadoUrlAplicado] = useState(estadoUrl);
+  if (estadoUrl !== estadoUrlAplicado) {
+    setEstadoUrlAplicado(estadoUrl);
+    setConsulta({ pestana: 'pendientes', estado: estadoUrl, fecha: '', cursores: [''] });
+  }
   const [pagina, setPagina] = useState<Pagina>({ items: [], siguiente: null });
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
