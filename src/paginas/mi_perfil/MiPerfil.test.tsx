@@ -451,3 +451,38 @@ describe('Mi perfil: correo de contacto (#122)', () => {
     expect(screen.queryByLabelText('Calle *')).not.toBeInTheDocument()
   })
 })
+
+describe('Mi perfil: teléfono (#122)', () => {
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  const put = () => apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')
+
+  it('C3: normaliza espacios, guiones y paréntesis a 10 dígitos antes del PUT', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    const telefono = await screen.findByLabelText(/Teléfono de contacto/)
+    await userEvent.clear(telefono)
+    await userEvent.type(telefono, '(477) 123-4567')
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    expect(JSON.parse(String(put()![1]!.body)).telefono).toBe('4771234567')
+  })
+
+  it.each(['477 123 456', '477 123 45678'])('C3: con %s muestra el error claro y no envía nada', async (valor) => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    const telefono = await screen.findByLabelText(/Teléfono de contacto/)
+    await userEvent.clear(telefono)
+    await userEvent.type(telefono, valor)
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(screen.getByText(/El teléfono debe tener exactamente 10 dígitos/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Teléfono de contacto/)).toHaveClass('is-invalid')
+    expect(screen.queryByLabelText('Calle *')).not.toBeInTheDocument()
+    expect(put()).toBeUndefined()
+  })
+})

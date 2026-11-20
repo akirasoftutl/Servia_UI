@@ -17,6 +17,7 @@ import { CampoCalle, type EleccionCalle } from './CampoCalle';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { FotosNegocio } from './FotosNegocio';
 import { FOTOS_VACIAS, normalizarFotosNegocio } from './fotos';
+import { normalizarTelefono, validarTelefono } from './telefono';
 
 interface Categoria {
   id: string;
@@ -162,7 +163,8 @@ export function MiPerfil() {
 
     if (paso === 1) {
       if (!form.nombre.trim()) nuevosErrores.nombre = 'El nombre es obligatorio';
-      if (!form.telefono.trim()) nuevosErrores.telefono = 'El teléfono es obligatorio';
+      const errorTelefono = validarTelefono(form.telefono);
+      if (errorTelefono) nuevosErrores.telefono = errorTelefono;
       if (!CORREO_VALIDO.test(form.correoContacto.trim())) nuevosErrores.correoContacto = 'Escribe un correo válido, por ejemplo contacto@negocio.com';
       if (!form.descripcion.trim()) nuevosErrores.descripcion = 'La descripción es obligatoria';
     }
@@ -199,10 +201,15 @@ export function MiPerfil() {
 
     if (pasoActual !== 3) return;
     if (!validarPaso(3)) return;
+    if (!validarPaso(1)) {
+      setPasoActual(1);
+      return;
+    }
 
     setGuardando(true);
     try {
-      const { nombre, descripcion, categoriaId, telefono } = form;
+      const { nombre, descripcion, categoriaId } = form;
+      const telefono = normalizarTelefono(form.telefono);
       const correoContacto = form.correoContacto.trim();
       const respuesta = await api<RespuestaPerfil>('/negocios/mio', {
         method: 'PUT',
