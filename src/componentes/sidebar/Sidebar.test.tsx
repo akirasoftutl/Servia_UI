@@ -1,7 +1,8 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, MemoryRouter, Route, RouterProvider, Routes } from 'react-router'
 import { NotificacionesContext, type NotificacionesContextValue } from '../../contextos/notificacionesContexto'
+import { readFileSync } from 'node:fs'
 import { Sidebar } from './Sidebar'
 
 const sesion = vi.hoisted(() => ({ usuario: { uid: 'ana', email: 'ana@ejemplo.com' } }))
@@ -199,4 +200,181 @@ it('UI69 muestra Avisos en PRINCIPAL con globo cuando hay no leídas y sin globo
 
   await userEvent.click(botonSinGlobo)
   expect(await screen.findByRole('heading', { name: 'Bandeja de avisos' })).toBeVisible()
+})
+
+describe('UI108 ítem activo según la ruta', () => {
+  beforeEach(() => pantalla(false))
+  const enRuta = (ruta: string) => render(<MemoryRouter initialEntries={[ruta]}><Sidebar /></MemoryRouter>)
+  const activos = () => screen.queryAllByRole('button').filter((b) => b.classList.contains('active')).map((b) => b.querySelector('span:not([aria-hidden])')?.textContent)
+
+  it('resalta el ítem de la ruta al cargar directo, sin haber hecho clic', () => {
+    enRuta('/clientes')
+    expect(activos()).toEqual(['Clientes'])
+    expect(screen.getByRole('button', { name: 'Clientes' })).toHaveAttribute('aria-current', 'page')
+  })
+  it.each([
+    ['/resumen', 'Resumen'], ['/reservas', 'Reservas'], ['/servicios', 'Servicios'], ['/clientes', 'Clientes'],
+    ['/soporte', 'Reportar un problema'], ['/preferencias-notificaciones', 'Notificaciones'], ['/ayuda', 'Ayuda'],
+    ['/estadisticas', 'Estadísticas'], ['/bloqueos', 'Bloqueos'], ['/horario', 'Horario'],
+  ])('en %s solo está activo «%s»', (ruta, nombre) => {
+    enRuta(ruta)
+    expect(activos()).toEqual([nombre])
+  })
+  it('conserva el ítem en rutas anidadas', () => {
+    enRuta('/reservas/r0')
+    expect(activos()).toEqual(['Reservas'])
+    cleanup()
+    enRuta('/servicios/nuevo')
+    expect(activos()).toEqual(['Servicios'])
+    cleanup()
+    enRuta('/clientes/c1')
+    expect(activos()).toEqual(['Clientes'])
+  })
+  it('no confunde rutas que solo comparten prefijo ni resalta nada fuera del menú', () => {
+    enRuta('/reservas-antiguas')
+    expect(activos()).toEqual([])
+    cleanup()
+    enRuta('/mi-perfil')
+    expect(activos()).toEqual([])
+    expect(document.querySelector('[aria-current]')).toBeNull()
+  })
+  it('sigue la ruta con el botón atrás, sin depender de un clic previo', async () => {
+    const router = createMemoryRouter([{ path: '*', element: <Sidebar /> }], { initialEntries: ['/resumen'] })
+    render(<RouterProvider router={router} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Horario' }))
+    expect(activos()).toEqual(['Horario'])
+    await act(async () => { await router.navigate(-1) })
+    expect(activos()).toEqual(['Resumen'])
+    await act(async () => { await router.navigate('/bloqueos') })
+    expect(activos()).toEqual(['Bloqueos'])
+  })
+})
+
+describe('UI108 íconos del menú', () => {
+  beforeEach(() => pantalla(false))
+  const items = () => [...document.querySelectorAll<HTMLElement>('.nav-link')]
+  const etiqueta = (b: HTMLElement) => b.querySelector('span:not([aria-hidden])')?.textContent
+
+  it('cada ítem lleva un único svg de lucide, decorativo y sin glifos de texto', () => {
+    render(barra())
+    expect(items()).toHaveLength(11)
+    for (const b of items()) {
+      expect(b.querySelectorAll('svg')).toHaveLength(1)
+      expect(b.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+      expect(b.querySelector('svg')).toHaveClass('lucide')
+      expect(b.textContent).toBe(etiqueta(b))
+    }
+  })
+  it('ningún ícono se repite entre ítems', () => {
+    render(barra())
+    const icono = (b: HTMLElement) => [...b.querySelector('svg')!.classList].find((c) => c.startsWith('lucide-') && c !== 'lucide')
+    const nombres = items().map(icono)
+    expect(nombres.every(Boolean)).toBe(true)
+    expect(new Set(nombres).size).toBe(items().length)
+  })
+  it('el tamaño de los íconos lo fija una sola regla CSS con variable, no el marcado', () => {
+    const css = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8')
+    const regla = css.match(/\.nav-link svg\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(regla).toMatch(/width:\s*var\(--sv-icono-nav\)/)
+    expect(regla).toMatch(/height:\s*var\(--sv-icono-nav\)/)
+    expect(readFileSync('src/estilos/panel.css', 'utf8')).toMatch(/--sv-icono-nav:\s*20px/)
+  })
+})
+
+it('UI108 la barra no muestra buscador, ni en escritorio ni en el cajón', async () => {
+  pantalla(false)
+  const vista = render(barra())
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument()
+  expect(document.querySelector('.search-container, .search-input, input')).toBeNull()
+  vista.unmount()
+  pantalla(true)
+  render(barra())
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  expect(document.querySelector('input')).toBeNull()
+})
+
+describe('UI108 la barra mide el alto de la ventana y desplaza el menú por dentro', () => {
+  const css = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8')
+  const regla = (selector: string) => css.match(new RegExp(`(?:^|\\n)${selector.replace('.', '\\.')}\\s*\\{([^}]*)\\}`))?.[1] ?? ''
+  it('.sidebar fija el alto a 100dvh y no crece con el contenido', () => {
+    const barraCss = regla('.sidebar')
+    expect(barraCss).toMatch(/height:\s*100dvh/)
+    expect(barraCss).toMatch(/min-height:\s*0/)
+    expect(barraCss).not.toMatch(/min-height:\s*100vh/)
+  })
+  it('el menú es la zona que se desplaza y el encabezado y la cuenta no se encogen', () => {
+    const nav = regla('.sidebar-nav')
+    expect(nav).toMatch(/overflow-y:\s*auto/)
+    expect(nav).toMatch(/min-height:\s*0/)
+    expect(css).toMatch(/\.sidebar-header,\s*\.user-profile\s*\{[^}]*flex:\s*none/)
+  })
+  it('la tarjeta de cuenta sigue dentro de la barra, después del menú', () => {
+    pantalla(false)
+    render(barra())
+    const aside = screen.getByRole('complementary')
+    const hijos = [...aside.children].map((el) => el.className)
+    expect(hijos.at(-1)).toContain('user-profile')
+    expect(hijos[hijos.indexOf('sidebar-nav') ]).toBe('sidebar-nav')
+    expect(within(aside).getByRole('button', { name: 'Menú de la cuenta' })).toBeVisible()
+  })
+})
+
+it('UI108 los ítems ocupan todo el ancho y comparten letra y alto mínimo del sistema', () => {
+  const css = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8')
+  expect(css.match(/\.nav-item\s*\{([^}]*)\}/)?.[1]).toMatch(/width:\s*100%/)
+  const enlace = css.match(/\n\.nav-link\s*\{([^}]*)\}/)?.[1] ?? ''
+  expect(enlace).toMatch(/font-size:\s*var\(--sv-texto-md\)/)
+  expect(enlace).toMatch(/min-height:\s*var\(--sv-objetivo-tactil\)/)
+  expect(readFileSync('src/estilos/panel.css', 'utf8')).toMatch(/--sv-objetivo-tactil:\s*44px/)
+})
+
+describe('UI108 barra móvil y cajón', () => {
+  const panelCss = readFileSync('src/estilos/panel.css', 'utf8')
+  const bloqueCajon = panelCss.match(/@media \(max-width: (\d+)px\) \{\s*\.layout\.layout--with-sidebar \{ flex-direction: column; \}([\s\S]*?)\n\}\n/)
+
+  it('el cajón se activa a 900 px en JS y en CSS con el mismo valor (cubre tablet)', () => {
+    pantalla(true)
+    render(barra())
+    const consultas = vi.mocked(window.matchMedia).mock.calls.map(([consulta]) => consulta)
+    expect(consultas.length).toBeGreaterThan(0)
+    expect(new Set(consultas)).toEqual(new Set(['(max-width: 900px)']))
+    expect(bloqueCajon?.[1]).toBe('900')
+  })
+  it('la barra superior usa la superficie oscura del cajón y no la blanca del panel', () => {
+    const barraMovil = bloqueCajon?.[2].match(/\.panel-barra-movil\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(barraMovil).toMatch(/background:\s*var\(--bg-sidebar\)/)
+    expect(barraMovil).toMatch(/color:\s*var\(--text-main\)/)
+    expect(barraMovil).not.toMatch(/--sv-superficie/)
+  })
+  it('abrir y cerrar usan íconos de lucide en botones propios del fondo oscuro, sin glifos ni botón secundario', async () => {
+    pantalla(true)
+    render(barra())
+    const abrir = screen.getByRole('button', { name: 'Abrir menú' })
+    expect(abrir.querySelector('svg')).toHaveClass('lucide-menu')
+    expect(abrir.textContent).toBe('')
+    await userEvent.click(abrir)
+    const cerrar = within(screen.getByRole('complementary')).getByRole('button', { name: 'Cerrar menú' })
+    expect(cerrar.querySelector('svg')).toHaveClass('lucide-x')
+    expect(cerrar.textContent).toBe('')
+    for (const boton of [abrir, cerrar]) {
+      expect(boton).toHaveClass('panel-boton-icono')
+      expect(boton).not.toHaveClass('btn-servia-secondary')
+    }
+  })
+})
+
+describe('UI108 el reinicio de márgenes ya no es global', () => {
+  const css = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+  const selectores = [...css.matchAll(/(?<=^|\})\s*([^{}@][^{}]*)\{([^}]*)\}/g)].map(([, selector, cuerpo]) => ({ selector: selector.trim(), cuerpo }))
+  it('ninguna regla con selector universal solo reinicia margin o padding', () => {
+    const globales = selectores.filter(({ selector, cuerpo }) => /^\*(\s*,\s*\*)*$/.test(selector) && /margin:\s*0|padding:\s*0/.test(cuerpo))
+    expect(globales).toEqual([])
+  })
+  it('el reinicio queda acotado a la barra y a la barra móvil', () => {
+    const acotado = selectores.find(({ selector, cuerpo }) => selector.startsWith(':where(') && /margin:\s*0/.test(cuerpo) && /padding:\s*0/.test(cuerpo))
+    expect(acotado?.selector).toContain('.sidebar')
+    expect(acotado?.selector).toContain('.panel-barra-movil')
+  })
 })

@@ -1,8 +1,8 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Link } from 'react-router';
-import { ShieldAlert } from 'lucide-react'
+import { ShieldAlert, Store } from 'lucide-react'
 import './MiPerfil.css';
-import { api } from '../../servicios/api';
+import { api, type FotosNegocio as FotosNegocioDatos } from '../../servicios/api';
 import {
   DIRECCION_VACIA,
   aplicarDetalleADireccion,
@@ -16,6 +16,9 @@ import {
 import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
 import { CambiarContrasena } from './CambiarContrasena';
 import { CampoCalle, type EleccionCalle } from './CampoCalle';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
+import { FotosNegocio } from './FotosNegocio';
+import { FOTOS_VACIAS, normalizarFotosNegocio } from './fotos';
 
 interface Categoria {
   id: string;
@@ -37,6 +40,7 @@ interface PerfilNegocio {
 type RespuestaPerfil = Partial<PerfilNegocio> & {
   direccion?: Direccion | null;
   direccionTexto?: string;
+  fotos?: Partial<FotosNegocioDatos> | null;
 };
 
 export function MiPerfil() {
@@ -74,6 +78,7 @@ export function MiPerfil() {
 
   // Estado local para la vista previa de la imagen
   const [imagenPreview, setImagenPreview] = useState<string | null>(null);
+  const [fotos, setFotos] = useState<FotosNegocioDatos>(FOTOS_VACIAS);
 
 
   useEffect(() => {
@@ -94,6 +99,7 @@ export function MiPerfil() {
           perfilCompleto: perfil.perfilCompleto ?? false,
           camposFaltantes: perfil.camposFaltantes ?? [],
         }));
+        setFotos(normalizarFotosNegocio(perfil.fotos));
         if (perfil.direccion) {
           setDireccion(direccionAForm(perfil.direccion));
         } else if (perfil.direccionTexto) {
@@ -218,6 +224,9 @@ export function MiPerfil() {
         setDireccion(direccionAForm(respuesta.direccion));
         setDireccionVieja('');
       }
+      if (respuesta.fotos) {
+        setFotos(normalizarFotosNegocio(respuesta.fotos));
+      }
       setMensajeExito('Perfil actualizado correctamente');
       setMostrarModalExito(true);
     } catch (error: any) {
@@ -312,7 +321,7 @@ export function MiPerfil() {
           {/* Encabezado */}
           <header className="panel-encabezado">
             <div>
-              <span className="panel-eyebrow">PANEL DE NEGOCIO</span>
+              <EyebrowPanel grupo="negocio" icono={Store} />
 
               <h1 className="panel-titulo">
                 Perfil del negocio
@@ -913,7 +922,8 @@ export function MiPerfil() {
 
         </form>
 
-        {/* Fuera del formulario del perfil: es un formulario aparte (MVP-04). */}
+        {/* Fuera del formulario del perfil: secciones independientes. */}
+        <FotosNegocio fotosIniciales={fotos} alCambiar={setFotos} />
         <RecepcionReservas />
         <CambiarContrasena />
       </div>

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, type ReactNode, type FormEvent } from 'react';
 import { api, ErrorApi } from '../../servicios/api';
 import './Bloqueos.css';
+import { CalendarOff } from 'lucide-react';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 interface Bloqueo {
   id: string;
@@ -206,7 +208,7 @@ export function Bloqueos() {
 
         <header className="panel-encabezado">
           <div>
-            <span className="panel-eyebrow">OPERACIONES</span>
+            <EyebrowPanel grupo="negocio" icono={CalendarOff} />
             <h1 className="panel-titulo">Bloqueos de horario</h1>
             <p className="panel-subtitulo">Administra los días u horas en los que no atenderás.</p>
           </div>

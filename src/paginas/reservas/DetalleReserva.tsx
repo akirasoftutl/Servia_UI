@@ -4,6 +4,8 @@ import { useAuth } from '../../contextos/AuthContext';
 import { api, ErrorApi } from '../../servicios/api';
 import { ESTADOS_CONFIG, formatearFecha, formatearHora, calcularTiempoRestante } from './estados';
 import './Reservas.css';
+import { CalendarCheck } from 'lucide-react';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 const MOTIVO_MIN = 20;
 const MOTIVO_MAX = 500;
@@ -274,7 +276,7 @@ export function DetalleReserva() {
 
         <header className="panel-encabezado d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
           <div>
-            <span className="panel-eyebrow">DETALLE DE RESERVA</span>
+            <EyebrowPanel grupo="operacion" icono={CalendarCheck} />
             <h1 className="panel-titulo mb-0">Reserva {reserva.folio}</h1>
             <p className="panel-subtitulo mt-1">Revisa la información de la solicitud del cliente.</p>
           </div>

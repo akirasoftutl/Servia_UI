@@ -93,6 +93,11 @@
   --sv-rapido: 160ms;
   --sv-curva: cubic-bezier(0.22, 1, 0.36, 1);
 
+  /* Íconos y objetivos táctiles */
+  --sv-icono-nav: 20px;
+  --sv-icono-menu: 16px;
+  --sv-objetivo-tactil: 44px;
+
   /* Anchos */
   --sv-ancho-contenedor: 1080px;
   --sv-ancho-dialogo: 480px;
@@ -1343,23 +1348,30 @@ fieldset:disabled .btn-servia-secondary {
   .panel-dialogo-acciones > * {
     width: 100%;
   }
+
+  .panel-fotos-previa {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* Navegación angosta: conserva la barra del escritorio y libera el contenido. */
+/* Navegación angosta (móvil y tablet): barra superior oscura y menú en cajón. */
 .panel-barra-movil { display: none; }
 .panel-barra-lateral .user-card { width: 100%; text-align: left; }
 .panel-barra-lateral .user-card:focus-visible { outline: none; box-shadow: var(--sv-foco); }
 
-@media (max-width: 650px) {
+@media (max-width: 900px) {
   .layout.layout--with-sidebar { flex-direction: column; }
   .panel-barra-movil {
     display: flex;
     align-items: center;
-    gap: var(--sv-esp-4);
-    padding: var(--sv-esp-3) var(--sv-esp-4);
-    background: var(--sv-superficie);
-    color: var(--sv-titulo);
+    gap: var(--sv-esp-2);
+    padding: var(--sv-esp-2) var(--sv-esp-3);
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-main);
     font-family: var(--sv-fuente-titulos);
+    font-size: var(--sv-texto-lg);
+    font-weight: 700;
   }
   .layout.layout--with-sidebar .panel-barra-lateral {
     position: fixed;
@@ -1383,6 +1395,15 @@ fieldset:disabled .btn-servia-secondary {
 
 /* Los asuntos admiten hasta 100 caracteres, incluso sin espacios. */
 .panel-reporte-asunto { overflow-wrap: anywhere; }
+
+/* Tablet: con la barra lateral fija el contenido queda angosto; menos margen lateral. */
+@media (min-width: 651px) and (max-width: 1023px) {
+  .panel-pagina {
+    padding-right: var(--sv-esp-4);
+    padding-left: var(--sv-esp-4);
+  }
+}
+
 /* Interruptor compartido: misma pista violeta y etiqueta que recepción de reservas. */
 .panel-interruptor {
   display: inline-flex;
@@ -1527,4 +1548,92 @@ fieldset:disabled .btn-servia-secondary {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sv-esp-2);
+}
+/* Fotos del negocio: portada, vista previa y cuadrícula de galería. */
+.panel-fotos-bloque + .panel-fotos-bloque {
+  margin-top: var(--sv-esp-5);
+  padding-top: var(--sv-esp-5);
+  border-top: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
+}
+.panel-fotos-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sv-esp-3);
+  margin-bottom: var(--sv-esp-4);
+}
+.panel-fotos-marco-portada {
+  margin: 0;
+  overflow: hidden;
+  border: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
+  border-radius: var(--sv-radio-md);
+  background: var(--sv-superficie-hundida);
+}
+.panel-fotos-imagen-portada {
+  display: block;
+  width: 100%;
+  max-height: calc(var(--sv-esp-7) * 6);
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.panel-fotos-previa {
+  display: grid;
+  grid-template-columns: minmax(0, calc(var(--sv-esp-7) * 5)) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sv-esp-4);
+  margin-bottom: var(--sv-esp-4);
+  padding: var(--sv-esp-4);
+  border: calc(var(--sv-esp-1) / 4) dashed var(--sv-acento-borde);
+  border-radius: var(--sv-radio-md);
+  background: var(--sv-superficie-suave);
+}
+.panel-fotos-previa-imagen {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--sv-radio-sm);
+  object-fit: cover;
+  background: var(--sv-superficie-hundida);
+}
+.panel-fotos-previa-cuerpo {
+  min-width: 0;
+}
+.panel-fotos-previa-nombre {
+  margin: 0 0 var(--sv-esp-3);
+  overflow-wrap: anywhere;
+}
+.panel-fotos-previa-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sv-esp-2);
+}
+.panel-fotos-cuadricula {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--sv-esp-7) * 4)), 1fr));
+  gap: var(--sv-esp-4);
+}
+.panel-fotos-tarjeta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
+  border-radius: var(--sv-radio-md);
+  background: var(--sv-superficie);
+  box-shadow: var(--sv-sombra-item);
+}
+.panel-fotos-imagen-galeria {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--sv-superficie-hundida);
+}
+.panel-fotos-tarjeta-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sv-esp-2);
+  padding: var(--sv-esp-2) var(--sv-esp-3);
+  border-top: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
 }

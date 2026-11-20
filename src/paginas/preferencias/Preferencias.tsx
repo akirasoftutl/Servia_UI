@@ -3,6 +3,7 @@ import { Bell, CircleAlert } from 'lucide-react';
 import { api, ErrorApi } from '../../servicios/api';
 import { EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import '../../estilos/panel.css';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 interface PreferenciasPush { nuevaSolicitud: boolean; reservaCancelada: boolean }
 const tipos = [
@@ -52,7 +53,7 @@ export function Preferencias() {
 
   return <div className="panel-pagina"><div className="panel-contenedor">
     <header className="panel-encabezado"><div>
-      <span className="panel-eyebrow">OPERACIONES</span>
+      <EyebrowPanel grupo="configuracion" icono={Bell} />
       <h1 className="panel-titulo">Preferencias de notificaciones</h1>
       <p className="panel-subtitulo">Elige qué avisos quieres recibir como notificación push.</p>
     </div></header>

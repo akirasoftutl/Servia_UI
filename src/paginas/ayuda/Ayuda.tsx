@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import '../../estilos/panel.css';
+import { CircleHelp } from 'lucide-react';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 const grupos = [
   { titulo: 'Reservas', preguntas: [
@@ -27,7 +29,7 @@ export function Ayuda() {
 
   return <div className="panel-pagina"><div className="panel-contenedor">
     <header className="panel-encabezado"><div className="panel-encabezado-textos">
-      <span className="panel-eyebrow">OPERACIONES</span>
+      <EyebrowPanel grupo="configuracion" icono={CircleHelp} />
       <h1 className="panel-titulo">Ayuda</h1>
       <p className="panel-subtitulo">Encuentra respuestas sobre cómo usar Servia.</p>
     </div></header>
