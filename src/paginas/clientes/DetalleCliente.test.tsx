@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { api, ErrorApi } from '../../servicios/api';
 import { DetalleCliente } from './DetalleCliente';
@@ -23,7 +23,10 @@ it('C3 carga directamente sin estado del router, muestra el bloque cliente e his
   expect(mock).toHaveBeenCalledWith('/negocios/mio/clientes/ana/reservas?');
   expect(screen.getByRole('link', { name: cliente.telefono })).toHaveAttribute('href', 'tel:4770000000');
   expect(screen.getByRole('link', { name: cliente.correo })).toHaveAttribute('href', 'mailto:historial@correo.mx');
-  expect(screen.getByText('Total de reservas: 17 · Completadas: 9 · Canceladas: 4')).toBeInTheDocument();
+  const indicador = (etiqueta: string) => screen.getByText(etiqueta, { selector: 'dt' }).closest('.cliente-stat')!.querySelector('dd')!.textContent;
+  expect(indicador('Total de reservas')).toBe('17');
+  expect(indicador('Completadas')).toBe('9');
+  expect(indicador('Canceladas')).toBe('4');
   expect(screen.getByText('Rechazada por vencimiento')).toBeInTheDocument();
   expect(screen.getByText('Motivo: Se agotó el plazo')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('link', { name: 'Corte clásico · SRV-ABC' }));
@@ -60,6 +63,31 @@ it('C5 conserva los datos del cliente cuando el historial está vacío', async (
   expect(await screen.findByText('No hay reservas en este historial.')).toBeInTheDocument();
   expect(screen.getByText('Datos del historial')).toBeInTheDocument();
 });
-it('F5 muestra fecha y rango horario de México sin repetir la preposición, incluso en UTC', async () => {
-  abrir(); await waitFor(() => expect(screen.getByText('03/11/30 a las 20:00 – 21:00')).toBeInTheDocument());
+it('F5 muestra día, rango horario y fecha larga de México, incluso en UTC', async () => {
+  abrir(); await waitFor(() => expect(screen.getByText('20:00 – 21:00')).toBeInTheDocument());
+  expect(screen.getByText('03 nov')).toHaveClass('cliente-reserva-dia');
+  expect(screen.getByText(/domingo, 3 de noviembre de 2030 · 60 min/)).toBeInTheDocument();
+});
+it('D18 la ficha muestra avatar, botones de contacto y los cuatro indicadores con la última visita en México', async () => {
+  abrir(); await screen.findByRole('heading', { name: 'Datos del historial' });
+  const ficha = screen.getByRole('region', { name: 'Datos del cliente' });
+  expect(ficha.querySelector('.cliente-perfil-avatar')).toHaveTextContent(/^DH$/);
+  expect(within(ficha).getByRole('link', { name: cliente.telefono })).toHaveClass('cliente-contacto-chip');
+  expect(within(ficha).getByRole('link', { name: cliente.correo })).toHaveClass('cliente-contacto-chip');
+  expect(within(ficha).getAllByRole('term').map((t) => t.textContent)).toEqual(['Total de reservas', 'Completadas', 'Canceladas', 'Última visita']);
+  const visita = within(ficha).getByText('Última visita', { selector: 'dt' }).closest('.cliente-stat')!;
+  expect(visita.querySelector('dd')).toHaveTextContent('3 nov 2030');
+  expect(visita).toHaveTextContent('A las 20:00 h');
+});
+it('D18 cada reserva del historial lleva el folio como etiqueta y el estado como insignia, sin romper el nombre del enlace', async () => {
+  abrir(); const enlace = await screen.findByRole('link', { name: 'Corte clásico · SRV-ABC' });
+  expect(enlace.querySelector('.cliente-reserva-folio')).toHaveTextContent('SRV-ABC');
+  const item = enlace.closest('article')!;
+  expect(within(item).getByText('Rechazada por vencimiento')).toHaveClass('reserva-badge', 'rechazada_vencimiento');
+  expect(screen.getByText('1 reserva')).toHaveClass('panel-contador');
+});
+it('D18 sin teléfono ni correo la ficha no muestra botones de contacto', async () => {
+  mock.mockResolvedValue({ cliente: { ...cliente, telefono: null, correo: null }, items: [reserva], siguiente: null }); abrir();
+  await screen.findByRole('heading', { name: 'Datos del historial' });
+  expect(document.querySelector('.cliente-contacto-chip')).toBeNull();
 });

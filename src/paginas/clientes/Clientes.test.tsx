@@ -1,7 +1,8 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { api } from '../../servicios/api';
 import { Clientes } from './Clientes';
+import { iniciales } from './clientes';
 
 vi.mock('../../servicios/api', () => ({ api: vi.fn() }));
 const mock = vi.mocked(api);
@@ -16,8 +17,44 @@ it('C1 muestra contacto, totales distintos y enlace al cliente', async () => {
   expect(screen.getByRole('link', { name: 'Ana Pérez' })).toHaveAttribute('href', '/clientes/ana');
   expect(screen.getByRole('link', { name: cliente.telefono })).toHaveAttribute('href', 'tel:4771234567');
   expect(screen.getByRole('link', { name: cliente.correo })).toHaveAttribute('href', 'mailto:ana@correo.mx');
-  expect(screen.getByText('Total de reservas: 13 · Completadas: 7 · Canceladas: 2')).toBeInTheDocument();
-  expect(screen.getByText('Última reserva: 03/11/30 a las 20:00')).toBeInTheDocument();
+  expect(screen.getByText('Última visita: 03/11/30 a las 20:00')).toBeInTheDocument();
+});
+it('D17 la tarjeta tiene avatar con iniciales y tres mini-métricas con el valor de cada una', async () => {
+  abrir(); await avanzar();
+  const tarjeta = screen.getByRole('link', { name: 'Ana Pérez' }).closest('article')!;
+  expect(tarjeta.querySelector('.clientes-avatar')).toHaveTextContent(/^AP$/);
+  const kpis = tarjeta.querySelector('dl[aria-label="Resumen de reservas de Ana Pérez"]')!;
+  const valor = (etiqueta: string) => within(kpis as HTMLElement).getByText(etiqueta).closest('div')!.querySelector('dd')!.textContent;
+  expect(valor('Reservas')).toBe('13');
+  expect(valor('Completadas')).toBe('7');
+  expect(valor('Canceladas')).toBe('2');
+});
+it('D17 sin teléfono ni correo no deja enlaces vacíos y marca las canceladas solo si hay', async () => {
+  mock.mockResolvedValue({ items: [{ ...cliente, telefono: null, correo: null, canceladas: 0 }], siguiente: null });
+  abrir(); await avanzar();
+  expect(document.querySelector('a[href^="tel:"], a[href^="mailto:"]')).toBeNull();
+  expect(screen.getByText('Canceladas').closest('.clientes-kpi')).not.toHaveClass('clientes-kpi--peligro');
+});
+it('D17 las iniciales usan la primera y la última palabra, o un signo si no hay nombre', () => {
+  expect(iniciales('Carlos Alberto Mendoza')).toBe('CM');
+  expect(iniciales('  ana ')).toBe('A');
+  expect(iniciales('Álvaro Núñez')).toBe('ÁN');
+  expect(iniciales('')).toBe('?');
+});
+it('D17 la cabecera cuenta clientes y reservas cargadas, con «+» si faltan páginas, y enlaza a Reservas', async () => {
+  mock.mockResolvedValue({ items: [cliente, { ...cliente, clienteUid: 'b', nombre: 'Beto', totalReservas: 4 }], siguiente: 'mas' });
+  abrir(); await avanzar();
+  const metricas = document.querySelector('dl[aria-label="Resumen de clientes"]')!;
+  const cifra = (etiqueta: string) => within(metricas as HTMLElement).getByText(etiqueta, { selector: 'dt' }).closest('.panel-metrica')!.querySelector('dd')!.textContent;
+  expect(cifra('clientes')).toBe('2+');
+  expect(cifra('reservas acumuladas')).toBe('17+');
+  expect(screen.getByText('2+ clientes')).toHaveClass('panel-contador');
+  expect(screen.getByRole('link', { name: 'Ver reservas' })).toHaveAttribute('href', '/reservas');
+});
+it('D17 sin clientes la cabecera no muestra contadores', async () => {
+  mock.mockResolvedValue({ items: [], siguiente: null }); abrir(); await avanzar();
+  expect(document.querySelector('.panel-metricas')).toBeNull();
+  expect(document.querySelector('.panel-contador')).toBeNull();
 });
 it('C2 espera 300 ms, mínimo dos caracteres y borra resultados y cursor al buscar', async () => {
   mock.mockResolvedValue({ items: [cliente], siguiente: 'v1.+/=' });
