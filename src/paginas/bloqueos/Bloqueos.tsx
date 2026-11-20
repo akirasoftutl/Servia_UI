@@ -286,7 +286,7 @@ export function Bloqueos() {
               {!cargando && !error && bloqueos.length === 0 && <EstadoVacio
                 icono={CalendarOff}
                 titulo="Tu agenda no tiene bloqueos"
-                texto="No tienes bloqueos."
+                texto="Cuando necesites cerrar una fecha u hora, crea un bloqueo en el formulario."
               />}
 
               {!cargando && !error && bloqueos.length > 0 && (

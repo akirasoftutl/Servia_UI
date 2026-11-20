@@ -174,7 +174,7 @@ export function Reservas() {
           {!cargando && !error && pagina.items.length === 0 && <EstadoVacio
             icono={CalendarClock}
             titulo={pestana === 'pendientes' ? 'Sin solicitudes por ahora' : 'Sin citas próximas'}
-            texto={pestana === 'pendientes' ? 'No tienes reservas pendientes.' : 'No tienes reservas próximas.'}
+            texto={pestana === 'pendientes' ? 'Cuando un cliente solicite una cita, la verás aquí para aceptarla o rechazarla.' : 'Las citas que confirmes aparecerán aquí.'}
             accion={<Link to="/mi-perfil/vista-previa" className="btn-servia-secondary">Ver cómo te ven tus clientes</Link>}
           />}
           {!cargando && !error && <div className="panel-lista">

@@ -51,7 +51,7 @@ export function Clientes() {
       <p id="clientes-ayuda" className="panel-item-texto">Escribe al menos 2 caracteres para buscar.</p>
       <div aria-busy={cargando}>
         <EstadoClientes carga="clientes" titulo={buscando ? 'Sin resultados' : 'Aún no hay clientes'} cargando={cargando} error={error}
-          vacio={pagina.items.length || consulta.length === 1 ? '' : buscando ? 'No encontramos clientes con ese nombre.' : 'Todavía no tienes clientes.'} reintentar={reintentar} />
+          vacio={pagina.items.length || consulta.length === 1 ? '' : buscando ? 'No encontramos clientes con ese nombre.' : 'Aquí aparecerán las personas que reserven contigo.'} reintentar={reintentar} />
         <div className="panel-lista">
           {pagina.items.map((cliente) => <article className="panel-item clientes-item" key={cliente.clienteUid}>
             <h2 className="panel-item-titulo"><Link to={`/clientes/${encodeURIComponent(cliente.clienteUid)}`}>{cliente.nombre || 'Cliente sin nombre'}</Link></h2>

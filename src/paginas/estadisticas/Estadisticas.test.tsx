@@ -221,7 +221,7 @@ describe('Estadísticas', () => {
       cancelaciones: { porCliente: 0, porNegocio: 0 }, clientesAtendidos: 0, serviciosMasReservados: [],
       porDia: [{ fecha: '2026-11-17', reservas: 0 }] });
     render(<Estadisticas />);
-    const vacio = await screen.findByText('No hay reservas en este periodo.');
+    const vacio = await screen.findByText('Las cifras aparecerán cuando tengas reservas en este periodo.');
     expect(vacio).toHaveClass('panel-estado-texto');
     expect(vacio.closest('.panel-estado')!.querySelector('.panel-ilustracion')).toBeInTheDocument();
     expect(numero('Total de reservas')).toHaveTextContent(/^0$/);

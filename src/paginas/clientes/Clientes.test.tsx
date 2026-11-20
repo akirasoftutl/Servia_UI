@@ -65,7 +65,7 @@ it('C5 muestra cargando con el patrón de Reservas', () => {
 });
 it('C5 muestra vacío', async () => {
   mock.mockResolvedValue({ items: [], siguiente: null }); abrir(); await avanzar();
-  expect(screen.getByText('Todavía no tienes clientes.')).toHaveClass('panel-estado-texto');
+  expect(screen.getByText('Aquí aparecerán las personas que reserven contigo.')).toHaveClass('panel-estado-texto');
 });
 it('distingue búsqueda sin resultados del estado vacío sin clientes', async () => {
   mock.mockResolvedValue({ items: [cliente], siguiente: null });

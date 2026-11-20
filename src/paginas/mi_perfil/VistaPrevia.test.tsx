@@ -187,7 +187,7 @@ describe('Vista previa', () => {
     abrir()
     expect(await screen.findByText('Juárez, 10, Int. 2, Centro, 37000, León, Guanajuato')).toBeInTheDocument()
     expect(screen.getByText('Categoría no disponible')).toBeInTheDocument()
-    expect(screen.getByText('No hay servicios activos para mostrar.')).toBeInTheDocument()
+    expect(screen.getByText('Activa al menos un servicio para que los clientes vean tu perfil completo.')).toBeInTheDocument()
   })
 
   it('no actualiza la pantalla después de desmontar', async () => {

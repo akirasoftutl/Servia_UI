@@ -158,7 +158,7 @@ export function VistaPrevia() {
             {datos.servicios.length === 0 ? <EstadoVacio
               icono={Tags}
               titulo="Sin servicios activos"
-              texto="No hay servicios activos para mostrar."
+              texto="Activa al menos un servicio para que los clientes vean tu perfil completo."
               accion={<Link to="/servicios/nuevo" className="btn-servia-primary">Crear servicio</Link>}
             /> :
               <ul className="panel-lista list-unstyled mb-0">{datos.servicios.map(servicio => <li className="panel-item" key={servicio.id}>

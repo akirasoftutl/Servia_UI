@@ -36,20 +36,20 @@ describe('estados vacíos compartidos', () => {
 
   it('Reservas: ilustración, título y botón al siguiente paso', async () => {
     render(<MemoryRouter><Reservas /></MemoryRouter>);
-    const estado = esVacioCompartido(await screen.findByText('No tienes reservas pendientes.'), 'Sin solicitudes por ahora');
+    const estado = esVacioCompartido(await screen.findByText('Cuando un cliente solicite una cita, la verás aquí para aceptarla o rechazarla.'), 'Sin solicitudes por ahora');
     expect(estado.querySelector('a.btn-servia-secondary')).toHaveAttribute('href', '/mi-perfil/vista-previa');
   });
 
   it('Clientes: ilustración y título, sin botón (los clientes llegan por reservas)', async () => {
     render(<MemoryRouter><Clientes /></MemoryRouter>);
-    const estado = esVacioCompartido(await screen.findByText('Todavía no tienes clientes.'), 'Aún no hay clientes');
+    const estado = esVacioCompartido(await screen.findByText('Aquí aparecerán las personas que reserven contigo.'), 'Aún no hay clientes');
     expect(estado.querySelector('.panel-estado-acciones')).toBeNull();
   });
 
   it('Bloqueos: ilustración y título', async () => {
     render(<Bloqueos />);
     await waitFor(() => expect(screen.queryByText('Cargando...')).not.toBeInTheDocument());
-    esVacioCompartido(screen.getByText('No tienes bloqueos.'), 'Tu agenda no tiene bloqueos');
+    esVacioCompartido(screen.getByText('Cuando necesites cerrar una fecha u hora, crea un bloqueo en el formulario.'), 'Tu agenda no tiene bloqueos');
   });
 
   it('Reservas con una pendiente muestra el contador con ícono svg, no con ⏱', async () => {

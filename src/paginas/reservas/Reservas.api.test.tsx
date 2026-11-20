@@ -17,7 +17,7 @@ it('consulta las reservas del negocio mediante api con su token y sin identifica
     <Reservas />
   </MemoryRouter>
 );
-  await screen.findByText('No tienes reservas pendientes.');
+  await screen.findByText('Cuando un cliente solicite una cita, la verás aquí para aceptarla o rechazarla.');
   const llamadaReservas = await waitFor(() => {
     const llamada = fetchMock.mock.calls.find(([url]) => String(url).includes('/reservas/negocio'));
     expect(llamada).toBeDefined();

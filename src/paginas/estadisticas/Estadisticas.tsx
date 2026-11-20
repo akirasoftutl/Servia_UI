@@ -116,7 +116,7 @@ export function Estadisticas() {
         {datos.totalReservas === 0 && <EstadoVacio
           icono={ChartColumn}
           titulo="Sin datos que mostrar"
-          texto="No hay reservas en este periodo."
+          texto="Las cifras aparecerán cuando tengas reservas en este periodo."
         />}
         <dl className="estadisticas-metricas">{metricas.map(([etiqueta, valor]) =>
           <div className="panel-item" key={etiqueta}><dt className="panel-item-texto">{etiqueta}</dt>
