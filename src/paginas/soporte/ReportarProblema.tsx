@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { MessageSquareWarning } from 'lucide-react';
 import { api } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import '../../estilos/panel.css';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
@@ -33,7 +34,7 @@ export function ReportarProblema() {
         const combinados = new Map([...datos, ...actuales].map(r => [r.id, r]));
         return [...combinados.values()].sort((a, b) => b.creadaEn.localeCompare(a.creadaEn));
       }); })
-      .catch(() => { if (vigente) setErrorCarga('No pudimos cargar tus reportes. Intenta de nuevo.'); })
+      .catch((error: unknown) => { if (vigente) setErrorCarga(mensajeDeError(error, 'No pudimos cargar tus reportes. Intenta de nuevo.')); })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
   }, [revision]);
@@ -51,8 +52,8 @@ export function ReportarProblema() {
       setReportes(actuales => [reporte, ...actuales.filter(r => r.id !== reporte.id)]);
       setExito('Tu reporte se envió correctamente.');
       setAsunto(''); setDescripcion(''); setIntentado(false);
-    } catch {
-      setErrorEnvio('No pudimos enviar tu reporte. Revisa tu conexión e intenta de nuevo.');
+    } catch (error: unknown) {
+      setErrorEnvio(mensajeDeError(error, 'No pudimos enviar tu reporte. Revisa tu conexión e intenta de nuevo.'));
     } finally { bloqueo.current = false; setEnviando(false); }
   }
 

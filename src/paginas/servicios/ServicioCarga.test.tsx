@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { NuevoServicio } from './NuevoServicio';
 vi.mock('../../servicios/api', () => ({ api: vi.fn(), ErrorApi: class extends Error { estado: number; constructor(estado: number, mensaje: string) { super(mensaje); this.estado = estado; } } }));
 const mock = vi.mocked(api);
@@ -20,10 +21,19 @@ it('404 impide editar y ofrece regreso', async () => {
 it('recupera una carga fallida sin habilitar un formulario vacío', async () => {
   mock.mockRejectedValueOnce(new ErrorApi(503, 'Interno')).mockResolvedValue(datos);
   abrir();
-  expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar los datos. Intenta de nuevo.');
+  expect(await screen.findByRole('alert')).toHaveTextContent(MENSAJE_ERROR_SERVIDOR);
   expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Intentar de nuevo' }));
   expect(await screen.findByLabelText('Nombre del servicio *')).toHaveValue('Corte');
+});
+it.each([
+  [new ErrorApi(429, 'Demasiadas consultas; inténtalo más tarde.'), 'Demasiadas consultas; inténtalo más tarde.'],
+  [new ErrorApi(500, 'Error interno'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos cargar los datos. Intenta de nuevo.'],
+])('carga de servicio distingue 429, 500 y fallo de red', async (error, esperado) => {
+  mock.mockRejectedValueOnce(error);
+  abrir();
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
 });
 it('edita sin depender de la carga del perfil', async () => {
   mock.mockImplementation(async ruta => { if (ruta === '/negocios/mio') throw new ErrorApi(503, 'Perfil caído'); return datos; });

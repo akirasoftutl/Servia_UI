@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { vi } from 'vitest';
 import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { DetalleReserva } from './DetalleReserva';
 import { calcularTiempoRestante, formatearFecha, formatearHora } from './estados';
 
@@ -133,6 +134,16 @@ describe('DetalleReserva', () => {
     responderDetalle(new Error('Sin conexión'));
     mostrar();
     expect(await screen.findByText('No pudimos cargar la reserva. Intenta de nuevo.')).toBeInTheDocument();
+  });
+
+  it.each([
+    [new ErrorApi(429, 'Demasiadas consultas de reserva.'), 'Demasiadas consultas de reserva.'],
+    [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+    [new TypeError('Failed to fetch'), 'No pudimos cargar la reserva. Intenta de nuevo.'],
+  ])('distingue 429, 500 y red al cargar el detalle de reserva', async (error, esperado) => {
+    responderDetalle(error);
+    mostrar();
+    expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
   });
 
   it('muestra los datos del cliente, del servicio y del horario', async () => {

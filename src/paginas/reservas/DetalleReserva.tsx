@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../contextos/AuthContext';
 import { api, ErrorApi } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { ESTADOS_CONFIG, formatearFecha, formatearHora, calcularTiempoRestante } from './estados';
 import './Reservas.css';
 import { CalendarCheck } from 'lucide-react';
@@ -53,11 +54,11 @@ export function DetalleReserva() {
     try {
       const data = await api<DetalleReservaAPI>(`/reservas/negocio/${id}`);
       setReserva(data);
-    } catch (err: any) {
-      if (err.estado === 404) {
+    } catch (err: unknown) {
+      if (err instanceof ErrorApi && err.estado === 404) {
         setError('No encontramos esta reserva.');
       } else {
-        setError('No pudimos cargar la reserva. Intenta de nuevo.');
+        setError(mensajeDeError(err, 'No pudimos cargar la reserva. Intenta de nuevo.'));
       }
     } finally {
       setCargando(false);

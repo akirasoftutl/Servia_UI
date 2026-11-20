@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { NuevoServicio } from './NuevoServicio';
 import { MisServicios } from './MisServicios';
 vi.mock('../../servicios/api', () => ({ api: vi.fn(), ErrorApi: class extends Error { estado: number; constructor(estado: number, mensaje: string) { super(mensaje); this.estado = estado; } } }));
@@ -118,17 +119,41 @@ it.each(['/servicios/uno', '/servicios'])('409 en %s ofrece desactivar sin segun
   expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   expect(mock.mock.calls.filter(([, opciones]) => opciones?.method === 'DELETE')).toHaveLength(1);
 });
-it.each(['PUT', 'PATCH', 'DELETE'])('muestra el error genérico ante fallo %s y permite reintentar', async metodo => {
+it.each(['PUT', 'PATCH', 'DELETE'])('muestra el error del servidor ante fallo 500 en %s y permite reintentar', async metodo => {
   const implementacion = mock.getMockImplementation()!;
   mock.mockImplementation(async (ruta, opciones) => { if (opciones?.method === metodo) throw new ErrorApi(500, 'Detalle privado'); return implementacion(ruta, opciones); });
   abrir(); await screen.findByLabelText('Nombre del servicio *');
   if (metodo === 'PUT') await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
   else { const accion = metodo === 'PATCH' ? 'Desactivar' : 'Eliminar'; await userEvent.click(screen.getByRole('button', { name: accion })); await confirmar(accion); }
-  expect(await screen.findByRole('alert')).toHaveTextContent(ERROR);
+  expect(await screen.findByRole('alert')).toHaveTextContent(MENSAJE_ERROR_SERVIDOR);
   expect(screen.queryByText('Detalle privado')).not.toBeInTheDocument();
   mock.mockImplementation(implementacion);
   if (metodo === 'PUT') { await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' })); expect(await screen.findByRole('status')).toHaveTextContent('Cambios guardados.'); }
   else { const accion = metodo === 'PATCH' ? 'Desactivar' : 'Eliminar'; await userEvent.click(screen.getByRole('button', { name: accion })); await confirmar(accion); expect(await screen.findByRole('status')).toHaveTextContent(metodo === 'PATCH' ? 'Servicio desactivado.' : 'Servicio eliminado.'); }
+});
+it.each([
+  ['PUT', new ErrorApi(429, 'Demasiados cambios; espera un momento.'), 'Demasiados cambios; espera un momento.'],
+  ['PUT', new TypeError('Failed to fetch'), ERROR],
+  ['PATCH', new ErrorApi(429, 'Demasiados cambios; espera un momento.'), 'Demasiados cambios; espera un momento.'],
+  ['PATCH', new TypeError('Failed to fetch'), ERROR],
+  ['DELETE', new ErrorApi(429, 'Demasiadas solicitudes.'), 'Demasiadas solicitudes.'],
+  ['DELETE', new TypeError('Failed to fetch'), ERROR],
+])('muestra el mensaje de 429 o red en %s', async (metodo, error, esperado) => {
+  const implementacion = mock.getMockImplementation()!;
+  mock.mockImplementation(async (ruta, opciones) => { if (opciones?.method === metodo) throw error; return implementacion(ruta, opciones); });
+  abrir(); await screen.findByLabelText('Nombre del servicio *');
+  if (metodo === 'PUT') await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+  else { const accion = metodo === 'PATCH' ? 'Desactivar' : 'Eliminar'; await userEvent.click(screen.getByRole('button', { name: accion })); await confirmar(accion); }
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
+});
+it.each([
+  [new ErrorApi(429, 'Demasiadas consultas; inténtalo más tarde.'), 'Demasiadas consultas; inténtalo más tarde.'],
+  [new ErrorApi(500, 'Error interno'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos cargar tus servicios. Intenta nuevamente.'],
+])('MisServicios distingue 429, 500 y red al cargar el catálogo', async (error, esperado) => {
+  mock.mockRejectedValueOnce(error);
+  abrir('/servicios');
+  expect(await screen.findByText(esperado)).toBeInTheDocument();
 });
 it('la tarjeta es un enlace nativo y abre edición con Enter', async () => {
   abrir('/servicios');

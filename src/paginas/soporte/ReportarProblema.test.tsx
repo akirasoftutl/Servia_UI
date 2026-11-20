@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { ReportarProblema } from './ReportarProblema';
 import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 vi.mock('../../servicios/api', async original => ({ ...await original<typeof import('../../servicios/api')>(), api: vi.fn() }));
 const apiMock = vi.mocked(api);
 const reporte = { id: 'r1', asunto: 'Error del panel', estado: 'abierto', creadaEn: '2026-11-20T02:00:00Z' };
@@ -40,13 +41,31 @@ it.each([[5,20],[100,1000]])('C1/C2 envía límites %i/%i recortados, sin uid, m
   expect(item.querySelector('time')).toHaveTextContent(/19 nov 2026/);
   expect(screen.getByLabelText('Asunto')).toHaveValue('');
 });
-it.each([new ErrorApi(400, 'Datos inválidos'), new ErrorApi(500, 'Internal server error'), new TypeError('Failed to fetch')])('C3 error de API/red en español sin alert', async error => {
+it.each([
+  [new ErrorApi(400, 'Datos inválidos'), 'Datos inválidos'],
+  [new ErrorApi(429, 'Enviaste demasiados reportes; inténtalo más tarde.'), 'Enviaste demasiados reportes; inténtalo más tarde.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos enviar tu reporte. Revisa tu conexión e intenta de nuevo.'],
+])('C3 error de API/red distingue 4xx, 5xx y red sin alert', async (error, esperado) => {
   const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {});
   await montar(); apiMock.mockRejectedValueOnce(error); llenar(); enviar();
-  expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos enviar tu reporte. Revisa tu conexión e intenta de nuevo.');
+  const aviso = await screen.findByRole('alert');
+  expect(aviso).toHaveTextContent(esperado);
+  if (error instanceof ErrorApi) {
+    expect(aviso).not.toHaveTextContent('Revisa tu conexión');
+  }
   expect(screen.getByLabelText('Asunto')).toHaveValue(reporte.asunto);
   expect(screen.queryByRole('article')).not.toBeInTheDocument();
   expect(alerta).not.toHaveBeenCalled(); alerta.mockRestore();
+});
+it.each([
+  [new ErrorApi(429, 'Demasiadas consultas; inténtalo más tarde.'), 'Demasiadas consultas; inténtalo más tarde.'],
+  [new ErrorApi(500, 'The query requires an index'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos cargar tus reportes. Intenta de nuevo.'],
+])('C4 carga de reportes distingue 429, 500 y red', async (error, esperado) => {
+  apiMock.mockRejectedValueOnce(error);
+  render(<ReportarProblema />);
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
 });
 it('C4 usa las superficies, cabecera, campos y botones compartidos', async () => {
   const { container } = await montar();

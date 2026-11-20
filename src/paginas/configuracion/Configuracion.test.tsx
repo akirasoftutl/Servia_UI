@@ -3,12 +3,16 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { readFileSync } from 'node:fs'
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth'
-import { api } from '../../servicios/api'
+import { api, ErrorApi } from '../../servicios/api'
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import { Configuracion } from './Configuracion'
 
 const sesion = vi.hoisted(() => ({ usuario: null as unknown, cerrarSesion: vi.fn() }))
 vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => sesion }))
-vi.mock('../../servicios/api', () => ({ api: vi.fn(), ErrorApi: class extends Error {} }))
+vi.mock('../../servicios/api', async (original) => ({
+  ...(await original<typeof import('../../servicios/api')>()),
+  api: vi.fn(),
+}))
 vi.mock('../../servicios/firebase', () => ({ auth: null }))
 vi.mock('firebase/auth', async (original) => ({
   ...(await original<typeof import('firebase/auth')>()),
@@ -181,6 +185,16 @@ describe('UI109 página Configuración', () => {
       listaReportes = reportes
       await userEvent.click(within(ayuda).getByRole('button', { name: 'Reintentar' }))
       expect(await within(ayuda).findByText('Error al guardar servicio')).toBeVisible()
+    })
+    it.each([
+      [new ErrorApi(429, 'Demasiadas solicitudes; inténtalo más tarde.'), 'Demasiadas solicitudes; inténtalo más tarde.'],
+      [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+      [new TypeError('Failed to fetch'), 'No pudimos cargar tus reportes.'],
+    ])('distingue 429, 500 y fallo de red al cargar los últimos reportes', async (error, esperado) => {
+      listaReportes = error
+      pagina()
+      const ayuda = tarjeta('Ayuda y soporte')
+      expect(await within(ayuda).findByRole('alert')).toHaveTextContent(esperado)
     })
   })
 

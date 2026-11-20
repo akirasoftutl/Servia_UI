@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { NotificacionesProvider } from '../../contextos/NotificacionesProvider'
+import { ErrorApi } from '../../servicios/api'
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import type { Aviso, EstadoPermisoPush } from '../../servicios/notificaciones'
 import { Avisos } from './Avisos'
 
@@ -236,4 +238,38 @@ it('cumple el sistema visual compartido del panel sin estilos ni valores sueltos
 
   const clases = [...vista.container.querySelectorAll('[class]')].flatMap((n) => [...n.classList])
   expect(clases.every((c) => c.startsWith('panel-') || c.startsWith('btn-servia-') || c.startsWith('lucide'))).toBe(true)
+})
+
+it.each([
+  [new ErrorApi(429, 'Demasiadas consultas de avisos.'), 'Demasiadas consultas de avisos.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No se pudieron cargar tus avisos.'],
+])('distingue 429, 500 y red al cargar avisos', async (error, esperado) => {
+  notifMocks.listarAvisos.mockRejectedValue(error)
+  montarAvisos()
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
+})
+
+it.each([
+  [new ErrorApi(429, 'Demasiadas peticiones.'), 'Demasiadas peticiones.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No se pudieron cargar más avisos. Inténtalo de nuevo.'],
+])('distingue 429, 500 y red al cargar más avisos', async (error, esperado) => {
+  notifMocks.listarAvisos.mockResolvedValue({ items: [avisoNuevo], noLeidas: 1, siguiente: 'cursor-2' })
+  montarAvisos()
+  await screen.findByText('Nueva solicitud')
+  notifMocks.listarAvisos.mockRejectedValueOnce(error)
+  await userEvent.click(screen.getByRole('button', { name: 'Cargar más' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
+})
+
+it.each([
+  [new ErrorApi(429, 'Demasiados intentos de registro.'), 'Demasiados intentos de registro.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No se pudieron activar las notificaciones. Inténtalo de nuevo.'],
+])('distingue 429, 500 y red al activar notificaciones', async (error, esperado) => {
+  notifMocks.activarNotificacionesPush.mockRejectedValueOnce(error)
+  montarAvisos()
+  await userEvent.click(await screen.findByRole('button', { name: 'Activar notificaciones' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
 })

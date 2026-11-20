@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CalendarDays, CalendarX, ChartColumn, CircleCheck, Clock, UserX, Users, type LucideIcon } from 'lucide-react';
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api, ErrorApi } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { periodoPredefinido, validarPeriodo, type Periodo } from './fechas';
 import { GraficaReservas, LeyendaGrafica } from './GraficaReservas';
 import { porcentaje } from './grafica';
@@ -45,7 +46,7 @@ export function Estadisticas() {
       } catch (causa) {
         if (vigente) setError(causa instanceof ErrorApi && causa.estado === 400 && /demasiadas reservas/i.test(causa.message)
           ? `${causa.message} Acorta el periodo.`
-          : 'No pudimos cargar las estadísticas. Intenta de nuevo.');
+          : mensajeDeError(causa, 'No pudimos cargar las estadísticas. Intenta de nuevo.'));
       } finally {
         if (vigente) setCargando(false);
       }

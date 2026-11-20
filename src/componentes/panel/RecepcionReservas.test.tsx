@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../servicios/firebase';
 import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { Configuracion } from '../../paginas/configuracion/Configuracion';
 import { Reservas } from '../../paginas/reservas/Reservas';
 
@@ -76,17 +77,31 @@ describe.each([['Configuración', Configuracion], ['Reservas', Reservas]] as con
     expect(screen.getByRole('status')).toHaveTextContent(inicial ? 'Reservas pausadas.' : 'Reservas reanudadas.');
   });
 
-  it.each([new ErrorApi(409, 'Conflict'), new TypeError('Failed to fetch')])('C4 error %s en español, sin alert y conserva estado', async (error) => {
+  it.each([
+    [new ErrorApi(429, 'Demasiados cambios; inténtalo más tarde.'), 'Demasiados cambios; inténtalo más tarde.'],
+    [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+    [new TypeError('Failed to fetch'), 'No pudimos cambiar la recepción de reservas. Intenta de nuevo.'],
+  ])('C4 error %s en español, sin alert y conserva estado', async (error, esperado) => {
     fallo = error;
     const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {});
     mostrar(Pagina);
     await waitFor(() => expect(getInterruptor()).toBeEnabled());
     await userEvent.click(getInterruptor());
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Pausar' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cambiar la recepción de reservas. Intenta de nuevo.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
     expect(within(zona()).getByRole('switch', { hidden: true })).toHaveAttribute('aria-checked', 'true');
     expect(alerta).not.toHaveBeenCalled();
     alerta.mockRestore();
+  });
+
+  it.each([
+    [new ErrorApi(429, 'Demasiadas consultas.'), 'Demasiadas consultas.'],
+    [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+    [new TypeError('Failed to fetch'), 'Intenta de nuevo para consultar el estado actual.'],
+  ])('C4 carga inicial distingue %s', async (error, esperado) => {
+    carga = error;
+    mostrar(Pagina);
+    expect(await within(zona()).findByRole('alert')).toHaveTextContent(esperado);
   });
 
   it.each(['GET', 'PATCH'])('C4 un 401 en %s vuelve a iniciar sesión', async (metodo) => {

@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { api, ErrorApi } from '../../servicios/api'
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import { VistaPrevia } from './VistaPrevia'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
@@ -95,13 +96,22 @@ describe('Vista previa', () => {
     apiMock.mockImplementation((ruta, opciones) => ruta === fallo
       ? Promise.reject(new ErrorApi(500, 'Error del servidor')) : respuesta(ruta, opciones))
     abrir()
-    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar la vista previa.')
+    expect(await screen.findByRole('alert')).toHaveTextContent(MENSAJE_ERROR_SERVIDOR)
     expect(screen.queryByText('Así te verán cuando aparezcas')).not.toBeInTheDocument()
     expect(apiMock).not.toHaveBeenCalledWith('/negocios/mio/servicios?estado=activos')
     responder()
     await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(await screen.findByText('Nombre público')).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    [new ErrorApi(429, 'Demasiadas consultas; inténtalo más tarde.'), 'Demasiadas consultas; inténtalo más tarde.'],
+    [new TypeError('Failed to fetch'), 'No pudimos cargar la vista previa. Intenta nuevamente.'],
+  ])('distingue 429 y fallo de red al cargar la vista previa', async (error, esperado) => {
+    apiMock.mockRejectedValueOnce(error)
+    abrir()
+    expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
   })
 
   it.each([

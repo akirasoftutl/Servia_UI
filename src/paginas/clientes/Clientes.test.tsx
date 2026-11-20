@@ -1,10 +1,14 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { api } from '../../servicios/api';
+import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { Clientes } from './Clientes';
 import { iniciales } from './clientes';
 
-vi.mock('../../servicios/api', () => ({ api: vi.fn() }));
+vi.mock('../../servicios/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../servicios/api')>()),
+  api: vi.fn(),
+}));
 const mock = vi.mocked(api);
 const cliente = { clienteUid: 'ana', nombre: 'Ana Pérez', telefono: '4771234567', correo: 'ana@correo.mx', totalReservas: 13, completadas: 7, canceladas: 2, ultimaReserva: '2030-11-04T02:00:00Z' };
 function abrir() { return render(<MemoryRouter><Clientes /></MemoryRouter>); }
@@ -136,4 +140,12 @@ it('C5 muestra error y permite reintentar sin alert', async () => {
   expect(screen.getByRole('alert')).toHaveTextContent('No pudimos cargar los clientes.');
   fireEvent.click(screen.getByRole('button', { name: 'Reintentar' })); await avanzar();
   expect(screen.getByText('Ana Pérez')).toBeInTheDocument(); expect(alerta).not.toHaveBeenCalled(); alerta.mockRestore();
+});
+it.each([
+  [new ErrorApi(429, 'Demasiadas consultas de clientes.'), 'Demasiadas consultas de clientes.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos cargar los clientes. Intenta de nuevo.'],
+])('distingue 429, 500 y red al cargar clientes', async (error, esperado) => {
+  mock.mockRejectedValueOnce(error); abrir(); await avanzar();
+  expect(screen.getByRole('alert')).toHaveTextContent(esperado);
 });

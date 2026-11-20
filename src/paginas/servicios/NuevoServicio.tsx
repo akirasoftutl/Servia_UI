@@ -10,6 +10,7 @@ import { CircleAlert, ImagePlus, PackagePlus, ShieldAlert } from 'lucide-react';
 import { EsqueletoEncabezado, EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import { Link, useNavigate, useParams } from 'react-router'; // <-- Agregamos useParams
 import { api, ErrorApi } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
@@ -79,7 +80,7 @@ export function NuevoServicio() {
         }
       } catch (error) {
         if (vigente) setErrorCarga(error instanceof ErrorApi && error.estado === 404 && esEdicion
-          ? 'Este servicio no existe.' : 'No pudimos cargar los datos. Intenta de nuevo.');
+          ? 'Este servicio no existe.' : mensajeDeError(error, 'No pudimos cargar los datos. Intenta de nuevo.'));
       } finally {
         if (vigente) setCargando(false);
       }
@@ -142,8 +143,9 @@ export function NuevoServicio() {
         setPerfilCompleto(false);
         setCamposFaltantes([error.message]);
       } else {
-        setErrorGuardar(esEdicion ? 'No pudimos guardar los cambios. Intenta de nuevo.'
-          : error instanceof ErrorApi && error.estado === 400 ? error.message || 'Revisa los datos del formulario.' : 'No pudimos guardar el servicio. Intenta de nuevo.');
+        setErrorGuardar(mensajeDeError(error, esEdicion
+          ? 'No pudimos guardar los cambios. Intenta de nuevo.'
+          : 'No pudimos guardar el servicio. Intenta de nuevo.'));
       }
     } finally {
       setPublicando(false);

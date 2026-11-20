@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { CircleAlert, Clock, Plus, Tags } from 'lucide-react';
 import { api } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EsqueletoLista, EstadoVacio, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
@@ -44,8 +45,8 @@ export function MisServicios() {
         setServicios(data); setError('');
         if (filtro === 'todos') setResumen({ total: data.length, activos: data.filter((s) => s.activo).length });
       }
-    }).catch(() => {
-      if (vigente) setError('No pudimos cargar tus servicios. Intenta nuevamente.');
+    }).catch((causa: unknown) => {
+      if (vigente) setError(mensajeDeError(causa, 'No pudimos cargar tus servicios. Intenta nuevamente.'));
     }).finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
   }, [filtro, revision]);

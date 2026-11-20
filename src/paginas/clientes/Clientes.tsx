@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { api } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import type { PaginaClientes } from './clientes';
 import { TarjetaCliente } from './TarjetaCliente';
 import { EstadoClientes } from './EstadoClientes';
@@ -29,7 +30,7 @@ export function Clientes() {
         .then((datos) => {
           if (vigente) setPagina((anterior) => ({ items: cursor ? [...anterior.items, ...datos.items] : datos.items, siguiente: datos.siguiente }));
         })
-        .catch(() => { if (vigente) setError('No pudimos cargar los clientes. Intenta de nuevo.'); })
+        .catch((causa: unknown) => { if (vigente) setError(mensajeDeError(causa, 'No pudimos cargar los clientes. Intenta de nuevo.')); })
         .finally(() => { if (vigente) setCargando(false); });
     }, q && !cursor ? 300 : 0);
     return () => { vigente = false; window.clearTimeout(temporizador); };

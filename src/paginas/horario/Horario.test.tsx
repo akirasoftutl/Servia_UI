@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { api, ErrorApi } from '../../servicios/api'
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import { Horario } from './Horario'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
@@ -370,10 +371,14 @@ describe('Horario', () => {
     expect(apiMock).toHaveBeenCalledTimes(2)
   })
 
-  it('muestra el error general cuando falla el guardado', async () => {
+  it.each([
+    [new ErrorApi(429, 'Demasiados cambios de horario; inténtalo más tarde.'), 'Demasiados cambios de horario; inténtalo más tarde.'],
+    [new ErrorApi(500, 'Error del servidor'), MENSAJE_ERROR_SERVIDOR],
+    [new TypeError('Failed to fetch'), 'No pudimos guardar tu horario. Intenta de nuevo.'],
+  ])('distingue 429, 500 y red cuando falla el guardado', async (error, esperado) => {
     const user = userEvent.setup()
     apiMock.mockResolvedValueOnce({ configurado: false, dias: null })
-    apiMock.mockRejectedValueOnce(new ErrorApi(500, 'Error del servidor'))
+    apiMock.mockRejectedValueOnce(error)
 
     renderizarHorario()
 
@@ -383,11 +388,16 @@ describe('Horario', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Guardar horario' }))
 
-    expect(
-      await screen.findByText(
-        'No pudimos guardar tu horario. Intenta de nuevo.',
-      ),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(esperado)).toBeInTheDocument()
+  })
+  it.each([
+    [new ErrorApi(429, 'Demasiadas consultas.'), 'Demasiadas consultas.'],
+    [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+    [new TypeError('Failed to fetch'), 'No pudimos cargar tu horario. Intenta de nuevo.'],
+  ])('distingue 429, 500 y red al cargar el horario', async (error, esperado) => {
+    apiMock.mockRejectedValueOnce(error)
+    renderizarHorario()
+    expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
   })
   it('la insignia de estado no dibuja un segundo punto', async () => {
     apiMock.mockResolvedValueOnce({ configurado: true, dias: diasConfigurados })

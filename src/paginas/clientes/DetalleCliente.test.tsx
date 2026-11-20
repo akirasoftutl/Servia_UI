@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { DetalleCliente } from './DetalleCliente';
 import { Clientes } from './Clientes';
 
@@ -90,4 +91,12 @@ it('D18 sin teléfono ni correo la ficha no muestra botones de contacto', async 
   mock.mockResolvedValue({ cliente: { ...cliente, telefono: null, correo: null }, items: [reserva], siguiente: null }); abrir();
   await screen.findByRole('heading', { name: 'Datos del historial' });
   expect(document.querySelector('.cliente-contacto-chip')).toBeNull();
+});
+it.each([
+  [new ErrorApi(429, 'Demasiadas consultas de historial.'), 'Demasiadas consultas de historial.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos cargar el historial. Intenta de nuevo.'],
+])('distingue 429, 500 y red al cargar el historial del cliente', async (error, esperado) => {
+  mock.mockRejectedValueOnce(error); abrir();
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
 });

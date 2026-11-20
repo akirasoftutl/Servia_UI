@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { api, ErrorApi } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { ESTADOS_CONFIG } from '../reservas/estados';
 import { diaCortoMexico, diaLargoMexico, horaMexico, type HistorialCliente, type ReservaCliente } from './clientes';
 import { FichaCliente } from './FichaCliente';
@@ -33,7 +34,7 @@ function Historial({ clienteUid }: { clienteUid: string }) {
       })
       .catch((fallo: unknown) => {
         if (vigente) setError(fallo instanceof ErrorApi && fallo.estado === 404
-          ? 'No encontramos a este cliente en tu negocio.' : 'No pudimos cargar el historial. Intenta de nuevo.');
+          ? 'No encontramos a este cliente en tu negocio.' : mensajeDeError(fallo, 'No pudimos cargar el historial. Intenta de nuevo.'));
       })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };

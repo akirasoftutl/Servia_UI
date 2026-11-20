@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode, type FormEvent } from 'react';
 import { CalendarOff } from 'lucide-react';
 import { api, ErrorApi } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import './Bloqueos.css';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
@@ -82,8 +83,8 @@ export function Bloqueos() {
     try {
       const data = await api<Bloqueo[]>('/negocios/mio/bloqueos');
       setBloqueos(data);
-    } catch {
-      setError('No pudimos cargar tus bloqueos.');
+    } catch (causa: unknown) {
+      setError(mensajeDeError(causa, 'No pudimos cargar tus bloqueos.'));
     } finally {
       setCargando(false);
     }
@@ -94,7 +95,7 @@ export function Bloqueos() {
     // La carga inicial ya comienza en estado cargando; evita actualizaciones síncronas.
     api<Bloqueo[]>('/negocios/mio/bloqueos').then(
       (datos) => { if (activo) setBloqueos(datos); },
-      () => { if (activo) setError('No pudimos cargar tus bloqueos.'); },
+      (causa: unknown) => { if (activo) setError(mensajeDeError(causa, 'No pudimos cargar tus bloqueos.')); },
     ).finally(() => { if (activo) setCargando(false); });
     return () => { activo = false; };
   }, []);
@@ -161,7 +162,7 @@ export function Bloqueos() {
         setReservasConflicto(leerReservas(error.datos));
         setMostrarConflicto(true);
       } else {
-        setErrorGuardar('No pudimos guardar el bloqueo. Intenta de nuevo.');
+        setErrorGuardar(mensajeDeError(error, 'No pudimos guardar el bloqueo. Intenta de nuevo.'));
       }
     } finally {
       setCreando(false);
@@ -177,8 +178,8 @@ export function Bloqueos() {
       setAlerta('Bloqueo quitado.');
       setQuitarId(null);
       await cargarBloqueos();
-    } catch {
-      setErrorGuardar('No pudimos quitar el bloqueo. Intenta de nuevo.');
+    } catch (causa: unknown) {
+      setErrorGuardar(mensajeDeError(causa, 'No pudimos quitar el bloqueo. Intenta de nuevo.'));
       setQuitarId(null);
     } finally {
       setQuitando(false);

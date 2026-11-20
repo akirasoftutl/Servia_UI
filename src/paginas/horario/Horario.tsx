@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { ShieldAlert, Clock } from 'lucide-react'
 import { api } from '../../servicios/api'
+import { mensajeDeError } from '../../servicios/mensajeDeError'
 import './Horario.css'
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel'
 
@@ -226,9 +227,9 @@ export function Horario() {
 
         setConfigurado(respuesta.configurado)
         setFormulario(crearFormulario(respuesta.dias))
-      } catch {
+      } catch (error: unknown) {
         if (activo) {
-          setErrorCarga('No pudimos cargar tu horario. Intenta de nuevo.')
+          setErrorCarga(mensajeDeError(error, 'No pudimos cargar tu horario. Intenta de nuevo.'))
         }
       } finally {
         if (activo) setCargando(false)
@@ -324,7 +325,7 @@ export function Horario() {
         setDialogoAbierto(true)
       } else {
         cerrarConflicto()
-        setErrorGuardado(MENSAJE_ERROR_GUARDADO)
+        setErrorGuardado(mensajeDeError(error, MENSAJE_ERROR_GUARDADO))
       }
     } finally {
       setGuardando(false)

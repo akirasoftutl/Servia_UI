@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { Estadisticas } from './Estadisticas';
 import { periodoPredefinido, validarPeriodo } from './fechas';
 import { MAX_ETIQUETAS, indicesEtiquetas, marcasEje, porcentaje, promedioDiario } from './grafica';
@@ -352,6 +353,16 @@ describe('Estadísticas', () => {
     render(<Estadisticas />);
     expect(await screen.findByRole('alert')).toHaveTextContent('El periodo tiene demasiadas reservas. Acórtalo e inténtalo de nuevo. Acorta el periodo.');
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeVisible();
+  });
+
+  it.each([
+    [new ErrorApi(429, 'Demasiadas consultas de estadísticas.'), 'Demasiadas consultas de estadísticas.'],
+    [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+    [new TypeError('Failed to fetch'), 'No pudimos cargar las estadísticas. Intenta de nuevo.'],
+  ])('distingue 429, 500 y red al cargar estadísticas', async (error, esperado) => {
+    apiMock.mockRejectedValueOnce(error);
+    render(<Estadisticas />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
   });
 });
 
