@@ -389,4 +389,10 @@ describe('Horario', () => {
       ),
     ).toBeInTheDocument()
   })
+  it('la insignia de estado no dibuja un segundo punto', async () => {
+    apiMock.mockResolvedValueOnce({ configurado: true, dias: diasConfigurados })
+    renderizarHorario()
+    const insignia = (await screen.findByText('Horario configurado')).closest('.panel-insignia') as HTMLElement
+    expect(insignia.querySelector('span')).toBeNull()
+  })
 })

@@ -14,13 +14,6 @@
   margin-top: var(--sv-esp-4);
 }
 
-.horario-estado-punto {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
 .horario-meta-texto {
   color: var(--sv-texto-suave);
   font-size: var(--sv-texto-sm);

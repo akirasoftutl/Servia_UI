@@ -3,6 +3,7 @@ import { MessageSquareWarning } from 'lucide-react';
 import { api } from '../../servicios/api';
 import { EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import '../../estilos/panel.css';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 interface Reporte { id: string; asunto: string; estado: 'abierto'; creadaEn: string }
 const fecha = new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'medium', timeStyle: 'short' });
@@ -57,7 +58,7 @@ export function ReportarProblema() {
 
   return <div className="panel-pagina"><div className="panel-contenedor">
     <header className="panel-encabezado"><div className="panel-encabezado-textos">
-      <span className="panel-eyebrow"><MessageSquareWarning aria-hidden="true" />SOPORTE</span>
+      <EyebrowPanel grupo="configuracion" icono={MessageSquareWarning} />
       <h1 className="panel-titulo">Reportar un problema</h1>
       <p className="panel-subtitulo">Cuéntanos qué ocurrió y consulta tus reportes enviados.</p>
     </div></header>

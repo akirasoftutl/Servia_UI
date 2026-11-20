@@ -12,6 +12,7 @@ import { Link, useNavigate, useParams } from 'react-router'; // <-- Agregamos us
 import { api, ErrorApi } from '../../servicios/api';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 interface PerfilNegocio {
   perfilCompleto: boolean;
@@ -213,7 +214,7 @@ export function NuevoServicio() {
         <div inert={servicioPublicado}>
             <header className="panel-encabezado">
               <div className="panel-encabezado-textos">
-                <span className="panel-eyebrow"><PackagePlus aria-hidden="true" />PANEL DE NEGOCIO</span>
+                <EyebrowPanel grupo="negocio" icono={PackagePlus} />
                 <h1 className="panel-titulo">{esEdicion ? 'Editar servicio' : 'Nuevo servicio'}</h1>
                 <p className="panel-subtitulo">{esEdicion ? 'Actualiza la información de tu servicio.' : 'Agrega un nuevo servicio a tu negocio y permite que más clientes conozcan lo que ofreces.'}</p>
                 {/* Vista previa de cómo se verá el servicio en el catálogo */}
