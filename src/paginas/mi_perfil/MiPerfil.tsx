@@ -408,8 +408,10 @@ export function MiPerfil() {
                               {errores.correoContacto}
                             </div>
                           ) : (
-                            <div className="panel-ayuda">
-                              Es el correo que verán tus clientes. No cambia el correo con el que inicias sesión.
+                            <div className="perfil-campo-pie">
+                              <span className="panel-ayuda">
+                                Es el correo que verán tus clientes. No cambia el correo con el que inicias sesión.
+                              </span>
                             </div>
                           )}
                         </div>
