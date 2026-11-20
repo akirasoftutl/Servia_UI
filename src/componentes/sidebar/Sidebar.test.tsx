@@ -278,3 +278,12 @@ describe('UI108 la barra mide el alto de la ventana y desplaza el menú por dent
     expect(within(aside).getByRole('button', { name: 'Menú de la cuenta' })).toBeVisible()
   })
 })
+
+it('UI108 los ítems ocupan todo el ancho y comparten letra y alto mínimo del sistema', () => {
+  const css = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8')
+  expect(css.match(/\.nav-item\s*\{([^}]*)\}/)?.[1]).toMatch(/width:\s*100%/)
+  const enlace = css.match(/\n\.nav-link\s*\{([^}]*)\}/)?.[1] ?? ''
+  expect(enlace).toMatch(/font-size:\s*var\(--sv-texto-md\)/)
+  expect(enlace).toMatch(/min-height:\s*var\(--sv-objetivo-tactil\)/)
+  expect(readFileSync('src/estilos/panel.css', 'utf8')).toMatch(/--sv-objetivo-tactil:\s*44px/)
+})
