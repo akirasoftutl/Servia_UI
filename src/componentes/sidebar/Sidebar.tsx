@@ -157,6 +157,7 @@ export const Sidebar: React.FC = () => {
                   <li key={item.id} className="nav-item">
                     <button
                       className={`nav-link ${isActive ? 'active' : ''}`}
+                      aria-label={item.badge ? `${item.label}, ${item.badge} ${item.badge === 1 ? 'aviso sin leer' : 'avisos sin leer'}` : undefined}
                       aria-current={isActive ? 'page' : undefined}
                       onClick={() => {
                         setAbierta(false);
@@ -166,10 +167,7 @@ export const Sidebar: React.FC = () => {
                       <Icono aria-hidden="true" />
                       <span>{item.label}</span>
                       {item.badge !== undefined && item.badge > 0 && (
-                        <span
-                          className="panel-sidebar-globo"
-                          aria-label={`${item.badge} ${item.badge === 1 ? 'aviso sin leer' : 'avisos sin leer'}`}
-                        >
+                        <span className="panel-sidebar-globo" aria-hidden="true">
                           {item.badge}
                         </span>
                       )}

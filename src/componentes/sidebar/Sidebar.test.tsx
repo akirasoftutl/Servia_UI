@@ -184,6 +184,9 @@ it('UI69 muestra Avisos en PRINCIPAL con globo cuando hay no leídas y sin globo
   const botonAvisos = screen.getByRole('button', { name: /Avisos/ })
   expect(botonAvisos.closest('.nav-group')).toHaveTextContent('PRINCIPAL')
   expect(within(botonAvisos).getByText('3')).toHaveClass('panel-sidebar-globo')
+  // El globo vive dentro de un botón (hijos presentacionales): el aviso sin leer se anuncia en el nombre del botón.
+  expect(screen.getByRole('button', { name: 'Avisos, 3 avisos sin leer' })).toBe(botonAvisos)
+  expect(within(botonAvisos).getByText('3')).toHaveAttribute('aria-hidden', 'true')
 
   rerender(
     <MemoryRouter initialEntries={['/resumen']}>
