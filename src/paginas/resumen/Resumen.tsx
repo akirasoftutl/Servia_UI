@@ -171,7 +171,9 @@ export function Resumen() {
                   ? 'Tienes citas esperando confirmación para asegurar su horario.' : 'No tienes solicitudes esperando tu respuesta.'}</span>
               </span>
               <span className="resumen-hero-pie">
-                <Link to="/reservas?estado=pendiente" className="btn-servia-primary btn-servia-sm">Atender solicitudes<ChevronRight aria-hidden="true" /></Link>
+                {datos.pendientes > 0
+                  ? <Link to="/reservas?estado=pendiente" className="btn-servia-primary btn-servia-sm">Atender solicitudes<ChevronRight aria-hidden="true" /></Link>
+                  : <Link to="/reservas" className="btn-servia-secondary btn-servia-sm">Ver reservas<ChevronRight aria-hidden="true" /></Link>}
               </span>
             </li>
             <Cifra numero={datos.hoy} etiqueta="Reservas de hoy" icono={CalendarCheck} tono="info" nota="Agenda del día" />

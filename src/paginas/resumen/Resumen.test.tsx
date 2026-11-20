@@ -131,6 +131,10 @@ describe('Resumen', () => {
     await screen.findByText('Solicitudes pendientes');
     expect(screen.queryByText('Requiere atención')).not.toBeInTheDocument();
     expect(numeroDe('Solicitudes pendientes')).toBe('0');
+    expect(screen.queryByRole('link', { name: 'Atender solicitudes' })).not.toBeInTheDocument();
+    const ver = screen.getByRole('link', { name: 'Ver reservas' });
+    expect(ver).toHaveAttribute('href', '/reservas');
+    expect(ver).toHaveClass('btn-servia-secondary');
   });
 
   it('D27 los cuatro accesos rápidos llevan a las rutas reales del panel', async () => {
