@@ -1,4 +1,4 @@
-import { api, ErrorApi } from './api'
+import { api, eliminarFotoNegocio, ErrorApi, subirFotoNegocio } from './api'
 
 function respuesta(estado: number, cuerpo?: unknown) {
   return new Response(cuerpo === undefined ? '' : JSON.stringify(cuerpo), { status: estado })
@@ -45,5 +45,30 @@ describe('api', () => {
 
     expect(error).toBeInstanceOf(ErrorApi)
     expect((error as ErrorApi).datos).toEqual(cuerpo)
+  })
+
+  it('no fuerza Content-Type application/json cuando el cuerpo es FormData', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(respuesta(201, { id: 'f1', url: 'https://cdn/f1.jpg' }))
+    const archivo = new File(['abc'], 'portada.jpg', { type: 'image/jpeg' })
+    const resultado = await subirFotoNegocio(archivo, 'portada')
+
+    expect(resultado).toEqual({ id: 'f1', url: 'https://cdn/f1.jpg' })
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3000/negocios/mio/fotos', expect.objectContaining({ method: 'POST' }))
+    const opciones = fetchMock.mock.calls[0][1]!
+    const cabeceras = opciones.headers as Headers
+    expect(cabeceras.has('Content-Type')).toBe(false)
+    expect(opciones.body).toBeInstanceOf(FormData)
+    const datos = opciones.body as FormData
+    expect(datos.get('tipo')).toBe('portada')
+    expect(datos.get('archivo')).toBe(archivo)
+  })
+
+  it('elimina una foto en DELETE /negocios/mio/fotos/{fotoId} con respuesta 204', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
+    await expect(eliminarFotoNegocio('foto/123')).resolves.toBeUndefined()
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/negocios/mio/fotos/foto%2F123',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
   })
 })
