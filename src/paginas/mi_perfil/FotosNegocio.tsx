@@ -224,7 +224,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
         aria-labelledby="titulo-fotos-negocio"
         aria-busy={ocupado}
       >
-        <div className="panel-tarjeta-encabezado">
+        <div className="panel-tarjeta-encabezado panel-tarjeta-encabezado--con-aviso">
           <div>
             <h2 id="titulo-fotos-negocio" className="panel-tarjeta-titulo">
               Fotos
@@ -233,14 +233,14 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               Sube tu portada y hasta {MAX_FOTOS_GALERIA} fotos de galería para que los clientes conozcan tu negocio.
               Formatos JPEG, PNG o WebP de hasta 5 MB.
             </p>
-            <p className="panel-ayuda" id="aviso-fotos-aparte">
-              Las fotos se suben aparte y al instante: no necesitas pulsar «Guardar cambios» del perfil.
-            </p>
           </div>
           <span className="panel-contador">
             {fotos.galeria.length} / {MAX_FOTOS_GALERIA} en galería
           </span>
         </div>
+        <p className="panel-tarjeta-subtitulo panel-fotos-aviso" id="aviso-fotos-aparte">
+          Las fotos se suben aparte y al instante: no necesitas pulsar «Guardar cambios» del perfil.
+        </p>
 
         {error && (
           <div className="panel-alerta panel-alerta--error" role="alert">

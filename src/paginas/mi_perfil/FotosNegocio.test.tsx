@@ -407,4 +407,12 @@ describe('FotosNegocio (portada y galería)', () => {
       expect(revocar).toHaveBeenCalledWith('blob:servia-previa-1');
     });
   });
+
+  it('F4: el aviso de «se suben aparte» va a ancho completo bajo el encabezado, con el estilo del subtítulo', () => {
+    render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+    const aviso = screen.getByText(/se suben aparte y al instante/);
+    expect(aviso).toHaveClass('panel-tarjeta-subtitulo');
+    expect(aviso.closest('.panel-tarjeta-encabezado')).toBeNull();
+    expect(aviso.parentElement).toBe(screen.getByRole('heading', { name: 'Fotos' }).closest('section'));
+  });
 });

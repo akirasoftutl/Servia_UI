@@ -273,6 +273,14 @@
   margin-bottom: var(--sv-esp-5);
 }
 
+.panel-tarjeta-encabezado--con-aviso {
+  margin-bottom: var(--sv-esp-2);
+}
+
+.panel-tarjeta-subtitulo.panel-fotos-aviso {
+  margin-bottom: var(--sv-esp-5);
+}
+
 .panel-tarjeta-titulo {
   margin: 0 0 5px;
   color: var(--sv-titulo);
