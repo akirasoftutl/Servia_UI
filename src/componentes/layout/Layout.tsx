@@ -3,6 +3,7 @@ import Navbar from '../navbar/Navbar';
 import Footer from '../footer/Footer';
 import { Sidebar } from '../sidebar/Sidebar';
 import { useAuth } from '../../contextos/AuthContext';
+import { NotificacionesProvider } from '../../contextos/NotificacionesProvider';
 import './Layout.css';
 
 export function Layout() {
@@ -30,8 +31,7 @@ function ContenidoLayout() {
 
   const showSidebar = !ocultarHYF && !!usuario;
 
-  return (
-    <>
+  const cuerpo = (
     <div className={`layout ${showSidebar ? 'layout--with-sidebar' : ''}`}>
       {!ocultarHYF && (usuario ? <Sidebar /> : <Navbar />)}
       
@@ -40,7 +40,8 @@ function ContenidoLayout() {
       </main>
       
       {!ocultarHYF && !usuario && <Footer />}
-      </div>
-    </>
+    </div>
   );
+
+  return showSidebar ? <NotificacionesProvider>{cuerpo}</NotificacionesProvider> : cuerpo;
 }

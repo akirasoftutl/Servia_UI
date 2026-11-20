@@ -12,6 +12,10 @@ export default defineConfig({
       // El service worker se actualiza solo cuando hay una versión nueva.
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.png', 'apple-touch-icon.png'],
+      workbox: {
+        // El service worker de FCM tiene su propio alcance; no lo precacheamos.
+        globIgnores: ['**/firebase-messaging-sw.js'],
+      },
       manifest: {
         name: 'Servia · Panel del negocio',
         short_name: 'Servia Negocio',
