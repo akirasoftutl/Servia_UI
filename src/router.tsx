@@ -1,5 +1,6 @@
 import { ReportarProblema } from './paginas/soporte/ReportarProblema'
 import { Preferencias } from './paginas/preferencias/Preferencias'
+import { Configuracion } from './paginas/configuracion/Configuracion'
 import { Avisos } from './paginas/avisos/Avisos'
 import { Ayuda } from './paginas/ayuda/Ayuda'
 import { createBrowserRouter, type RouteObject } from 'react-router'
@@ -49,6 +50,7 @@ export const rutas: RouteObject[] = [
           { path: 'ayuda', element: <Ayuda /> },
           { path: 'resumen', element: <Resumen /> },
           { path: 'avisos', element: <Avisos /> },
+          { path: 'configuracion', element: <Configuracion /> },
           { path: 'preferencias-notificaciones', element: <Preferencias /> },
           { path: 'mi-perfil', element: <MiPerfil /> },
           { path: 'mi-perfil/vista-previa', element: <VistaPrevia /> },

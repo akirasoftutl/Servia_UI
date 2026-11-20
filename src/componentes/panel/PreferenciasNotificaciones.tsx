@@ -12,10 +12,10 @@ const tipos = [
 const mensajeError = (causa: unknown) => causa instanceof ErrorApi
   ? causa.message : 'No se pudo conectar. Inténtalo de nuevo.';
 
-interface Props { titulo?: string }
+interface Props { titulo?: string; ancla?: string }
 
 /** Interruptores de avisos push: los usan la página de Preferencias y la tarjeta de Configuración. */
-export function PreferenciasNotificaciones({ titulo = 'Avisos push' }: Props) {
+export function PreferenciasNotificaciones({ titulo = 'Avisos push', ancla }: Props) {
   const [datos, setDatos] = useState<PreferenciasPush | null>(null);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -54,7 +54,7 @@ export function PreferenciasNotificaciones({ titulo = 'Avisos push' }: Props) {
   }
 
   return (
-    <section className="panel-tarjeta" aria-labelledby="preferencias-titulo" aria-busy={cargando || guardando}>
+    <section id={ancla} className="panel-tarjeta" aria-labelledby="preferencias-titulo" aria-busy={cargando || guardando}>
       <div className="panel-tarjeta-encabezado"><div>
         <h2 id="preferencias-titulo" className="panel-tarjeta-titulo">{titulo}</h2>
         <p className="panel-tarjeta-subtitulo">Los avisos siempre aparecerán en tu bandeja, aunque apagues el push.</p>
