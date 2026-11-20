@@ -329,4 +329,28 @@ describe('FotosNegocio (portada y galería)', () => {
       expect(screen.queryByRole('button', { name: 'Quitar portada' })).not.toBeInTheDocument();
     });
   });
+
+  describe('foto que no carga (#116)', () => {
+    it('C4: la portada con error muestra «No se pudo cargar la foto» en vez del texto alternativo y se puede quitar', () => {
+      render(<FotosNegocio fotosIniciales={{ portada: { id: 'p-1', url: 'https://cdn.servia.test/rota.jpg' }, galeria: [] }} />);
+      fireEvent.error(screen.getByAltText('Portada actual del negocio'));
+      expect(screen.getByText('No se pudo cargar la foto')).toBeInTheDocument();
+      expect(screen.queryByAltText('Portada actual del negocio')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Quitar portada' })).toBeEnabled();
+    });
+
+    it('C4: solo la foto de galería que falla muestra el estado; las demás siguen y conserva «Quitar»', () => {
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: galeriaDe(2) }} />);
+      fireEvent.error(screen.getByAltText('Foto 2 de la galería'));
+      expect(screen.getAllByText('No se pudo cargar la foto')).toHaveLength(1);
+      expect(screen.queryByAltText('Foto 2 de la galería')).not.toBeInTheDocument();
+      expect(screen.getByAltText('Foto 1 de la galería')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Quitar foto 2' })).toBeEnabled();
+    });
+
+    it('C4: si la foto carga bien no aparece el aviso', () => {
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: galeriaDe(1) }} />);
+      expect(screen.queryByText('No se pudo cargar la foto')).not.toBeInTheDocument();
+    });
+  });
 });

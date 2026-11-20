@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle2, CircleAlert, Image as ImageIcon, Images, Plus, Trash2, Upload } from 'lucide-react';
+import { CheckCircle2, CircleAlert, Image as ImageIcon, ImageOff, Images, Plus, Trash2, Upload } from 'lucide-react';
 import {
   eliminarFotoNegocio,
   ErrorApi,
@@ -43,6 +43,31 @@ function crearUrlPrevia(archivo: File): { url: string; revocable: boolean } {
     return { url: URL.createObjectURL(archivo), revocable: true };
   }
   return { url: `data:${archivo.type};base64,`, revocable: false };
+}
+
+// Si la URL de la foto no responde, el navegador solo mostraría el texto alternativo:
+// se cambia por un aviso claro con el mismo tamaño que la imagen.
+function ImagenConFallo({
+  src,
+  alt,
+  className,
+  variante,
+}: {
+  src: string;
+  alt: string;
+  className: string;
+  variante: 'portada' | 'galeria';
+}) {
+  const [fallo, setFallo] = useState(false);
+  if (fallo) {
+    return (
+      <div className={`panel-fotos-error panel-fotos-error--${variante}`} role="status">
+        <ImageOff aria-hidden="true" />
+        <span>No se pudo cargar la foto</span>
+      </div>
+    );
+  }
+  return <img src={src} alt={alt} className={className} onError={() => setFallo(true)} />;
 }
 
 function mensajeErrorApi(causa: unknown, respaldo: string): string {
@@ -322,10 +347,12 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
 
           {fotos.portada ? (
             <figure className="panel-fotos-marco-portada">
-              <img
+              <ImagenConFallo
+                key={fotos.portada.url}
                 src={fotos.portada.url}
                 alt="Portada actual del negocio"
                 className="panel-fotos-imagen-portada"
+                variante="portada"
               />
             </figure>
           ) : (
@@ -422,10 +449,12 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
             <ul className="panel-fotos-cuadricula list-unstyled mb-0">
               {fotos.galeria.map((foto, indice) => (
                 <li className="panel-fotos-tarjeta" key={foto.id}>
-                  <img
+                  <ImagenConFallo
+                    key={foto.url}
                     src={foto.url}
                     alt={`Foto ${indice + 1} de la galería`}
                     className="panel-fotos-imagen-galeria"
+                    variante="galeria"
                   />
                   <div className="panel-fotos-tarjeta-pie">
                     <span className="panel-ayuda">Foto {indice + 1}</span>
