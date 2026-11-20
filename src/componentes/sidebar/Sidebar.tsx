@@ -1,16 +1,18 @@
 import { Bell } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import './Sidebar.css';
 import '../../estilos/panel.css';
 import { api } from '../../servicios/api';
 import { useAuth } from '../../contextos/AuthContext';
+import { useNotificaciones } from '../../contextos/notificacionesContexto';
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ReactNode;
   ruta?: string;
+  badge?: number;
 }
 
 interface NavGroup {
@@ -62,6 +64,8 @@ export const Sidebar: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { cerrarSesion, usuario } = useAuth();
+  const { noLeidas } = useNotificaciones();
+  const location = useLocation();
   const [negocio, setNegocio] = useState<{ uid: string; nombre: string } | null>(null);
   const uid = usuario?.uid;
   const correo = usuario?.email ?? '';
@@ -138,6 +142,7 @@ export const Sidebar: React.FC = () => {
           ),
         },
         { id: 'clientes', label: 'Clientes', ruta: '/clientes', icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="4" /><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
+        { id: 'avisos', label: 'Avisos', ruta: '/avisos', badge: noLeidas, icon: <Bell width="20" height="20" aria-hidden="true" /> },
       ],
     },
     {
@@ -201,7 +206,10 @@ export const Sidebar: React.FC = () => {
             <h2 className="group-title">{group.title}</h2>
             <ul className="nav-list">
               {group.items.map((item) => {
-                const isActive = activeItem === item.id;
+                const rutaActiva = Boolean(
+                  item.ruta && (location.pathname === item.ruta || location.pathname.startsWith(`${item.ruta}/`)),
+                );
+                const isActive = rutaActiva || activeItem === item.id;
                 return (
                   <li key={item.id} className="nav-item">
                     <button
@@ -214,6 +222,14 @@ export const Sidebar: React.FC = () => {
                     >
                       {item.icon}
                       <span>{item.label}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span
+                          className="panel-sidebar-globo"
+                          aria-label={`${item.badge} ${item.badge === 1 ? 'aviso sin leer' : 'avisos sin leer'}`}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
                     </button>
                   </li>
                 );

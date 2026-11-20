@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, MemoryRouter, Route, RouterProvider, Routes } from 'react-router'
+import { NotificacionesContext, type NotificacionesContextValue } from '../../contextos/notificacionesContexto'
 import { Sidebar } from './Sidebar'
 
 const sesion = vi.hoisted(() => ({ usuario: { uid: 'ana', email: 'ana@ejemplo.com' } }))
@@ -97,7 +98,7 @@ it('abre Clientes desde Principal después de Servicios y Resumen al inicio', as
   const clientes = screen.getByRole('button', { name: 'Clientes' })
   const grupo = clientes.closest('.nav-group')!
   expect(grupo).toHaveTextContent('PRINCIPAL')
-  expect([...grupo.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Resumen', 'Reservas', 'Servicios', 'Clientes'])
+  expect([...grupo.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Resumen', 'Reservas', 'Servicios', 'Clientes', 'Avisos'])
   fireEvent.click(clientes)
   expect(await screen.findByRole('heading', { name: 'Clientes del negocio' })).toBeInTheDocument()
   expect(router.state.location.pathname).toBe('/clientes')
@@ -157,4 +158,45 @@ it('UI102 abre Notificaciones desde el menú móvil y lo cierra al navegar', asy
   expect(await screen.findByRole('heading', { name: 'Preferencias push' })).toBeVisible()
   expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Abrir menú' })).toHaveAttribute('aria-expanded', 'false')
+})
+
+it('UI69 muestra Avisos en PRINCIPAL con globo cuando hay no leídas y sin globo en 0', async () => {
+  pantalla(false)
+  const contextoBase: NotificacionesContextValue = {
+    noLeidas: 3,
+    versionLista: 0,
+    actualizarNoLeidas: vi.fn(),
+    decrementarNoLeidas: vi.fn(),
+    refrescarNoLeidas: vi.fn(),
+    abrirAviso: vi.fn(),
+  }
+  const { rerender } = render(
+    <MemoryRouter initialEntries={['/resumen']}>
+      <NotificacionesContext.Provider value={contextoBase}>
+        <Sidebar />
+        <Routes>
+          <Route path="/avisos" element={<h1>Bandeja de avisos</h1>} />
+        </Routes>
+      </NotificacionesContext.Provider>
+    </MemoryRouter>,
+  )
+  const botonAvisos = screen.getByRole('button', { name: /Avisos/ })
+  expect(botonAvisos.closest('.nav-group')).toHaveTextContent('PRINCIPAL')
+  expect(within(botonAvisos).getByText('3')).toHaveClass('panel-sidebar-globo')
+
+  rerender(
+    <MemoryRouter initialEntries={['/resumen']}>
+      <NotificacionesContext.Provider value={{ ...contextoBase, noLeidas: 0 }}>
+        <Sidebar />
+        <Routes>
+          <Route path="/avisos" element={<h1>Bandeja de avisos</h1>} />
+        </Routes>
+      </NotificacionesContext.Provider>
+    </MemoryRouter>,
+  )
+  const botonSinGlobo = screen.getByRole('button', { name: 'Avisos' })
+  expect(botonSinGlobo.querySelector('.panel-sidebar-globo')).toBeNull()
+
+  await userEvent.click(botonSinGlobo)
+  expect(await screen.findByRole('heading', { name: 'Bandeja de avisos' })).toBeVisible()
 })

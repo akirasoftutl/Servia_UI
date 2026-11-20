@@ -1,3 +1,4 @@
+import type { FirebaseApp } from 'firebase/app'
 import {
   getMessaging,
   getToken,
@@ -7,7 +8,7 @@ import {
   type Messaging,
 } from 'firebase/messaging'
 import { api } from './api'
-import { app, configFirebase } from './firebase'
+import * as firebaseModulo from './firebase'
 
 export interface Aviso {
   id: string
@@ -103,9 +104,25 @@ export function esIosSinInstalar(): boolean {
   return !instalada
 }
 
+function obtenerAppFirebase(): FirebaseApp | null {
+  try {
+    return firebaseModulo.app ?? null
+  } catch {
+    return null
+  }
+}
+
+function obtenerConfigFirebase(): Record<string, string | undefined> {
+  try {
+    return firebaseModulo.configFirebase ?? {}
+  } catch {
+    return {}
+  }
+}
+
 export function construirUrlServiceWorkerPush(): string {
   const parametros = new URLSearchParams()
-  for (const [clave, valor] of Object.entries(configFirebase)) {
+  for (const [clave, valor] of Object.entries(obtenerConfigFirebase())) {
     if (valor) parametros.set(clave, valor)
   }
   const consulta = parametros.toString()
@@ -131,6 +148,7 @@ export async function consultarEstadoPermisoPush(): Promise<EstadoPermisoPush> {
 }
 
 async function obtenerInstanciaMessaging(): Promise<Messaging | null> {
+  const app = obtenerAppFirebase()
   if (!app) return null
   if (!(await soportaPushWeb())) return null
   return getMessaging(app)
