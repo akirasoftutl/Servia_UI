@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Link } from 'react-router';
-import { ShieldAlert } from 'lucide-react'
+import { ShieldAlert, Store } from 'lucide-react'
 import './MiPerfil.css';
 import { api } from '../../servicios/api';
 import {
@@ -16,6 +16,7 @@ import {
 import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
 import { CambiarContrasena } from './CambiarContrasena';
 import { CampoCalle, type EleccionCalle } from './CampoCalle';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 interface Categoria {
   id: string;
@@ -312,7 +313,7 @@ export function MiPerfil() {
           {/* Encabezado */}
           <header className="panel-encabezado">
             <div>
-              <span className="panel-eyebrow">PANEL DE NEGOCIO</span>
+              <EyebrowPanel grupo="negocio" icono={Store} />
 
               <h1 className="panel-titulo">
                 Perfil del negocio

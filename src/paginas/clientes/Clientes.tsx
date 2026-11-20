@@ -5,6 +5,8 @@ import type { PaginaClientes } from './clientes';
 import { DatosCliente } from './DatosCliente';
 import { EstadoClientes } from './EstadoClientes';
 import './Clientes.css';
+import { Users } from 'lucide-react';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 export function Clientes() {
   const [busqueda, setBusqueda] = useState('');
@@ -36,7 +38,7 @@ export function Clientes() {
   function reintentar() { setCargando(true); setError(''); setRevision((r) => r + 1); }
   return <div className="panel-pagina"><div className="panel-contenedor">
     <header className="panel-encabezado"><div>
-      <span className="panel-eyebrow">PRINCIPAL</span>
+      <EyebrowPanel grupo="operacion" icono={Users} />
       <h1 className="panel-titulo">Clientes</h1>
       <p className="panel-subtitulo">Consulta a quienes han reservado con tu negocio.</p>
     </div></header>
