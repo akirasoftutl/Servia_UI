@@ -17,6 +17,7 @@ import { CampoCalle, type EleccionCalle } from './CampoCalle';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { FotosNegocio } from './FotosNegocio';
 import { FOTOS_VACIAS, normalizarFotosNegocio } from './fotos';
+import { normalizarTelefono, validarTelefono } from './telefono';
 
 interface Categoria {
   id: string;
@@ -41,6 +42,8 @@ type RespuestaPerfil = Partial<PerfilNegocio> & {
   fotos?: Partial<FotosNegocioDatos> | null;
 };
 
+const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function MiPerfil() {
 
   // Estado para controlar el paso actual (1, 2 o 3)
@@ -56,12 +59,6 @@ export function MiPerfil() {
     camposFaltantes: [],
   });
 
-  // Estados adicionales para los campos extendidos de la UI
-  const [camposExtra, setCamposExtra] = useState({
-    email: '',
-    referencias: '',
-  });
-
   const [direccion, setDireccion] = useState<DireccionForm>(DIRECCION_VACIA);
   // Texto de una dirección guardada antes de capturarla por campos.
   const [direccionVieja, setDireccionVieja] = useState('');
@@ -72,10 +69,7 @@ export function MiPerfil() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
-  const [mostrarModalExito, setMostrarModalExito] = useState(false);
 
-  // Estado local para la vista previa de la imagen
-  const [imagenPreview, setImagenPreview] = useState<string | null>(null);
   const [fotos, setFotos] = useState<FotosNegocioDatos>(FOTOS_VACIAS);
 
 
@@ -114,11 +108,7 @@ export function MiPerfil() {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (['email', 'referencias'].includes(name)) {
-      setCamposExtra({ ...camposExtra, [name]: value });
-    } else {
-      setForm({ ...form, [name]: value });
-    }
+    setForm({ ...form, [name]: value });
     setErrores({ ...errores, [name]: '' });
   };
 
@@ -144,25 +134,15 @@ export function MiPerfil() {
     setErrores({ ...errores, categoriaId: '' });
   };
 
-  const handleImagenChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagenPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   // Validación por paso individual
   const validarPaso = (paso: number): boolean => {
     const nuevosErrores: Record<string, string> = {};
 
     if (paso === 1) {
       if (!form.nombre.trim()) nuevosErrores.nombre = 'El nombre es obligatorio';
-      if (!form.telefono.trim()) nuevosErrores.telefono = 'El teléfono es obligatorio';
-      if (!camposExtra.email.includes('@')) nuevosErrores.email = 'Correo inválido';
+      const errorTelefono = validarTelefono(form.telefono);
+      if (errorTelefono) nuevosErrores.telefono = errorTelefono;
+      if (!CORREO_VALIDO.test(form.correoContacto.trim())) nuevosErrores.correoContacto = 'Escribe un correo válido, por ejemplo contacto@negocio.com';
       if (!form.descripcion.trim()) nuevosErrores.descripcion = 'La descripción es obligatoria';
     }
 
@@ -193,15 +173,20 @@ export function MiPerfil() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setMensajeExito('');
-    setMostrarModalExito(false);
     setErrorApi('');
 
     if (pasoActual !== 3) return;
     if (!validarPaso(3)) return;
+    if (!validarPaso(1)) {
+      setPasoActual(1);
+      return;
+    }
 
     setGuardando(true);
     try {
-      const { nombre, descripcion, categoriaId, telefono, correoContacto } = form;
+      const { nombre, descripcion, categoriaId } = form;
+      const telefono = normalizarTelefono(form.telefono);
+      const correoContacto = form.correoContacto.trim();
       const respuesta = await api<RespuestaPerfil>('/negocios/mio', {
         method: 'PUT',
         body: JSON.stringify({ nombre, descripcion, categoriaId, telefono, correoContacto, direccion: direccionParaApi(direccion) }),
@@ -226,7 +211,8 @@ export function MiPerfil() {
         setFotos(normalizarFotosNegocio(respuesta.fotos));
       }
       setMensajeExito('Perfil actualizado correctamente');
-      setMostrarModalExito(true);
+      // El botón de guardar está al final de la página: se sube para que el aviso quede a la vista.
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error: any) {
       setErrorApi(error.message || 'Error al guardar el perfil');
     } finally {
@@ -279,38 +265,13 @@ export function MiPerfil() {
           )}
 
         {/* Mensaje de éxito */}
-        {mensajeExito && !mostrarModalExito && (
+        {mensajeExito && (
           <div
             className="panel-alerta panel-alerta--exito"
             role="status"
           >
             <Check aria-hidden="true" />
             <strong>{mensajeExito}</strong>
-          </div>
-        )}
-
-        {mostrarModalExito && (
-          <div
-            className="panel-dialogo-fondo"
-            onClick={() => setMostrarModalExito(false)}
-          >
-            <div
-              className="panel-dialogo"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="panel-dialogo-icono panel-dialogo-icono--exito" aria-hidden="true">
-                <Check />
-              </div>
-              <h4 className="panel-dialogo-titulo">¡Éxito!</h4>
-              <p className="panel-dialogo-texto">{mensajeExito}</p>
-              <button
-                type="button"
-                className="btn-servia-primary"
-                onClick={() => setMostrarModalExito(false)}
-              >
-                Aceptar
-              </button>
-            </div>
           </div>
         )}
 
@@ -362,7 +323,7 @@ export function MiPerfil() {
                   <div className="row g-4">
 
                     {/* Campos del negocio */}
-                    <div className="col-12 col-lg-7">
+                    <div className="col-12">
                       <div className="row g-3">
 
                         <div className="col-12 col-md-6">
@@ -423,28 +384,34 @@ export function MiPerfil() {
 
                         <div className="col-12">
                           <label
-                            htmlFor="email"
+                            htmlFor="correoContacto"
                             className="form-label"
                           >
-                            Correo electrónico *
+                            Correo de contacto del negocio *
                           </label>
 
                           <input
-                            id="email"
+                            id="correoContacto"
                             type="email"
-                            name="email"
-                            className={`form-control ${errores.email ? 'is-invalid' : ''
+                            name="correoContacto"
+                            className={`form-control ${errores.correoContacto ? 'is-invalid' : ''
                               }`}
-                            value={camposExtra.email}
+                            value={form.correoContacto}
                             onChange={handleChange}
                             placeholder="contacto@negocio.com"
                             autoComplete="email"
                             required
                           />
 
-                          {errores.email && (
+                          {errores.correoContacto ? (
                             <div className="invalid-feedback">
-                              {errores.email}
+                              {errores.correoContacto}
+                            </div>
+                          ) : (
+                            <div className="perfil-campo-pie">
+                              <span className="panel-ayuda">
+                                Es el correo que verán tus clientes. No cambia el correo con el que inicias sesión.
+                              </span>
                             </div>
                           )}
                         </div>
@@ -487,75 +454,6 @@ export function MiPerfil() {
                           </div>
                         </div>
 
-                      </div>
-                    </div>
-
-              
-                    <div className="col-12 col-lg-5">
-                      <div className="perfil-upload h-100">
-                        <h3 className="perfil-upload-titulo">
-                          Imagen de tu negocio
-                        </h3>
-
-                        <p className="panel-ayuda mb-3">
-                          Agrega tu logotipo o una imagen que
-                          represente tu establecimiento.
-                        </p>
-
-                        <div className="perfil-image-preview mb-3">
-                          {imagenPreview ? (
-                            <img
-                              src={imagenPreview}
-                              alt="Vista previa de la imagen del negocio"
-                            />
-                          ) : (
-                            <div className="perfil-image-placeholder">
-                              <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                aria-hidden="true"
-                              >
-                                <rect
-                                  x="3"
-                                  y="3"
-                                  width="18"
-                                  height="18"
-                                  rx="3"
-                                />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <path d="m21 15-5-5L5 21" />
-                              </svg>
-
-                              <span>
-                                Aún no has seleccionado una imagen
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <input
-                          type="file"
-                          id="logo-upload"
-                          accept="image/png,image/jpeg,image/webp"
-                          className="d-none"
-                          onChange={handleImagenChange}
-                        />
-
-                        <label
-                          htmlFor="logo-upload"
-                          className="btn-servia-secondary btn-servia-bloque"
-                        >
-
-                          {imagenPreview
-                            ? 'Cambiar imagen'
-                            : 'Seleccionar imagen'}
-                        </label>
-
-                        <p className="panel-ayuda text-center mt-3 mb-0">
-                          Máximo 5 MB
-                        </p>
                       </div>
                     </div>
 
@@ -729,32 +627,6 @@ export function MiPerfil() {
 
                       {errores.estado && (
                         <div className="invalid-feedback">{errores.estado}</div>
-                      )}
-                    </div>
-
-                    <div className="col-12">
-                      <label
-                        htmlFor="referencias"
-                        className="form-label"
-                      >
-                        Referencias de ubicación
-                      </label>
-
-                      <textarea
-                        id="referencias"
-                        name="referencias"
-                        rows={3}
-                        className={`form-control ${errores.referencias ? 'is-invalid' : ''
-                          }`}
-                        value={camposExtra.referencias}
-                        onChange={handleChange}
-                        placeholder="Ej. Entre 5 de Mayo y Madero, frente a la plaza."
-                      />
-
-                      {errores.referencias && (
-                        <div className="invalid-feedback">
-                          {errores.referencias}
-                        </div>
                       )}
                     </div>
 

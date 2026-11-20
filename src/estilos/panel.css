@@ -273,6 +273,14 @@
   margin-bottom: var(--sv-esp-5);
 }
 
+.panel-tarjeta-encabezado--con-aviso {
+  margin-bottom: var(--sv-esp-2);
+}
+
+.panel-tarjeta-subtitulo.panel-fotos-aviso {
+  margin-bottom: var(--sv-esp-5);
+}
+
 .panel-tarjeta-titulo {
   margin: 0 0 5px;
   color: var(--sv-titulo);
@@ -1595,6 +1603,11 @@ fieldset:disabled .btn-servia-secondary {
   gap: var(--sv-esp-3);
   margin-bottom: var(--sv-esp-4);
 }
+.panel-fotos-cabecera-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sv-esp-2);
+}
 .panel-fotos-marco-portada {
   margin: 0;
   overflow: hidden;
@@ -1660,6 +1673,30 @@ fieldset:disabled .btn-servia-secondary {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   background: var(--sv-superficie-hundida);
+}
+.panel-fotos-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sv-esp-2);
+  width: 100%;
+  padding: var(--sv-esp-4);
+  background: var(--sv-superficie-hundida);
+  color: var(--sv-texto-tenue);
+  font-size: var(--sv-texto-sm);
+  text-align: center;
+}
+.panel-fotos-error svg {
+  width: var(--sv-esp-6);
+  height: var(--sv-esp-6);
+}
+.panel-fotos-error--portada {
+  max-height: calc(var(--sv-esp-7) * 6);
+  aspect-ratio: 16 / 9;
+}
+.panel-fotos-error--galeria {
+  aspect-ratio: 4 / 3;
 }
 .panel-fotos-tarjeta-pie {
   display: flex;

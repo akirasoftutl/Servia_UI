@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle2, CircleAlert, Image as ImageIcon, Images, Plus, Trash2, Upload } from 'lucide-react';
+import { CheckCircle2, CircleAlert, Image as ImageIcon, ImageOff, Images, Plus, Trash2, Upload } from 'lucide-react';
 import {
   eliminarFotoNegocio,
   ErrorApi,
@@ -34,6 +34,7 @@ interface VistaPreviaPendiente {
 
 interface FotoEnEliminacion {
   foto: FotoNegocio;
+  tipo: TipoFotoNegocio;
   numero: number;
 }
 
@@ -42,6 +43,31 @@ function crearUrlPrevia(archivo: File): { url: string; revocable: boolean } {
     return { url: URL.createObjectURL(archivo), revocable: true };
   }
   return { url: `data:${archivo.type};base64,`, revocable: false };
+}
+
+// Si la URL de la foto no responde, el navegador solo mostraría el texto alternativo:
+// se cambia por un aviso claro con el mismo tamaño que la imagen.
+function ImagenConFallo({
+  src,
+  alt,
+  className,
+  variante,
+}: {
+  src: string;
+  alt: string;
+  className: string;
+  variante: 'portada' | 'galeria';
+}) {
+  const [fallo, setFallo] = useState(false);
+  if (fallo) {
+    return (
+      <div className={`panel-fotos-error panel-fotos-error--${variante}`} role="status">
+        <ImageOff aria-hidden="true" />
+        <span>No se pudo cargar la foto</span>
+      </div>
+    );
+  }
+  return <img src={src} alt={alt} className={className} onError={() => setFallo(true)} />;
 }
 
 function mensajeErrorApi(causa: unknown, respaldo: string): string {
@@ -164,7 +190,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
 
   const confirmarEliminacion = async () => {
     if (!fotoPorEliminar || bloqueoRef.current) return;
-    const { foto } = fotoPorEliminar;
+    const { foto, tipo } = fotoPorEliminar;
     bloqueoRef.current = true;
     setOperacion('borrando');
     setError('');
@@ -173,13 +199,13 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
     try {
       await eliminarFotoNegocio(foto.id);
       if (!montadoRef.current) return;
-      const nuevas: FotosNegocio = {
-        ...fotos,
-        galeria: fotos.galeria.filter((item) => item.id !== foto.id),
-      };
+      const nuevas: FotosNegocio =
+        tipo === 'portada'
+          ? { ...fotos, portada: null }
+          : { ...fotos, galeria: fotos.galeria.filter((item) => item.id !== foto.id) };
       actualizarFotos(nuevas);
       setFotoPorEliminar(null);
-      setExito('Foto eliminada de la galería.');
+      setExito(tipo === 'portada' ? 'Portada eliminada.' : 'Foto eliminada de la galería.');
     } catch (causa: unknown) {
       if (!montadoRef.current) return;
       setFotoPorEliminar(null);
@@ -198,7 +224,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
         aria-labelledby="titulo-fotos-negocio"
         aria-busy={ocupado}
       >
-        <div className="panel-tarjeta-encabezado">
+        <div className="panel-tarjeta-encabezado panel-tarjeta-encabezado--con-aviso">
           <div>
             <h2 id="titulo-fotos-negocio" className="panel-tarjeta-titulo">
               Fotos
@@ -212,6 +238,9 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
             {fotos.galeria.length} / {MAX_FOTOS_GALERIA} en galería
           </span>
         </div>
+        <p className="panel-tarjeta-subtitulo panel-fotos-aviso" id="aviso-fotos-aparte">
+          Las fotos se suben aparte y al instante: no necesitas pulsar «Guardar cambios» del perfil.
+        </p>
 
         {error && (
           <div className="panel-alerta panel-alerta--error" role="alert">
@@ -251,18 +280,33 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               accept={ACCEPT_FOTOS}
               className="visually-hidden"
               aria-label="Seleccionar archivo de portada"
+              aria-describedby="aviso-fotos-aparte"
               disabled={ocupado}
               onChange={seleccionarArchivo('portada')}
             />
-            <button
-              type="button"
-              className="btn-servia-secondary btn-servia-sm"
-              disabled={ocupado}
-              onClick={() => inputPortadaRef.current?.click()}
-            >
-              <Upload aria-hidden="true" />
-              {fotos.portada ? 'Cambiar portada' : 'Subir portada'}
-            </button>
+            <div className="panel-fotos-cabecera-acciones">
+              <button
+                type="button"
+                className="btn-servia-secondary btn-servia-sm"
+                disabled={ocupado}
+                aria-describedby="aviso-fotos-aparte"
+                onClick={() => inputPortadaRef.current?.click()}
+              >
+                <Upload aria-hidden="true" />
+                {fotos.portada ? 'Cambiar portada' : 'Subir portada'}
+              </button>
+              {fotos.portada && (
+                <button
+                  type="button"
+                  className="btn-servia-danger btn-servia-sm"
+                  disabled={ocupado}
+                  onClick={() => setFotoPorEliminar({ foto: fotos.portada!, tipo: 'portada', numero: 0 })}
+                >
+                  <Trash2 aria-hidden="true" />
+                  Quitar portada
+                </button>
+              )}
+            </div>
           </div>
 
           {pendiente?.tipo === 'portada' && (
@@ -305,10 +349,12 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
 
           {fotos.portada ? (
             <figure className="panel-fotos-marco-portada">
-              <img
+              <ImagenConFallo
+                key={fotos.portada.url}
                 src={fotos.portada.url}
                 alt="Portada actual del negocio"
                 className="panel-fotos-imagen-portada"
+                variante="portada"
               />
             </figure>
           ) : (
@@ -341,6 +387,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               accept={ACCEPT_FOTOS}
               className="visually-hidden"
               aria-label="Seleccionar archivo de galería"
+              aria-describedby="aviso-fotos-aparte"
               disabled={ocupado || galeriaLlena}
               onChange={seleccionarArchivo('galeria')}
             />
@@ -348,6 +395,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               type="button"
               className="btn-servia-primary btn-servia-sm"
               disabled={ocupado || galeriaLlena}
+              aria-describedby="aviso-fotos-aparte"
               onClick={() => inputGaleriaRef.current?.click()}
             >
               <Plus aria-hidden="true" />
@@ -405,10 +453,12 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
             <ul className="panel-fotos-cuadricula list-unstyled mb-0">
               {fotos.galeria.map((foto, indice) => (
                 <li className="panel-fotos-tarjeta" key={foto.id}>
-                  <img
+                  <ImagenConFallo
+                    key={foto.url}
                     src={foto.url}
                     alt={`Foto ${indice + 1} de la galería`}
                     className="panel-fotos-imagen-galeria"
+                    variante="galeria"
                   />
                   <div className="panel-fotos-tarjeta-pie">
                     <span className="panel-ayuda">Foto {indice + 1}</span>
@@ -417,7 +467,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                       className="btn-servia-danger btn-servia-sm"
                       disabled={ocupado}
                       aria-label={`Quitar foto ${indice + 1}`}
-                      onClick={() => setFotoPorEliminar({ foto, numero: indice + 1 })}
+                      onClick={() => setFotoPorEliminar({ foto, tipo: 'galeria', numero: indice + 1 })}
                     >
                       <Trash2 aria-hidden="true" />
                       Quitar
@@ -459,10 +509,12 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                 <Trash2 aria-hidden="true" />
               </div>
               <h2 id={tituloDialogoId} className="panel-dialogo-titulo">
-                ¿Quitar foto de la galería?
+                {fotoPorEliminar.tipo === 'portada' ? '¿Quitar la portada?' : '¿Quitar foto de la galería?'}
               </h2>
               <p id={textoDialogoId} className="panel-dialogo-texto">
-                Se eliminará la foto {fotoPorEliminar.numero} de tu galería y dejará de mostrarse a tus clientes.
+                {fotoPorEliminar.tipo === 'portada'
+                  ? 'Se eliminará la portada de tu negocio y dejará de mostrarse a tus clientes.'
+                  : `Se eliminará la foto ${fotoPorEliminar.numero} de tu galería y dejará de mostrarse a tus clientes.`}
               </p>
               <div className="panel-dialogo-acciones">
                 <button
@@ -480,7 +532,11 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                   disabled={ocupado}
                   onClick={() => void confirmarEliminacion()}
                 >
-                  {operacion === 'borrando' ? 'Eliminando...' : 'Quitar foto'}
+                  {operacion === 'borrando'
+                    ? 'Eliminando...'
+                    : fotoPorEliminar.tipo === 'portada'
+                      ? 'Sí, quitar portada'
+                      : 'Quitar foto'}
                 </button>
               </div>
             </div>

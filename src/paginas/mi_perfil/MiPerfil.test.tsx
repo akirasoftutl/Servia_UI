@@ -46,7 +46,7 @@ function responder(perfil: Record<string, unknown>) {
 
 async function abrirPaso2() {
   render(<MemoryRouter><MiPerfil /></MemoryRouter>)
-  await userEvent.type(await screen.findByLabelText(/Correo/i, { selector: 'input[name="email"]' }), 'norte@correo.com')
+  await screen.findByLabelText(/Correo de contacto/i)
   await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
   await screen.findByLabelText('Calle *')
 }
@@ -412,5 +412,156 @@ describe('Mi perfil: sección Fotos (#42)', () => {
     expect(screen.getByAltText('Foto 1 de la galería')).toHaveAttribute('src', 'https://cdn.servia.test/g1.jpg')
     expect(screen.getByAltText('Foto 2 de la galería')).toHaveAttribute('src', 'https://cdn.servia.test/g2.jpg')
     expect(screen.getByText('2 / 5 en galería')).toBeInTheDocument()
+  })
+})
+
+describe('Mi perfil: correo de contacto (#122)', () => {
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  const put = () => apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')
+
+  it('C1: carga el correo de contacto desde GET /negocios/mio y el PUT envía el valor nuevo', async () => {
+    responder({ ...perfilBase, correoContacto: 'viejo@negocio.com', direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    const correo = await screen.findByLabelText(/Correo de contacto del negocio/)
+    expect(correo).toHaveValue('viejo@negocio.com')
+
+    await userEvent.clear(correo)
+    await userEvent.type(correo, 'nuevo@negocio.com')
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+
+    expect(JSON.parse(String(put()![1]!.body)).correoContacto).toBe('nuevo@negocio.com')
+    expect(JSON.parse(String(put()![1]!.body)).nombre).toBe('Barbería Norte')
+  })
+
+  it('C1: un correo inválido muestra el error en español y no avanza', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    const correo = await screen.findByLabelText(/Correo de contacto del negocio/)
+    await userEvent.clear(correo)
+    await userEvent.type(correo, 'sin-arroba')
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(screen.getByText(/Escribe un correo válido/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Calle *')).not.toBeInTheDocument()
+  })
+})
+
+describe('Mi perfil: teléfono (#122)', () => {
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  const put = () => apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')
+
+  it('C3: normaliza espacios, guiones y paréntesis a 10 dígitos antes del PUT', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    const telefono = await screen.findByLabelText(/Teléfono de contacto/)
+    await userEvent.clear(telefono)
+    await userEvent.type(telefono, '(477) 123-4567')
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    expect(JSON.parse(String(put()![1]!.body)).telefono).toBe('4771234567')
+  })
+
+  it.each(['477 123 456', '477 123 45678'])('C3: con %s muestra el error claro y no envía nada', async (valor) => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    const telefono = await screen.findByLabelText(/Teléfono de contacto/)
+    await userEvent.clear(telefono)
+    await userEvent.type(telefono, valor)
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(screen.getByText(/El teléfono debe tener exactamente 10 dígitos/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Teléfono de contacto/)).toHaveClass('is-invalid')
+    expect(screen.queryByLabelText('Calle *')).not.toBeInTheDocument()
+    expect(put()).toBeUndefined()
+  })
+})
+
+describe('Mi perfil: después de guardar (#122)', () => {
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  it('C2: sube al inicio y deja el aviso de éxito visible, sin modal que atrape', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    await screen.findByLabelText(/Correo de contacto/)
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+    const guardar = await screen.findByRole('button', { name: 'Guardar cambios' })
+    vi.mocked(window.scrollTo).mockClear()
+
+    await userEvent.click(guardar)
+
+    const aviso = await screen.findByRole('status')
+    expect(aviso).toHaveTextContent('Perfil actualizado correctamente')
+    expect(window.scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }))
+    expect(screen.queryByText('¡Éxito!')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Aceptar' })).not.toBeInTheDocument()
+    // Sigue en Mi perfil y se puede seguir editando sin cerrar nada.
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled()
+  })
+
+  it('C2: si la API falla no sube ni muestra el aviso de éxito', async () => {
+    apiMock.mockImplementation(async (ruta: string, opciones?: RequestInit) => {
+      if (ruta === '/categorias') return [{ id: 'cabello-barba', nombre: 'Cabello y barba' }]
+      if (opciones?.method === 'PUT') throw new ErrorApi(400, 'Datos inválidos')
+      return { ...perfilBase, direccion: direccionGuardada }
+    })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    await screen.findByLabelText(/Correo de contacto/)
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+    const guardar = await screen.findByRole('button', { name: 'Guardar cambios' })
+    vi.mocked(window.scrollTo).mockClear()
+    await userEvent.click(guardar)
+    await screen.findByRole('alert')
+    expect(screen.queryByText('Perfil actualizado correctamente')).not.toBeInTheDocument()
+    expect(window.scrollTo).not.toHaveBeenCalled()
+  })
+})
+
+describe('Mi perfil: limpieza (#116)', () => {
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  it('C1: el paso 1 ya no tiene «Imagen de tu negocio» y «Fotos» explica que se suben aparte', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    const { container } = render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    expect(await screen.findByRole('heading', { name: 'Información general' })).toBeInTheDocument()
+    expect(screen.queryByText('Imagen de tu negocio')).not.toBeInTheDocument()
+    expect(screen.queryByText('Seleccionar imagen')).not.toBeInTheDocument()
+    expect(container.querySelector('#logo-upload')).toBeNull()
+    // Los únicos selectores de archivo son los de la sección Fotos.
+    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(2)
+    expect(screen.getByRole('heading', { name: 'Fotos' })).toBeInTheDocument()
+    expect(screen.getByText(/se suben aparte y al instante/)).toBeInTheDocument()
+    expect(screen.getByText(/se suben aparte y al instante/)).toHaveTextContent('Guardar cambios')
+  })
+
+  it('C2: «Referencias de ubicación» ya no aparece y el PUT no la manda', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    await abrirPaso2()
+    expect(screen.queryByText('Referencias de ubicación')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Referencias/)).not.toBeInTheDocument()
+    expect(document.querySelector('textarea[name="referencias"]')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    const put = apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')!
+    expect(JSON.parse(String(put[1]!.body))).not.toHaveProperty('referencias')
   })
 })

@@ -280,4 +280,148 @@ describe('FotosNegocio (portada y galería)', () => {
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     expect(screen.getByText('Tu galería está vacía')).toBeInTheDocument();
   });
+
+  describe('quitar la portada (#116)', () => {
+    const portada = { id: 'p-1', url: 'https://cdn.servia.test/portada.jpg' };
+
+    it('C3: pide confirmación, cancelar no llama a la API y confirmar manda DELETE con el id de la portada', async () => {
+      const usuario = userEvent.setup();
+      fetchMock.mockResolvedValueOnce(respuestaJson(204));
+      render(<FotosNegocio fotosIniciales={{ portada, galeria: galeriaDe(1) }} />);
+
+      await usuario.click(screen.getByRole('button', { name: 'Quitar portada' }));
+      let dialogo = screen.getByRole('alertdialog');
+      expect(within(dialogo).getByText('¿Quitar la portada?')).toBeInTheDocument();
+      await usuario.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(screen.getByAltText('Portada actual del negocio')).toBeInTheDocument();
+
+      await usuario.click(screen.getByRole('button', { name: 'Quitar portada' }));
+      dialogo = screen.getByRole('alertdialog');
+      await usuario.click(within(dialogo).getByRole('button', { name: 'Sí, quitar portada' }));
+
+      expect(await screen.findByText('Sin foto de portada')).toBeInTheDocument();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, opciones] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('http://localhost:3000/negocios/mio/fotos/p-1');
+      expect(opciones.method).toBe('DELETE');
+      // La sección sigue usable: la galería se conserva y se puede subir otra portada.
+      expect(screen.queryByRole('button', { name: 'Quitar portada' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Subir portada' })).toBeEnabled();
+      expect(screen.getByAltText('Foto 1 de la galería')).toBeInTheDocument();
+      expect(screen.getByText('Portada eliminada.')).toBeInTheDocument();
+    });
+
+    it('C3: si la API falla, muestra el mensaje y conserva la portada', async () => {
+      const usuario = userEvent.setup();
+      fetchMock.mockResolvedValueOnce(respuestaJson(503, { message: 'Supabase Storage no está configurado en el servidor.' }));
+      render(<FotosNegocio fotosIniciales={{ portada, galeria: [] }} />);
+      await usuario.click(screen.getByRole('button', { name: 'Quitar portada' }));
+      await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Sí, quitar portada' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Supabase Storage no está configurado en el servidor.');
+      expect(screen.getByAltText('Portada actual del negocio')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Quitar portada' })).toBeEnabled();
+    });
+
+    it('C3: sin portada no hay botón para quitarla', () => {
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+      expect(screen.queryByRole('button', { name: 'Quitar portada' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('foto que no carga (#116)', () => {
+    it('C4: la portada con error muestra «No se pudo cargar la foto» en vez del texto alternativo y se puede quitar', () => {
+      render(<FotosNegocio fotosIniciales={{ portada: { id: 'p-1', url: 'https://cdn.servia.test/rota.jpg' }, galeria: [] }} />);
+      fireEvent.error(screen.getByAltText('Portada actual del negocio'));
+      expect(screen.getByText('No se pudo cargar la foto')).toBeInTheDocument();
+      expect(screen.queryByAltText('Portada actual del negocio')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Quitar portada' })).toBeEnabled();
+    });
+
+    it('C4: solo la foto de galería que falla muestra el estado; las demás siguen y conserva «Quitar»', () => {
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: galeriaDe(2) }} />);
+      fireEvent.error(screen.getByAltText('Foto 2 de la galería'));
+      expect(screen.getAllByText('No se pudo cargar la foto')).toHaveLength(1);
+      expect(screen.queryByAltText('Foto 2 de la galería')).not.toBeInTheDocument();
+      expect(screen.getByAltText('Foto 1 de la galería')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Quitar foto 2' })).toBeEnabled();
+    });
+
+    it('C4: si la foto carga bien no aparece el aviso', () => {
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: galeriaDe(1) }} />);
+      expect(screen.queryByText('No se pudo cargar la foto')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('URL.revokeObjectURL de la vista previa (#116)', () => {
+    const originales = { crear: URL.createObjectURL, revocar: URL.revokeObjectURL };
+    let crear: ReturnType<typeof vi.fn>;
+    let revocar: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      let contador = 0;
+      crear = vi.fn(() => `blob:servia-previa-${++contador}`);
+      revocar = vi.fn();
+      Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: crear });
+      Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: revocar });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: originales.crear });
+      Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: originales.revocar });
+    });
+
+    it('C5: al cancelar la vista previa libera su URL, y no antes', async () => {
+      const usuario = userEvent.setup();
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+      subirEnInput('Seleccionar archivo de portada', crearImagen('fachada.jpg'));
+      expect(crear).toHaveBeenCalledTimes(1);
+      expect(screen.getByAltText('Vista previa de la portada')).toHaveAttribute('src', 'blob:servia-previa-1');
+      expect(revocar).not.toHaveBeenCalled();
+
+      await usuario.click(screen.getByRole('button', { name: 'Cancelar' }));
+      expect(revocar).toHaveBeenCalledTimes(1);
+      expect(revocar).toHaveBeenCalledWith('blob:servia-previa-1');
+    });
+
+    it('C5: al subir la foto libera la URL de la vista previa', async () => {
+      const usuario = userEvent.setup();
+      fetchMock.mockResolvedValueOnce(respuestaJson(201, { id: 'g-1', url: 'https://cdn.servia.test/g-1.jpg' }));
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+      subirEnInput('Seleccionar archivo de galería', crearImagen('servicio.jpg'));
+      expect(revocar).not.toHaveBeenCalled();
+
+      await usuario.click(screen.getByRole('button', { name: 'Subir a la galería' }));
+      await screen.findByAltText('Foto 1 de la galería');
+      expect(revocar).toHaveBeenCalledTimes(1);
+      expect(revocar).toHaveBeenCalledWith('blob:servia-previa-1');
+    });
+
+    it('C5: si se elige otra foto antes de subir, libera la URL de la anterior', async () => {
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+      subirEnInput('Seleccionar archivo de portada', crearImagen('a.jpg'));
+      subirEnInput('Seleccionar archivo de portada', crearImagen('b.jpg'));
+      expect(crear).toHaveBeenCalledTimes(2);
+      expect(revocar).toHaveBeenCalledTimes(1);
+      expect(revocar).toHaveBeenCalledWith('blob:servia-previa-1');
+    });
+  });
+
+  it('F4: el aviso de «se suben aparte» va a ancho completo bajo el encabezado, con el estilo del subtítulo', () => {
+    render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+    const aviso = screen.getByText(/se suben aparte y al instante/);
+    expect(aviso).toHaveClass('panel-tarjeta-subtitulo');
+    expect(aviso.closest('.panel-tarjeta-encabezado')).toBeNull();
+    expect(aviso.parentElement).toBe(screen.getByRole('heading', { name: 'Fotos' }).closest('section'));
+  });
+
+  it('F6: los controles de subida quedan descritos por el aviso de «se suben aparte»', () => {
+    render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+    const descripcion = /se suben aparte y al instante/;
+    expect(screen.getByRole('button', { name: 'Subir portada' })).toHaveAccessibleDescription(descripcion);
+    expect(screen.getByRole('button', { name: 'Agregar foto' })).toHaveAccessibleDescription(descripcion);
+    expect(screen.getByLabelText('Seleccionar archivo de portada')).toHaveAccessibleDescription(descripcion);
+    expect(screen.getByLabelText('Seleccionar archivo de galería')).toHaveAccessibleDescription(descripcion);
+  });
 });
