@@ -551,4 +551,17 @@ describe('Mi perfil: limpieza (#116)', () => {
     expect(screen.getByText(/se suben aparte y al instante/)).toBeInTheDocument()
     expect(screen.getByText(/se suben aparte y al instante/)).toHaveTextContent('Guardar cambios')
   })
+
+  it('C2: «Referencias de ubicación» ya no aparece y el PUT no la manda', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    await abrirPaso2()
+    expect(screen.queryByText('Referencias de ubicación')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Referencias/)).not.toBeInTheDocument()
+    expect(document.querySelector('textarea[name="referencias"]')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    const put = apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')!
+    expect(JSON.parse(String(put[1]!.body))).not.toHaveProperty('referencias')
+  })
 })

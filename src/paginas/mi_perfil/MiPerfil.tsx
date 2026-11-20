@@ -59,11 +59,6 @@ export function MiPerfil() {
     camposFaltantes: [],
   });
 
-  // Estados adicionales para los campos extendidos de la UI
-  const [camposExtra, setCamposExtra] = useState({
-    referencias: '',
-  });
-
   const [direccion, setDireccion] = useState<DireccionForm>(DIRECCION_VACIA);
   // Texto de una dirección guardada antes de capturarla por campos.
   const [direccionVieja, setDireccionVieja] = useState('');
@@ -113,11 +108,7 @@ export function MiPerfil() {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name === 'referencias') {
-      setCamposExtra({ ...camposExtra, [name]: value });
-    } else {
-      setForm({ ...form, [name]: value });
-    }
+    setForm({ ...form, [name]: value });
     setErrores({ ...errores, [name]: '' });
   };
 
@@ -634,32 +625,6 @@ export function MiPerfil() {
 
                       {errores.estado && (
                         <div className="invalid-feedback">{errores.estado}</div>
-                      )}
-                    </div>
-
-                    <div className="col-12">
-                      <label
-                        htmlFor="referencias"
-                        className="form-label"
-                      >
-                        Referencias de ubicación
-                      </label>
-
-                      <textarea
-                        id="referencias"
-                        name="referencias"
-                        rows={3}
-                        className={`form-control ${errores.referencias ? 'is-invalid' : ''
-                          }`}
-                        value={camposExtra.referencias}
-                        onChange={handleChange}
-                        placeholder="Ej. Entre 5 de Mayo y Madero, frente a la plaza."
-                      />
-
-                      {errores.referencias && (
-                        <div className="invalid-feedback">
-                          {errores.referencias}
-                        </div>
                       )}
                     </div>
 
