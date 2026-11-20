@@ -83,7 +83,12 @@ describe('UI109 página Configuración', () => {
     it('cambia la contraseña con el componente existente, dentro de la tarjeta', async () => {
       pagina()
       const cuenta = tarjeta('Cuenta')
-      expect(within(cuenta).getByRole('heading', { name: 'Cambiar contraseña', level: 3 })).toBeVisible()
+      const subtitulo = within(cuenta).getByRole('heading', { name: 'Cambiar contraseña', level: 3 })
+      expect(subtitulo).toBeVisible()
+      // Título menor que el de la tarjeta, para que no parezca una tarjeta hermana.
+      expect(subtitulo).toHaveClass('panel-item-titulo')
+      expect(subtitulo).not.toHaveClass('panel-tarjeta-titulo')
+      expect(within(cuenta).getByRole('heading', { name: 'Cuenta', level: 2 })).toHaveClass('panel-tarjeta-titulo')
       await userEvent.type(within(cuenta).getByLabelText('Contraseña actual'), 'Actual123')
       await userEvent.type(within(cuenta).getByLabelText('Contraseña nueva'), 'Nueva12345')
       await userEvent.type(within(cuenta).getByLabelText('Confirma la contraseña nueva'), 'Nueva12345')

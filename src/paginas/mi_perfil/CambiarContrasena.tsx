@@ -103,7 +103,7 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
     <Contenedor className={incrustada ? 'panel-subseccion' : 'panel-tarjeta perfil-tarjeta-contrasena'} aria-labelledby="titulo-cambiar-contrasena">
       <div className="panel-tarjeta-encabezado">
         <div>
-          <Titulo id="titulo-cambiar-contrasena" className="panel-tarjeta-titulo">
+          <Titulo id="titulo-cambiar-contrasena" className={incrustada ? 'panel-item-titulo' : 'panel-tarjeta-titulo'}>
             Cambiar contraseña
           </Titulo>
           <p className="panel-tarjeta-subtitulo">
