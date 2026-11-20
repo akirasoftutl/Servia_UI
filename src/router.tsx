@@ -61,7 +61,6 @@ export const rutas: RouteObject[] = [
           { path: 'bloqueos', element: <Bloqueos /> },
           { path: 'estadisticas', element: <Estadisticas /> },
           { path: 'reservas', element: <Reservas /> },
-          { path: 'reservas', element: <Reservas /> },
           { path: 'reservas/:id', element: <DetalleReserva /> }, 
         ],
       },
