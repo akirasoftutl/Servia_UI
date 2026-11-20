@@ -185,3 +185,20 @@ describe('UI109 página Configuración', () => {
     expect(fuente).not.toContain('console.log')
   })
 })
+
+describe('UI109 Recepción de reservas y Cambiar contraseña viven en Configuración, no en Mi perfil', () => {
+  it('Mi perfil ya no las muestra', async () => {
+    const { MiPerfil } = await import('../mi_perfil/MiPerfil')
+    const router = createMemoryRouter([{ path: '/', element: <MiPerfil /> }])
+    render(<RouterProvider router={router} />)
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.queryByRole('region', { name: 'Recepción de reservas' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Cambiar contraseña' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Contraseña actual')).not.toBeInTheDocument()
+  })
+  it('Configuración sí las muestra (control negativo de la prueba anterior)', async () => {
+    pagina()
+    expect(screen.getByRole('region', { name: 'Recepción de reservas' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Cambiar contraseña' })).toBeVisible()
+  })
+})

@@ -13,8 +13,6 @@ import {
   type Direccion,
   type DireccionForm,
 } from './direccion';
-import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
-import { CambiarContrasena } from './CambiarContrasena';
 import { CampoCalle, type EleccionCalle } from './CampoCalle';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { FotosNegocio } from './FotosNegocio';
@@ -924,8 +922,6 @@ export function MiPerfil() {
 
         {/* Fuera del formulario del perfil: secciones independientes. */}
         <FotosNegocio fotosIniciales={fotos} alCambiar={setFotos} />
-        <RecepcionReservas />
-        <CambiarContrasena />
       </div>
     </div>
   );

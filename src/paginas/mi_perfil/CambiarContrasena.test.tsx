@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth'
 import { CambiarContrasena } from './CambiarContrasena'
-import { MiPerfil } from './MiPerfil'
+import { Configuracion } from '../configuracion/Configuracion'
 
 const sesion = vi.hoisted(() => ({ usuario: null as unknown }))
 vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => ({ usuario: sesion.usuario }) }))
@@ -42,10 +42,11 @@ async function llenar(actual: string, nueva: string, confirmacion = nueva) {
 }
 
 describe('MVP-04 cambiar la contraseña con la sesión iniciada', () => {
-  it('C3 aparece como sección «Cambiar contraseña» en Mi perfil', async () => {
-    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
-    const seccion = await screen.findByRole('region', { name: 'Cambiar contraseña' })
-    expect(within(seccion).getByLabelText('Contraseña actual')).toBeInTheDocument()
+  it('C3 aparece como subsección «Cambiar contraseña» dentro de la tarjeta Cuenta de Configuración', async () => {
+    render(<MemoryRouter><Configuracion /></MemoryRouter>)
+    const cuenta = await screen.findByRole('region', { name: 'Cuenta' })
+    expect(within(cuenta).getByRole('heading', { name: 'Cambiar contraseña' })).toBeInTheDocument()
+    expect(within(cuenta).getByLabelText('Contraseña actual')).toBeInTheDocument()
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   })
 
