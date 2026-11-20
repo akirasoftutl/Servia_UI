@@ -14,6 +14,10 @@
   gap: var(--sv-esp-3);
   margin: 0 0 var(--sv-esp-5);
 }
+/* Separa el estado vacío de las cifras que van debajo */
+.panel-estado + .estadisticas-metricas {
+  margin-top: var(--sv-esp-5);
+}
 .estadisticas-metricas .panel-item {
   flex-direction: column;
   align-items: flex-start;

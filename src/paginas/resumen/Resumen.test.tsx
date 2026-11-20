@@ -172,7 +172,17 @@ describe('Resumen', () => {
     for (const etiqueta of ['Solicitudes pendientes', 'Reservas de hoy', 'Próximos 7 días', 'Servicios publicados', 'Clientes atendidos']) {
       expect(numeroDe(etiqueta)).toBe('0');
     }
-    expect(within(screen.getByRole('region', { name: 'Próximas citas' })).queryAllByRole('link')).toHaveLength(0);
+    const vacio = within(screen.getByRole('region', { name: 'Próximas citas' }));
+    expect(vacio.getByRole('heading', { name: 'Tu agenda está libre' })).toBeVisible();
+    expect(vacio.getByText('Todavía no tienes reservas.').closest('.panel-estado')!.querySelector('.panel-ilustracion')).toBeInTheDocument();
+    expect(vacio.getByRole('link', { name: 'Crear servicio' })).toHaveAttribute('href', '/servicios/nuevo');
+  });
+
+  it('C5 con servicios publicados el estado vacío no ofrece crear otro', async () => {
+    respuestaResumen = resumen({ proximas: [] });
+    mostrar();
+    expect(await screen.findByText('No tienes reservas próximas.')).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Crear servicio' })).not.toBeInTheDocument();
   });
 
   it('C5 con reservas pero sin próximas citas no dice que no hay reservas', async () => {
