@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { Bell, CalendarCheck, CalendarClock, ChartColumn, ChevronRight, Clock, LayoutDashboard, Pause, Plus, Scissors, Users } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Bell, CalendarCheck, CalendarClock, ChartColumn, ChevronRight, Clock, LayoutDashboard, Pause, Plus, Scissors, Users, type LucideIcon } from 'lucide-react';
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api } from '../../servicios/api';
 import { ESTADOS_CONFIG } from '../reservas/estados';

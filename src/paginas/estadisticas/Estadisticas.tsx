@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, CalendarX, ChartColumn, CircleCheck, Clock, UserX, Users } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { CalendarDays, CalendarX, ChartColumn, CircleCheck, Clock, UserX, Users, type LucideIcon } from 'lucide-react';
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api, ErrorApi } from '../../servicios/api';
 import { periodoPredefinido, validarPeriodo, type Periodo } from './fechas';

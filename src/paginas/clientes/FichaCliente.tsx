@@ -1,5 +1,4 @@
-import { CalendarDays, CircleCheck, CircleX, Clock, Mail, Phone } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { CalendarDays, CircleCheck, CircleX, Clock, Mail, Phone, type LucideIcon } from 'lucide-react';
 import type { Cliente } from './clientes';
 import { diaMedioMexico, horaMexico, iniciales } from './clientes';
 
