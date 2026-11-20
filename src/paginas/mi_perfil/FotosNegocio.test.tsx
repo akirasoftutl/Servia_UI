@@ -353,4 +353,58 @@ describe('FotosNegocio (portada y galería)', () => {
       expect(screen.queryByText('No se pudo cargar la foto')).not.toBeInTheDocument();
     });
   });
+
+  describe('URL.revokeObjectURL de la vista previa (#116)', () => {
+    const originales = { crear: URL.createObjectURL, revocar: URL.revokeObjectURL };
+    let crear: ReturnType<typeof vi.fn>;
+    let revocar: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      let contador = 0;
+      crear = vi.fn(() => `blob:servia-previa-${++contador}`);
+      revocar = vi.fn();
+      Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: crear });
+      Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: revocar });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: originales.crear });
+      Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: originales.revocar });
+    });
+
+    it('C5: al cancelar la vista previa libera su URL, y no antes', async () => {
+      const usuario = userEvent.setup();
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+      subirEnInput('Seleccionar archivo de portada', crearImagen('fachada.jpg'));
+      expect(crear).toHaveBeenCalledTimes(1);
+      expect(screen.getByAltText('Vista previa de la portada')).toHaveAttribute('src', 'blob:servia-previa-1');
+      expect(revocar).not.toHaveBeenCalled();
+
+      await usuario.click(screen.getByRole('button', { name: 'Cancelar' }));
+      expect(revocar).toHaveBeenCalledTimes(1);
+      expect(revocar).toHaveBeenCalledWith('blob:servia-previa-1');
+    });
+
+    it('C5: al subir la foto libera la URL de la vista previa', async () => {
+      const usuario = userEvent.setup();
+      fetchMock.mockResolvedValueOnce(respuestaJson(201, { id: 'g-1', url: 'https://cdn.servia.test/g-1.jpg' }));
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+      subirEnInput('Seleccionar archivo de galería', crearImagen('servicio.jpg'));
+      expect(revocar).not.toHaveBeenCalled();
+
+      await usuario.click(screen.getByRole('button', { name: 'Subir a la galería' }));
+      await screen.findByAltText('Foto 1 de la galería');
+      expect(revocar).toHaveBeenCalledTimes(1);
+      expect(revocar).toHaveBeenCalledWith('blob:servia-previa-1');
+    });
+
+    it('C5: si se elige otra foto antes de subir, libera la URL de la anterior', async () => {
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+      subirEnInput('Seleccionar archivo de portada', crearImagen('a.jpg'));
+      subirEnInput('Seleccionar archivo de portada', crearImagen('b.jpg'));
+      expect(crear).toHaveBeenCalledTimes(2);
+      expect(revocar).toHaveBeenCalledTimes(1);
+      expect(revocar).toHaveBeenCalledWith('blob:servia-previa-1');
+    });
+  });
 });
