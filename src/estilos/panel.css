@@ -1380,3 +1380,65 @@ fieldset:disabled .btn-servia-secondary {
     opacity: 0.6;
   }
 }
+
+/* Los asuntos admiten hasta 100 caracteres, incluso sin espacios. */
+.panel-reporte-asunto { overflow-wrap: anywhere; }
+/* Interruptor compartido: misma pista violeta y etiqueta que recepción de reservas. */
+.panel-interruptor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sv-esp-2);
+  flex-shrink: 0;
+  min-height: calc(var(--sv-esp-7) - var(--sv-esp-1));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sv-titulo);
+  font: inherit;
+  font-size: var(--sv-texto-md);
+  font-weight: 650;
+  cursor: pointer;
+}
+.panel-interruptor-pista {
+  display: inline-flex;
+  align-items: center;
+  width: calc(var(--sv-esp-6) + var(--sv-esp-1));
+  height: var(--sv-esp-4);
+  padding: calc(var(--sv-esp-1) / 2);
+  border-radius: var(--sv-radio-pill);
+  background: var(--sv-borde-campo);
+}
+.panel-interruptor-pista::before {
+  content: '';
+  width: var(--sv-esp-3);
+  height: var(--sv-esp-3);
+  border-radius: var(--sv-radio-pill);
+  background: var(--sv-superficie);
+  transition: transform var(--sv-rapido);
+}
+.panel-interruptor[aria-checked='true'] .panel-interruptor-pista {
+  background: var(--sv-acento);
+}
+.panel-interruptor[aria-checked='true'] .panel-interruptor-pista::before {
+  transform: translateX(calc(var(--sv-esp-4) + var(--sv-esp-1)));
+}
+.panel-interruptor:focus-visible {
+  outline: none;
+  border-radius: var(--sv-radio-xs);
+  box-shadow: var(--sv-foco);
+}
+.panel-interruptor:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* Acordeones: controles y respuestas con el mismo sistema del panel. */
+.panel-acordeon-boton {
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+  white-space: normal;
+  border-radius: var(--sv-radio-sm);
+}
+.panel-acordeon > [role='region'] {
+  padding: var(--sv-esp-3) var(--sv-esp-4);
+}

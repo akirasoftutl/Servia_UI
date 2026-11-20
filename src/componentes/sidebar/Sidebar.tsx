@@ -1,3 +1,4 @@
+import { Bell } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import './Sidebar.css';
@@ -142,7 +143,9 @@ export const Sidebar: React.FC = () => {
     {
       title: 'OPERACIONES',
       items: [
-        { id: 'recepcion-reservas', label: 'Recepción de reservas', ruta: '/mi-perfil#recepcion-reservas', icon: <span aria-hidden="true">⏯</span> },
+        { id: 'soporte', label: 'Reportar un problema', ruta: '/soporte', icon: <span aria-hidden="true">?</span> },
+        { id: 'preferencias-notificaciones', label: 'Notificaciones', ruta: '/preferencias-notificaciones', icon: <Bell aria-hidden="true" /> },
+        { id: 'ayuda', label: 'Ayuda', ruta: '/ayuda', icon: <span aria-hidden="true">?</span> },
         { id: 'estadisticas', label: 'Estadísticas', ruta: '/estadisticas', icon: <span aria-hidden="true">▥</span> },
         { id: 'bloqueos', label: 'Bloqueos', ruta: '/bloqueos', icon: <span aria-hidden="true">▣</span> },
         {
