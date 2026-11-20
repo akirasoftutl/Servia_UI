@@ -49,7 +49,7 @@ function Historial({ clienteUid }: { clienteUid: string }) {
     <section className="panel-tarjeta" aria-label="Historial de reservas">
       <h2 className="panel-tarjeta-titulo">Historial de reservas</h2>
       <div aria-busy={cargando}>
-        <EstadoClientes carga="historial" cargando={cargando} error={error} vacio={datos && !datos.items.length ? 'No hay reservas en este historial.' : ''}
+        <EstadoClientes carga="historial" titulo="Sin reservas todavía" cargando={cargando} error={error} vacio={datos && !datos.items.length ? 'No hay reservas en este historial.' : ''}
           reintentar={() => { setCargando(true); setError(''); setRevision((r) => r + 1); }} />
         <div className="panel-lista">
           {datos?.items.map((reserva) => <article className="panel-item clientes-item" key={reserva.id}>

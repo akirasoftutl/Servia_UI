@@ -46,6 +46,9 @@
 .reserva-badge.rechazada_vencimiento { background: var(--sv-peligro-fondo); color: var(--sv-peligro); }
 
 .reserva-tiempo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sv-esp-1);
   padding: 4px 9px;
   border-radius: 8px;
   background: var(--sv-acento-suave);
@@ -53,6 +56,13 @@
   font-size: var(--sv-texto-xs);
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* Ícono del contador de tiempo restante */
+.reserva-tiempo svg {
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
 }
 
 /* Recepción de reservas (sección movida aquí desde el Layout) */

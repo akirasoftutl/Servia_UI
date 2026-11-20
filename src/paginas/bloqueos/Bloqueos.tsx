@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode, type FormEvent } from 'react';
+import { CalendarOff } from 'lucide-react';
 import { api, ErrorApi } from '../../servicios/api';
+import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import './Bloqueos.css';
 
 interface Bloqueo {
@@ -281,10 +283,11 @@ export function Bloqueos() {
                 <div className="spinner-border" aria-hidden="true" />
                 <p className="panel-estado-texto">Cargando...</p>
               </div>}
-              {!cargando && !error && bloqueos.length === 0 && <div className="panel-estado bloqueos-vacio">
-                <div className="panel-estado-icono" aria-hidden="true">✦</div>
-                <p className="panel-estado-texto">No tienes bloqueos.</p>
-              </div>}
+              {!cargando && !error && bloqueos.length === 0 && <EstadoVacio
+                icono={CalendarOff}
+                titulo="Tu agenda no tiene bloqueos"
+                texto="No tienes bloqueos."
+              />}
 
               {!cargando && !error && bloqueos.length > 0 && (
                 <div className="panel-lista">

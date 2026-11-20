@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { api } from '../../servicios/api';
 import './Reservas.css';
 import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { CalendarClock, Timer } from 'lucide-react';
+import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { ESTADOS_CONFIG } from './estados';
 
 const estados = {
@@ -169,12 +171,12 @@ export function Reservas() {
             <p className="panel-estado-texto" role="alert">{error}</p>
             <button className="btn-servia-primary" onClick={() => setRevision((r) => r + 1)}>Reintentar</button>
           </div>}
-          {!cargando && !error && pagina.items.length === 0 && <div className="panel-estado">
-            <div className="panel-estado-icono" aria-hidden="true">✦</div>
-            <p className="panel-estado-texto">
-              {pestana === 'pendientes' ? 'No tienes reservas pendientes.' : 'No tienes reservas próximas.'}
-            </p>
-          </div>}
+          {!cargando && !error && pagina.items.length === 0 && <EstadoVacio
+            icono={CalendarClock}
+            titulo={pestana === 'pendientes' ? 'Sin solicitudes por ahora' : 'Sin citas próximas'}
+            texto={pestana === 'pendientes' ? 'No tienes reservas pendientes.' : 'No tienes reservas próximas.'}
+            accion={<Link to="/mi-perfil/vista-previa" className="btn-servia-secondary">Ver cómo te ven tus clientes</Link>}
+          />}
           {!cargando && !error && <div className="panel-lista">
             {pagina.items.map((r) => (
               <article
@@ -197,7 +199,7 @@ export function Reservas() {
                 <div className="reserva-estado-container">
                   <span className={`reserva-badge ${r.estado}`}>{estados[r.estado]}</span>
                   {r.estado === 'pendiente' && r.venceEn && Date.parse(r.venceEn) > ahora &&
-                    <span className="reserva-tiempo">⏱ {tiempoRestante(r.venceEn, ahora)}</span>}
+                    <span className="reserva-tiempo"><Timer aria-hidden="true" /> {tiempoRestante(r.venceEn, ahora)}</span>}
                 </div>
               </article>
             ))}

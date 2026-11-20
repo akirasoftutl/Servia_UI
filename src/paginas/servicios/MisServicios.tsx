@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { CircleAlert, Clock, Plus, Tags } from 'lucide-react';
 import { api } from '../../servicios/api';
-import { EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
+import { EsqueletoLista, EstadoVacio, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
 
@@ -123,13 +123,11 @@ export function MisServicios() {
           )}
 
           {!cargando && !error && servicios.length === 0 && (
-            <div className="panel-estado">
-              <IlustracionEstado icono={Tags} />
-              <div className="panel-estado-cuerpo">
-              <h3 className="panel-estado-titulo">{filtro === 'todos' ? 'Tu catálogo está vacío' : `No tienes servicios ${filtro}`}</h3>
-              <p className="panel-estado-texto">{filtro === 'todos' ? 'Comienza agregando tu primer servicio para que tus clientes puedan descubrirlo.' : 'No encontramos servicios en esta categoría.'}</p>
-            </div>
-            </div>
+            <EstadoVacio
+              icono={Tags}
+              titulo={filtro === 'todos' ? 'Tu catálogo está vacío' : `No tienes servicios ${filtro}`}
+              texto={filtro === 'todos' ? 'Comienza agregando tu primer servicio para que tus clientes puedan descubrirlo.' : 'No encontramos servicios en esta categoría.'}
+            />
           )}
 
           {!cargando && !error && servicios.length > 0 && (

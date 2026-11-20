@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import { Tags } from 'lucide-react'
+import { EstadoVacio } from '../../componentes/panel/EstadosPanel'
 import { api, ErrorApi } from '../../servicios/api'
 import type { Direccion } from './direccion'
 import './VistaPrevia.css'
@@ -153,10 +155,12 @@ export function VistaPrevia() {
           </section>
           <section className="panel-tarjeta" aria-labelledby="servicios-activos">
             <h2 id="servicios-activos" className="panel-tarjeta-titulo">Servicios activos</h2>
-            {datos.servicios.length === 0 ? <div className="panel-estado">
-              <div className="panel-estado-icono" aria-hidden="true">✦</div>
-              <p className="panel-estado-texto">No hay servicios activos para mostrar.</p>
-            </div> :
+            {datos.servicios.length === 0 ? <EstadoVacio
+              icono={Tags}
+              titulo="Sin servicios activos"
+              texto="No hay servicios activos para mostrar."
+              accion={<Link to="/servicios/nuevo" className="btn-servia-primary">Crear servicio</Link>}
+            /> :
               <ul className="panel-lista list-unstyled mb-0">{datos.servicios.map(servicio => <li className="panel-item" key={servicio.id}>
                 <div>
                   <h3 className="panel-item-titulo">{servicio.nombre}</h3>
