@@ -19,7 +19,7 @@ interface ProximaCita {
   servicioNombre: string;
   inicio: string;
   fin: string;
-  // Servia_BE#106: la API lo agregará; mientras no llegue, la fila no muestra chip.
+  // Servia_BE#106: la API lo agregará. Solo «pendiente» lleva chip; «proximas» trae confirmadas, que no se marcan.
   estado?: string;
 }
 interface DatosResumen {
@@ -212,7 +212,7 @@ export function Resumen() {
               <ul className="panel-lista resumen-lista">
                 {datos.proximas.map((cita) => {
                   const dia = etiquetaDia(cita.inicio, datos.generadoEn);
-                  const estado = cita.estado ? ESTADOS_CONFIG[cita.estado] : undefined;
+                  const pendiente = cita.estado === 'pendiente';
                   return (
                     <li key={cita.id}>
                       <Link to={`/reservas/${cita.id}`} className="panel-item resumen-cita">
@@ -229,7 +229,7 @@ export function Resumen() {
                           </span>
                         </span>
                         <span className="resumen-cita-meta">
-                          {cita.estado && <span className={`reserva-badge ${estado?.className ?? ''}`}>{estado?.label ?? cita.estado}</span>}
+                          {pendiente && <span className={`reserva-badge ${ESTADOS_CONFIG.pendiente.className}`}>{ESTADOS_CONFIG.pendiente.label}</span>}
                           <ChevronRight className="resumen-cita-chevron" aria-hidden="true" />
                         </span>
                       </Link>

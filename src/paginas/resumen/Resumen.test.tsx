@@ -144,14 +144,15 @@ describe('Resumen', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/bloqueos'));
   });
 
-  it('D28 muestra el chip de estado de cada próxima cita solo cuando la API manda «estado»', async () => {
+  it('D28 solo las citas con estado «pendiente» llevan chip; confirmada y sin estado no', async () => {
     respuestaResumen = resumen({ proximas: [cita(1, { estado: 'confirmada' }), cita(2, { estado: 'pendiente' }), cita(3)] });
     mostrar();
     const lista = within(await screen.findByRole('region', { name: 'Próximas citas' }));
     const [primera, segunda, tercera] = lista.getAllByRole('link');
-    expect(within(primera).getByText('Confirmada')).toHaveClass('reserva-badge', 'confirmada');
+    expect(primera.querySelector('.reserva-badge')).toBeNull();
     expect(within(segunda).getByText('Pendiente')).toHaveClass('reserva-badge', 'pendiente');
     expect(tercera.querySelector('.reserva-badge')).toBeNull();
+    expect(screen.queryByText('Confirmada')).not.toBeInTheDocument();
     expect(tercera).toHaveTextContent('Cliente 3');
   });
 
