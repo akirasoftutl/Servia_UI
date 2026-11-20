@@ -1380,6 +1380,8 @@ fieldset:disabled .btn-servia-secondary {
   }
 }
 
+/* Los asuntos admiten hasta 100 caracteres, incluso sin espacios. */
+.panel-reporte-asunto { overflow-wrap: anywhere; }
 /* Interruptor compartido: misma pista violeta y etiqueta que recepción de reservas. */
 .panel-interruptor {
   display: inline-flex;
