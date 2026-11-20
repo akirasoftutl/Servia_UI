@@ -20,6 +20,8 @@ vi.mock('../../servicios/api', () => ({
   },
 }));
 
+vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => ({ cerrarSesion: vi.fn() }) }));
+
 const apiMock = vi.mocked(api);
 
 function reserva(extra: Record<string, unknown> = {}) {
@@ -66,7 +68,7 @@ beforeEach(() => {
       if (ruta.endsWith('/aceptar')) colaDetalle[colaDetalle.length - 1] = reserva({ estado: 'confirmada', segundosRestantes: null });
       if (ruta.endsWith('/rechazar')) colaDetalle[colaDetalle.length - 1] = reserva({ estado: 'rechazada', segundosRestantes: null, motivo });
       if (ruta.endsWith('/cancelar')) colaDetalle[colaDetalle.length - 1] = reserva({ estado: 'cancelada', segundosRestantes: null, motivo });
-      return {};
+      return respuestaPatch ?? {};
     }
     const respuesta = colaDetalle.length > 1 ? colaDetalle.shift() : colaDetalle[0];
     if (respuesta instanceof Error) throw respuesta;
@@ -97,6 +99,19 @@ async function listo(datos?: unknown) {
 }
 
 describe('DetalleReserva', () => {
+  it('MVP-27 completa tras confirmar y usa el detalle devuelto sin otro GET', async () => {
+    await listo(reserva({ estado: 'confirmada', inicio: '2020-01-01T12:00:00Z', segundosRestantes: null }));
+    responderPatch(reserva({ estado: 'completada', segundosRestantes: null }));
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar como completada' }));
+    expect(llamadas('/reservas/negocio/r1/completar')).toHaveLength(0);
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Reserva marcada como completada.');
+    expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/completar', { method: 'PATCH' });
+    expect(screen.getByText('Completada')).toBeInTheDocument();
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    expect(llamadas('/reservas/negocio/r1')).toHaveLength(1);
+  });
+
   it('muestra el estado de carga mientras llega el detalle', async () => {
     const carga = pendiente();
     responderDetalle(carga.promesa);

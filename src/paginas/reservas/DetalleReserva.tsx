@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
+import { useAuth } from '../../contextos/AuthContext';
 import { api, ErrorApi } from '../../servicios/api';
 import { ESTADOS_CONFIG, formatearFecha, formatearHora, calcularTiempoRestante } from './estados';
 import './Reservas.css';
@@ -23,11 +24,14 @@ interface DetalleReservaAPI {
 
 export function DetalleReserva() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { cerrarSesion } = useAuth();
   const [reserva, setReserva] = useState<DetalleReservaAPI | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
   // Modales y acciones
+  const [mostrarCompletar, setMostrarCompletar] = useState(false);
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
   const [mostrarRechazar, setMostrarRechazar] = useState(false);
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -95,17 +99,41 @@ export function DetalleReserva() {
     setMensajeExito('');
   };
 
-  const mostrarErrorAccion = (err: unknown) => {
-    const mensaje = err instanceof ErrorApi ? err.message : 'No pudimos guardar tu respuesta. Intenta de nuevo.';
+  const mostrarErrorAccion = (err: unknown, completando = false) => {
+    const mensaje = completando && err instanceof ErrorApi && err.estado === 404
+      ? 'La reserva no existe.'
+      : err instanceof ErrorApi ? err.message
+      : completando ? 'No se pudo conectar. Inténtalo de nuevo.'
+      : 'No pudimos guardar tu respuesta. Intenta de nuevo.';
     setMensajeError(mensaje);
     setErrorMotivo(mensaje);
     if (err instanceof ErrorApi && (err.estado === 409 || err.estado === 400)) {
       if (err.estado === 409) {
+        setMostrarCompletar(false);
         setMostrarConfirmar(false);
         setMostrarRechazar(false);
         setMostrarModal(false);
       }
       void cargarDetalle();
+    }
+  };
+
+  const handleCompletar = async () => {
+    iniciarAccion();
+    try {
+      const detalle = await api<DetalleReservaAPI>(`/reservas/negocio/${id}/completar`, { method: 'PATCH' });
+      setReserva(detalle);
+      setMensajeExito('Reserva marcada como completada.');
+      setMostrarCompletar(false);
+    } catch (err: unknown) {
+      if (err instanceof ErrorApi && err.estado === 401) {
+        await cerrarSesion();
+        navigate('/login', { replace: true });
+      } else {
+        mostrarErrorAccion(err, true);
+      }
+    } finally {
+      setProcesando(false);
     }
   };
 
@@ -173,6 +201,7 @@ export function DetalleReserva() {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        setMostrarCompletar(false);
         setMostrarConfirmar(false);
         setMostrarRechazar(false);
         setMostrarModal(false);
@@ -205,6 +234,8 @@ export function DetalleReserva() {
   const estadoConfig = ESTADOS_CONFIG[reserva.estado] || { label: reserva.estado, className: '' };
 
   const esPendienteVigente = reserva.estado === 'pendiente' && (segundosRestantes === null || segundosRestantes > 0);
+  // RN-51/RN-54: solo una Confirmada iniciada se puede cerrar; usar el reloj vivo.
+  const puedeCompletar = reserva.estado === 'confirmada' && Date.parse(reserva.inicio) <= ahora;
   const puedeCancelar = reserva.estado === 'confirmada' && Date.parse(reserva.inicio) > ahora;
 
   return (
@@ -303,6 +334,17 @@ export function DetalleReserva() {
 
             <Link to="/reservas" className="btn-servia-secondary text-decoration-none">Volver a reservas</Link>
 
+            {puedeCompletar && (
+              <button
+                type="button"
+                className="btn-servia-primary"
+                onClick={() => { setErrorMotivo(''); setMostrarCompletar(true); }}
+                disabled={procesando}
+              >
+                Marcar como completada
+              </button>
+            )}
+
             {puedeCancelar && (
               <button
                 type="button"
@@ -352,17 +394,18 @@ export function DetalleReserva() {
         </div>
       )}
 
-      {mostrarConfirmar && (
+      {(mostrarConfirmar || mostrarCompletar) && (
         <div className="panel-dialogo-fondo" role="alertdialog" aria-modal="true">
           <div className="panel-dialogo">
-            <h3 className="panel-dialogo-titulo">¿Confirmar la reserva?</h3>
+            <h3 className="panel-dialogo-titulo">{mostrarCompletar ? '¿Marcar esta reserva como completada? Ya no se podrá modificar.' : '¿Confirmar la reserva?'}</h3>
             <p className="text-muted mb-4">
-              ¿Confirmar la reserva de <strong>{reserva.cliente.nombre}</strong> el {formatearFecha(reserva.inicio)} a las {formatearHora(reserva.inicio)}?
+              {mostrarCompletar ? <>Reserva <strong>{reserva.folio}</strong> de </> : '¿Confirmar la reserva de '}
+              <strong>{reserva.cliente.nombre}</strong> el {formatearFecha(reserva.inicio)} a las {formatearHora(reserva.inicio)}{mostrarCompletar ? '.' : '?'}
             </p>
             {errorMotivo && <div className="panel-alerta panel-alerta--error" role="alert"><div className="panel-alerta-contenido">{errorMotivo}</div></div>}
             <div className="panel-dialogo-acciones">
-              <button className="btn-servia-secondary" onClick={() => setMostrarConfirmar(false)} disabled={procesando}>Cancelar</button>
-              <button className="btn-servia-primary" onClick={handleAceptar} disabled={procesando}>
+              <button className="btn-servia-secondary" onClick={() => { setMostrarConfirmar(false); setMostrarCompletar(false); }} disabled={procesando}>Cancelar</button>
+              <button className="btn-servia-primary" onClick={mostrarCompletar ? handleCompletar : handleAceptar} disabled={procesando}>
                 {procesando ? 'Confirmando...' : 'Confirmar'}
               </button>
             </div>
