@@ -531,3 +531,24 @@ describe('Mi perfil: después de guardar (#122)', () => {
     expect(window.scrollTo).not.toHaveBeenCalled()
   })
 })
+
+describe('Mi perfil: limpieza (#116)', () => {
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  it('C1: el paso 1 ya no tiene «Imagen de tu negocio» y «Fotos» explica que se suben aparte', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    const { container } = render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    expect(await screen.findByRole('heading', { name: 'Información general' })).toBeInTheDocument()
+    expect(screen.queryByText('Imagen de tu negocio')).not.toBeInTheDocument()
+    expect(screen.queryByText('Seleccionar imagen')).not.toBeInTheDocument()
+    expect(container.querySelector('#logo-upload')).toBeNull()
+    // Los únicos selectores de archivo son los de la sección Fotos.
+    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(2)
+    expect(screen.getByRole('heading', { name: 'Fotos' })).toBeInTheDocument()
+    expect(screen.getByText(/se suben aparte y al instante/)).toBeInTheDocument()
+    expect(screen.getByText(/se suben aparte y al instante/)).toHaveTextContent('Guardar cambios')
+  })
+})

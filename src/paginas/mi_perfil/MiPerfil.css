@@ -35,55 +35,6 @@
   margin-top: var(--sv-esp-2);
 }
 
-/* Imagen del negocio */
-.perfil-upload {
-  padding: var(--sv-esp-4);
-  border: 1px solid var(--sv-borde);
-  border-radius: var(--sv-radio-md);
-  background: var(--sv-superficie-suave);
-}
-
-.perfil-upload-titulo {
-  margin: 0 0 var(--sv-esp-2);
-  color: var(--sv-texto);
-  font-size: 15px;
-  font-weight: 750;
-}
-
-.perfil-image-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  border: 1px dashed #d7d2e3;
-  border-radius: var(--sv-radio-md);
-  background: #f1f0f6;
-  color: var(--sv-texto-tenue);
-}
-
-.perfil-image-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.perfil-image-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 0 var(--sv-esp-4);
-  font-size: var(--sv-texto-sm);
-  text-align: center;
-}
-
-.perfil-image-placeholder svg {
-  width: 42px;
-  height: 42px;
-}
-
 /* Tarjetas de categoría (la imagen de fondo llega en línea desde el TSX) */
 .perfil-category {
   position: relative;

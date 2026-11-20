@@ -207,6 +207,9 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               Sube tu portada y hasta {MAX_FOTOS_GALERIA} fotos de galería para que los clientes conozcan tu negocio.
               Formatos JPEG, PNG o WebP de hasta 5 MB.
             </p>
+            <p className="panel-ayuda" id="aviso-fotos-aparte">
+              Las fotos se suben aparte y al instante: no necesitas pulsar «Guardar cambios» del perfil.
+            </p>
           </div>
           <span className="panel-contador">
             {fotos.galeria.length} / {MAX_FOTOS_GALERIA} en galería

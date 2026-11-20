@@ -75,8 +75,6 @@ export function MiPerfil() {
   const [guardando, setGuardando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
 
-  // Estado local para la vista previa de la imagen
-  const [imagenPreview, setImagenPreview] = useState<string | null>(null);
   const [fotos, setFotos] = useState<FotosNegocioDatos>(FOTOS_VACIAS);
 
 
@@ -143,17 +141,6 @@ export function MiPerfil() {
   const handleCategoriaChange = (id: string) => {
     setForm({ ...form, categoriaId: id });
     setErrores({ ...errores, categoriaId: '' });
-  };
-
-  const handleImagenChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagenPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   // Validación por paso individual
@@ -345,7 +332,7 @@ export function MiPerfil() {
                   <div className="row g-4">
 
                     {/* Campos del negocio */}
-                    <div className="col-12 col-lg-7">
+                    <div className="col-12">
                       <div className="row g-3">
 
                         <div className="col-12 col-md-6">
@@ -474,75 +461,6 @@ export function MiPerfil() {
                           </div>
                         </div>
 
-                      </div>
-                    </div>
-
-              
-                    <div className="col-12 col-lg-5">
-                      <div className="perfil-upload h-100">
-                        <h3 className="perfil-upload-titulo">
-                          Imagen de tu negocio
-                        </h3>
-
-                        <p className="panel-ayuda mb-3">
-                          Agrega tu logotipo o una imagen que
-                          represente tu establecimiento.
-                        </p>
-
-                        <div className="perfil-image-preview mb-3">
-                          {imagenPreview ? (
-                            <img
-                              src={imagenPreview}
-                              alt="Vista previa de la imagen del negocio"
-                            />
-                          ) : (
-                            <div className="perfil-image-placeholder">
-                              <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                aria-hidden="true"
-                              >
-                                <rect
-                                  x="3"
-                                  y="3"
-                                  width="18"
-                                  height="18"
-                                  rx="3"
-                                />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <path d="m21 15-5-5L5 21" />
-                              </svg>
-
-                              <span>
-                                Aún no has seleccionado una imagen
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <input
-                          type="file"
-                          id="logo-upload"
-                          accept="image/png,image/jpeg,image/webp"
-                          className="d-none"
-                          onChange={handleImagenChange}
-                        />
-
-                        <label
-                          htmlFor="logo-upload"
-                          className="btn-servia-secondary btn-servia-bloque"
-                        >
-
-                          {imagenPreview
-                            ? 'Cambiar imagen'
-                            : 'Seleccionar imagen'}
-                        </label>
-
-                        <p className="panel-ayuda text-center mt-3 mb-0">
-                          Máximo 5 MB
-                        </p>
                       </div>
                     </div>
 
