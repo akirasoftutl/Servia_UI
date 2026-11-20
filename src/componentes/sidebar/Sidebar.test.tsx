@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, MemoryRouter, Route, RouterProvider, Routes } from 'react-router'
+import { readFileSync } from 'node:fs'
 import { Sidebar } from './Sidebar'
 
 const sesion = vi.hoisted(() => ({ usuario: { uid: 'ana', email: 'ana@ejemplo.com' } }))
@@ -204,5 +205,36 @@ describe('UI108 ítem activo según la ruta', () => {
     expect(activos()).toEqual(['Resumen'])
     await act(async () => { await router.navigate('/bloqueos') })
     expect(activos()).toEqual(['Bloqueos'])
+  })
+})
+
+describe('UI108 íconos del menú', () => {
+  beforeEach(() => pantalla(false))
+  const items = () => [...document.querySelectorAll<HTMLElement>('.nav-link')]
+  const etiqueta = (b: HTMLElement) => b.querySelector('span:not([aria-hidden])')?.textContent
+
+  it('cada ítem lleva un único svg de lucide, decorativo y sin glifos de texto', () => {
+    render(barra())
+    expect(items()).toHaveLength(10)
+    for (const b of items()) {
+      expect(b.querySelectorAll('svg')).toHaveLength(1)
+      expect(b.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+      expect(b.querySelector('svg')).toHaveClass('lucide')
+      expect(b.textContent).toBe(etiqueta(b))
+    }
+  })
+  it('ningún ícono se repite entre ítems', () => {
+    render(barra())
+    const icono = (b: HTMLElement) => [...b.querySelector('svg')!.classList].find((c) => c.startsWith('lucide-') && c !== 'lucide')
+    const nombres = items().map(icono)
+    expect(nombres.every(Boolean)).toBe(true)
+    expect(new Set(nombres).size).toBe(items().length)
+  })
+  it('el tamaño de los íconos lo fija una sola regla CSS con variable, no el marcado', () => {
+    const css = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8')
+    const regla = css.match(/\.nav-link svg\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(regla).toMatch(/width:\s*var\(--sv-icono-nav\)/)
+    expect(regla).toMatch(/height:\s*var\(--sv-icono-nav\)/)
+    expect(readFileSync('src/estilos/panel.css', 'utf8')).toMatch(/--sv-icono-nav:\s*20px/)
   })
 })

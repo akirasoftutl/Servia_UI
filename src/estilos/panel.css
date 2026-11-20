@@ -93,6 +93,11 @@
   --sv-rapido: 160ms;
   --sv-curva: cubic-bezier(0.22, 1, 0.36, 1);
 
+  /* Íconos y objetivos táctiles */
+  --sv-icono-nav: 20px;
+  --sv-icono-menu: 16px;
+  --sv-objetivo-tactil: 44px;
+
   /* Anchos */
   --sv-ancho-contenedor: 1080px;
   --sv-ancho-dialogo: 480px;

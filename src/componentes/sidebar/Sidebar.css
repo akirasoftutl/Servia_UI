@@ -87,6 +87,13 @@
   margin: 4px 0;
 }
 
+.dropdown-item svg,
+.chevron-icon {
+  width: var(--sv-icono-menu);
+  height: var(--sv-icono-menu);
+  flex: none;
+}
+
 /* Rotación de la flecha al estar abierto */
 .chevron-icon {
   transition: transform 0.2s ease;
@@ -259,6 +266,13 @@
 .nav-link:hover {
   background-color: var(--bg-hover);
   color: var(--text-main);
+}
+
+/* Todos los íconos del menú comparten tamaño; el trazo lo pone lucide. */
+.nav-link svg {
+  width: var(--sv-icono-nav);
+  height: var(--sv-icono-nav);
+  flex: none;
 }
 
 /* Estado Activo: Borde Morado Fuerte + Interior Translúcido */
