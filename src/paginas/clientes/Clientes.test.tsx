@@ -17,7 +17,7 @@ it('C1 muestra contacto, totales distintos y enlace al cliente', async () => {
   expect(screen.getByRole('link', { name: 'Ana Pérez' })).toHaveAttribute('href', '/clientes/ana');
   expect(screen.getByRole('link', { name: cliente.telefono })).toHaveAttribute('href', 'tel:4771234567');
   expect(screen.getByRole('link', { name: cliente.correo })).toHaveAttribute('href', 'mailto:ana@correo.mx');
-  expect(screen.getByText('Última visita: 03/11/30 a las 20:00')).toBeInTheDocument();
+  expect(screen.getByText('Última reserva: 03/11/30 a las 20:00')).toBeInTheDocument();
 });
 it('D17 la tarjeta tiene avatar con iniciales y tres mini-métricas con el valor de cada una', async () => {
   abrir(); await avanzar();

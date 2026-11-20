@@ -16,7 +16,7 @@ export function TarjetaCliente({ cliente }: { cliente: Cliente }) {
           {cliente.telefono && <a className="clientes-dato-linea" href={`tel:${cliente.telefono}`}><Phone aria-hidden="true" />{cliente.telefono}</a>}
           {cliente.correo && <a className="clientes-dato-linea" href={`mailto:${cliente.correo}`}><Mail aria-hidden="true" />{cliente.correo}</a>}
         </div>}
-        <span className="clientes-ultima-visita"><Clock aria-hidden="true" />Última visita: {fechaHoraMexico(cliente.ultimaReserva)}</span>
+        <span className="clientes-ultima-visita"><Clock aria-hidden="true" />Última reserva: {fechaHoraMexico(cliente.ultimaReserva)}</span>
       </div>
     </div>
     <div className="clientes-derecha">

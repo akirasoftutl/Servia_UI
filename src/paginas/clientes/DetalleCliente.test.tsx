@@ -74,8 +74,8 @@ it('D18 la ficha muestra avatar, botones de contacto y los cuatro indicadores co
   expect(ficha.querySelector('.cliente-perfil-avatar')).toHaveTextContent(/^DH$/);
   expect(within(ficha).getByRole('link', { name: cliente.telefono })).toHaveClass('cliente-contacto-chip');
   expect(within(ficha).getByRole('link', { name: cliente.correo })).toHaveClass('cliente-contacto-chip');
-  expect(within(ficha).getAllByRole('term').map((t) => t.textContent)).toEqual(['Total de reservas', 'Completadas', 'Canceladas', 'Última visita']);
-  const visita = within(ficha).getByText('Última visita', { selector: 'dt' }).closest('.cliente-stat')!;
+  expect(within(ficha).getAllByRole('term').map((t) => t.textContent)).toEqual(['Total de reservas', 'Completadas', 'Canceladas', 'Última reserva']);
+  const visita = within(ficha).getByText('Última reserva', { selector: 'dt' }).closest('.cliente-stat')!;
   expect(visita.querySelector('dd')).toHaveTextContent('3 nov 2030');
   expect(visita).toHaveTextContent('A las 20:00 h');
 });

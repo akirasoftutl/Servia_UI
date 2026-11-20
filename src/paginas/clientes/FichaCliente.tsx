@@ -35,7 +35,7 @@ export function FichaCliente({ cliente }: { cliente: Cliente }) {
       <Indicador etiqueta="Total de reservas" valor={cliente.totalReservas} icono={CalendarDays} nota="Historial acumulado" />
       <Indicador etiqueta="Completadas" valor={cliente.completadas} icono={CircleCheck} tono="exito" />
       <Indicador etiqueta="Canceladas" valor={cliente.canceladas} icono={CircleX} tono="peligro" />
-      <Indicador etiqueta="Última visita" valor={diaMedioMexico(cliente.ultimaReserva)} icono={Clock} tono="info" fecha
+      <Indicador etiqueta="Última reserva" valor={diaMedioMexico(cliente.ultimaReserva)} icono={Clock} tono="info" fecha
         nota={`A las ${horaMexico.format(new Date(cliente.ultimaReserva))} h`} />
     </dl>
   </>;
