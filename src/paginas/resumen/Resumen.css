@@ -276,4 +276,6 @@
     padding-top: var(--sv-esp-2);
     border-top: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
   }
+  /* Sin chip, la fila no necesita pie: solo quedaría la flecha. */
+  .resumen-cita-meta--solo-flecha { display: none; }
 }

@@ -228,7 +228,7 @@ export function Resumen() {
                             </span>
                           </span>
                         </span>
-                        <span className="resumen-cita-meta">
+                        <span className={`resumen-cita-meta${pendiente ? '' : ' resumen-cita-meta--solo-flecha'}`}>
                           {pendiente && <span className={`reserva-badge ${ESTADOS_CONFIG.pendiente.className}`}>{ESTADOS_CONFIG.pendiente.label}</span>}
                           <ChevronRight className="resumen-cita-chevron" aria-hidden="true" />
                         </span>

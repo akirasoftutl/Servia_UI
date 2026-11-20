@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { MAX_DIAS_SEPARADOS, MAX_VALORES, etiquetaCorta, indicePico, indicesEtiquetas, marcasEje, promedioDiario, techoEscala, type DiaReservas } from './grafica';
+import { MAX_DIAS_SEPARADOS, MAX_ETIQUETAS, MAX_VALORES, etiquetaCorta, indicePico, indicesEtiquetas, marcasEje, promedioDiario, techoEscala, type DiaReservas } from './grafica';
 
 const reservas = (n: number) => `${n} ${n === 1 ? 'reserva' : 'reservas'}`;
 const decimal = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 1 });
@@ -45,9 +45,12 @@ export function GraficaReservas({ porDia, etiquetaAccesible }: { porDia: DiaRese
               </div>
             </div>)}
         </div>
-        <div className="grafica-eje-x">{etiquetas.map((i) =>
-          <span className={`grafica-fecha${i === pico ? ' grafica-fecha--pico' : ''}`} key={porDia[i].fecha}
-            style={{ left: `${(i + 0.5) / porDia.length * 100}%` }}>{etiquetaCorta(porDia[i].fecha)}</span>)}</div>
+        <div className="grafica-eje-x">{etiquetas.map((i) => {
+          // Con muchos días, la primera y la última etiqueta se pegan a los bordes para no salirse del marco.
+          const borde = porDia.length > MAX_ETIQUETAS ? (i === 0 ? ' grafica-fecha--inicio' : i === porDia.length - 1 ? ' grafica-fecha--fin' : '') : '';
+          return <span className={`grafica-fecha${i === pico ? ' grafica-fecha--pico' : ''}${borde}`} key={porDia[i].fecha}
+            style={borde ? undefined : { left: `${(i + 0.5) / porDia.length * 100}%` }}>{etiquetaCorta(porDia[i].fecha)}</span>;
+        })}</div>
       </div>
     </div>
     {/* Contenedor de bloque: en display:table .visually-hidden no recorta el alto de las filas y desborda el layout. */}

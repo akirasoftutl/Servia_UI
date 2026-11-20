@@ -60,6 +60,7 @@
   justify-content: space-between;
   gap: var(--sv-esp-2);
 }
+.estadisticas-kpi-top > span:first-child { min-width: 0; overflow-wrap: anywhere; }
 .estadisticas-kpi-icono {
   display: grid;
   flex: 0 0 auto;
@@ -229,6 +230,8 @@
   transform: translateX(-50%);
   white-space: nowrap;
 }
+.grafica-fecha--inicio { left: 0; transform: none; }
+.grafica-fecha--fin { right: 0; transform: none; }
 .grafica-fecha--pico { color: var(--sv-titulo); font-weight: 700; }
 
 /* Servicios más reservados con barra de participación */
@@ -268,6 +271,8 @@
 .estadisticas-progreso-barra { height: 100%; border-radius: var(--sv-radio-pill); background: var(--sv-acento); }
 
 @media (max-width: 650px) {
+  .estadisticas-metricas .panel-item { padding: var(--sv-esp-3); }
+  .estadisticas-kpi-top > span:first-child { font-size: var(--sv-texto-xs); }
   .estadisticas-periodo-barra .panel-pestanas { width: 100%; }
   .estadisticas-periodo-barra .panel-pestanas button { padding: var(--sv-esp-2); font-size: var(--sv-texto-xs); white-space: nowrap; }
   .grafica-marco { padding: var(--sv-esp-4) var(--sv-esp-3) var(--sv-esp-3); }

@@ -296,7 +296,7 @@ describe('Estadísticas', () => {
     expect(marcasEje(16)).toEqual([16, 11, 5, 0]);
     expect(marcasEje(2)).toEqual([2, 1, 0]);
     expect(indicesEtiquetas(3)).toEqual([0, 1, 2]);
-    expect(indicesEtiquetas(90)).toEqual([0, 15, 30, 45, 59, 74, 89]);
+    expect(indicesEtiquetas(90)).toEqual([0, 18, 36, 53, 71, 89]);
     expect(indicesEtiquetas(366).at(-1)).toBe(365);
     expect(promedioDiario([{ fecha: 'a', reservas: 9 }, { fecha: 'b', reservas: 12 }, { fecha: 'c', reservas: 16 }])).toBe(12.3);
     expect(promedioDiario([])).toBe(0);

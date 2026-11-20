@@ -2,7 +2,7 @@
 export interface DiaReservas { fecha: string; reservas: number }
 
 /** Hasta cuántas etiquetas de fecha caben en el eje sin encimarse, incluso a 375 px. */
-export const MAX_ETIQUETAS = 7;
+export const MAX_ETIQUETAS = 6;
 /** Hasta cuántas barras llevan su valor encima; con más, solo el pico. */
 export const MAX_VALORES = 14;
 /** Con más días que esto las barras se juntan (sin separación) para seguir siendo legibles. */
