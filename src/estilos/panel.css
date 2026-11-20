@@ -1475,6 +1475,92 @@ fieldset:disabled .btn-servia-secondary {
 .panel-acordeon > [role='region'] {
   padding: var(--sv-esp-3) var(--sv-esp-4);
 }
+/* Avisos: globo de no leídos en barra lateral, fila destacada y aviso en primer plano. */
+.panel-sidebar-globo {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--sv-esp-5);
+  height: var(--sv-esp-5);
+  padding: 0 var(--sv-esp-2);
+  border-radius: var(--sv-radio-pill);
+  background: var(--sv-morado);
+  color: var(--sv-superficie);
+  font-size: var(--sv-texto-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.panel-avisos-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.panel-aviso-item {
+  width: 100%;
+  flex-wrap: wrap;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+.panel-aviso-item:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
+}
+.panel-item--no-leido {
+  border-color: var(--sv-acento-borde);
+  background: var(--sv-acento-suave);
+}
+.panel-item--no-leido::before {
+  transform: scaleY(1);
+}
+.panel-aviso-cuerpo {
+  flex: 1 1 calc(var(--sv-esp-7) * 5);
+  min-width: 0;
+}
+.panel-aviso-titulo,
+.panel-aviso-texto {
+  display: block;
+}
+.panel-aviso-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sv-esp-2);
+  flex: 0 0 auto;
+}
+.panel-alerta--apilable {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.panel-alerta--apilable .panel-alerta-contenido {
+  flex: 1 1 calc(var(--sv-esp-7) * 5);
+}
+.panel-aviso-fecha {
+  color: var(--sv-texto-tenue);
+  font-size: var(--sv-texto-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.panel-aviso-flotante {
+  position: fixed;
+  top: var(--sv-esp-4);
+  right: var(--sv-esp-4);
+  z-index: 1090;
+  width: min(var(--sv-ancho-dialogo), calc(100% - var(--sv-esp-5)));
+}
+.panel-aviso-flotante-tarjeta {
+  margin-bottom: 0;
+  box-shadow: var(--sv-sombra-panel);
+}
+.panel-aviso-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sv-esp-2);
+}
 /* Fotos del negocio: portada, vista previa y cuadrícula de galería. */
 .panel-fotos-bloque + .panel-fotos-bloque {
   margin-top: var(--sv-esp-5);

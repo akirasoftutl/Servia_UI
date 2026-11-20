@@ -1,16 +1,18 @@
-import { Bell, CalendarCheck, CalendarOff, ChartColumn, ChevronRight, CircleHelp, Clock, LayoutDashboard, LogOut, Menu, MessageSquareWarning, Scissors, Settings, UserRound, Users, X, type LucideIcon } from 'lucide-react';
+import { Bell, CalendarCheck, CalendarOff, ChartColumn, ChevronRight, CircleHelp, Clock, Inbox, LayoutDashboard, LogOut, Menu, MessageSquareWarning, Scissors, Settings, UserRound, Users, X, type LucideIcon } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import './Sidebar.css';
 import '../../estilos/panel.css';
 import { api } from '../../servicios/api';
 import { useAuth } from '../../contextos/AuthContext';
+import { useNotificaciones } from '../../contextos/notificacionesContexto';
 
 interface NavItem {
   id: string;
   label: string;
   icono: LucideIcon;
   ruta?: string;
+  badge?: number;
 }
 
 interface NavGroup {
@@ -68,6 +70,7 @@ export const Sidebar: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { cerrarSesion, usuario } = useAuth();
+  const { noLeidas } = useNotificaciones();
   const [negocio, setNegocio] = useState<{ uid: string; nombre: string } | null>(null);
   const uid = usuario?.uid;
   const correo = usuario?.email ?? '';
@@ -110,6 +113,7 @@ export const Sidebar: React.FC = () => {
         { id: 'reservas', label: 'Reservas', ruta: '/reservas', icono: CalendarCheck },
         { id: 'servicios', label: 'Servicios', ruta: '/servicios', icono: Scissors },
         { id: 'clientes', label: 'Clientes', ruta: '/clientes', icono: Users },
+        { id: 'avisos', label: 'Avisos', ruta: '/avisos', icono: Inbox, badge: noLeidas },
       ],
     },
     {
@@ -153,6 +157,7 @@ export const Sidebar: React.FC = () => {
                   <li key={item.id} className="nav-item">
                     <button
                       className={`nav-link ${isActive ? 'active' : ''}`}
+                      aria-label={item.badge ? `${item.label}, ${item.badge} ${item.badge === 1 ? 'aviso sin leer' : 'avisos sin leer'}` : undefined}
                       aria-current={isActive ? 'page' : undefined}
                       onClick={() => {
                         setAbierta(false);
@@ -161,6 +166,11 @@ export const Sidebar: React.FC = () => {
                     >
                       <Icono aria-hidden="true" />
                       <span>{item.label}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span className="panel-sidebar-globo" aria-hidden="true">
+                          {item.badge}
+                        </span>
+                      )}
                     </button>
                   </li>
                 );

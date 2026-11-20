@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth } from '../servicios/firebase';
 import { api } from '../servicios/api';
+import { desactivarTokenPushActual } from '../servicios/notificaciones';
 
 interface AuthContextType {
   usuario: User | null;
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const cerrarSesion = async () => {
+    await desactivarTokenPushActual();
     await signOut(auth!);
     setUsuario(null);
   };
