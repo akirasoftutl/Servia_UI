@@ -240,6 +240,37 @@
   color: var(--text-main);
 }
 
+/* Botón solo de ícono para la barra y el cajón oscuros (abrir y cerrar el menú). */
+.panel-boton-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--sv-objetivo-tactil);
+  height: var(--sv-objetivo-tactil);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--sv-radio-sm);
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color var(--sv-rapido) var(--sv-curva);
+}
+
+.panel-boton-icono:hover {
+  background-color: var(--bg-hover);
+}
+
+.panel-boton-icono:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
+}
+
+.panel-boton-icono svg {
+  width: var(--sv-icono-nav);
+  height: var(--sv-icono-nav);
+}
+
 /* Todos los íconos del menú comparten tamaño; el trazo lo pone lucide. */
 .nav-link svg {
   width: var(--sv-icono-nav);

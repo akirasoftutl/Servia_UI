@@ -287,3 +287,38 @@ it('UI108 los ítems ocupan todo el ancho y comparten letra y alto mínimo del s
   expect(enlace).toMatch(/min-height:\s*var\(--sv-objetivo-tactil\)/)
   expect(readFileSync('src/estilos/panel.css', 'utf8')).toMatch(/--sv-objetivo-tactil:\s*44px/)
 })
+
+describe('UI108 barra móvil y cajón', () => {
+  const panelCss = readFileSync('src/estilos/panel.css', 'utf8')
+  const bloqueCajon = panelCss.match(/@media \(max-width: (\d+)px\) \{\s*\.layout\.layout--with-sidebar \{ flex-direction: column; \}([\s\S]*?)\n\}\n/)
+
+  it('el cajón se activa a 900 px en JS y en CSS con el mismo valor (cubre tablet)', () => {
+    pantalla(true)
+    render(barra())
+    const consultas = vi.mocked(window.matchMedia).mock.calls.map(([consulta]) => consulta)
+    expect(consultas.length).toBeGreaterThan(0)
+    expect(new Set(consultas)).toEqual(new Set(['(max-width: 900px)']))
+    expect(bloqueCajon?.[1]).toBe('900')
+  })
+  it('la barra superior usa la superficie oscura del cajón y no la blanca del panel', () => {
+    const barraMovil = bloqueCajon?.[2].match(/\.panel-barra-movil\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(barraMovil).toMatch(/background:\s*var\(--bg-sidebar\)/)
+    expect(barraMovil).toMatch(/color:\s*var\(--text-main\)/)
+    expect(barraMovil).not.toMatch(/--sv-superficie/)
+  })
+  it('abrir y cerrar usan íconos de lucide en botones propios del fondo oscuro, sin glifos ni botón secundario', async () => {
+    pantalla(true)
+    render(barra())
+    const abrir = screen.getByRole('button', { name: 'Abrir menú' })
+    expect(abrir.querySelector('svg')).toHaveClass('lucide-menu')
+    expect(abrir.textContent).toBe('')
+    await userEvent.click(abrir)
+    const cerrar = within(screen.getByRole('complementary')).getByRole('button', { name: 'Cerrar menú' })
+    expect(cerrar.querySelector('svg')).toHaveClass('lucide-x')
+    expect(cerrar.textContent).toBe('')
+    for (const boton of [abrir, cerrar]) {
+      expect(boton).toHaveClass('panel-boton-icono')
+      expect(boton).not.toHaveClass('btn-servia-secondary')
+    }
+  })
+})

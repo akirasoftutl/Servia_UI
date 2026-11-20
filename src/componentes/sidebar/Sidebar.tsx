@@ -1,4 +1,4 @@
-import { Bell, CalendarCheck, CalendarOff, ChartColumn, ChevronRight, CircleHelp, Clock, LayoutDashboard, LogOut, MessageSquareWarning, Scissors, Settings, UserRound, Users, type LucideIcon } from 'lucide-react';
+import { Bell, CalendarCheck, CalendarOff, ChartColumn, ChevronRight, CircleHelp, Clock, LayoutDashboard, LogOut, Menu, MessageSquareWarning, Scissors, Settings, UserRound, Users, X, type LucideIcon } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import './Sidebar.css';
@@ -22,14 +22,17 @@ interface NavGroup {
 const esRutaActiva = (ruta: string | undefined, pathname: string) =>
   !!ruta && (pathname === ruta || pathname.startsWith(`${ruta}/`));
 
+// Debe coincidir con el punto de corte del cajón en panel.css (@media (max-width: 900px)).
+const CONSULTA_CAJON = '(max-width: 900px)';
+
 export const Sidebar: React.FC = () => {
-  const [angosta, setAngosta] = useState(() => window.matchMedia?.('(max-width: 650px)').matches ?? false);
+  const [angosta, setAngosta] = useState(() => window.matchMedia?.(CONSULTA_CAJON).matches ?? false);
   const [abierta, setAbierta] = useState(false);
   const botonMenu = useRef<HTMLButtonElement>(null);
   const barra = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const media = window.matchMedia?.('(max-width: 650px)');
+    const media = window.matchMedia?.(CONSULTA_CAJON);
     if (!media) return;
     const actualizar = () => { setAngosta(media.matches); setAbierta(false); };
     media.addEventListener('change', actualizar);
@@ -125,16 +128,16 @@ export const Sidebar: React.FC = () => {
   return (
     <>
     <header className="panel-barra-movil">
-      <button ref={botonMenu} className="btn-servia-secondary" aria-label={abierta ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={abierta} aria-controls="panel-navegacion" onClick={() => setAbierta(!abierta)}>☰</button>
-      <span>Servia</span>
+      <button ref={botonMenu} className="panel-boton-icono" aria-label={abierta ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={abierta} aria-controls="panel-navegacion" onClick={() => setAbierta(!abierta)}><Menu aria-hidden="true" /></button>
+      <span className="panel-barra-movil-marca">Servia</span>
     </header>
     {angosta && abierta && <button className="panel-menu-fondo" aria-label="Cerrar menú al tocar fuera" tabIndex={-1} onClick={() => setAbierta(false)} />}
     <aside ref={barra} id="panel-navegacion" aria-label="Navegación del panel" className="sidebar panel-barra-lateral" hidden={angosta && !abierta}>
       <div className="sidebar-header">
-        {angosta && <button className="btn-servia-secondary" aria-label="Cerrar menú" onClick={() => setAbierta(false)}>×</button>}
         <div className="brand">
           <h1 className="brand-title">Servia</h1>
         </div>
+        {angosta && <button className="panel-boton-icono" aria-label="Cerrar menú" onClick={() => setAbierta(false)}><X aria-hidden="true" /></button>}
 
       </div>
 
