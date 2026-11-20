@@ -34,6 +34,7 @@ interface VistaPreviaPendiente {
 
 interface FotoEnEliminacion {
   foto: FotoNegocio;
+  tipo: TipoFotoNegocio;
   numero: number;
 }
 
@@ -164,7 +165,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
 
   const confirmarEliminacion = async () => {
     if (!fotoPorEliminar || bloqueoRef.current) return;
-    const { foto } = fotoPorEliminar;
+    const { foto, tipo } = fotoPorEliminar;
     bloqueoRef.current = true;
     setOperacion('borrando');
     setError('');
@@ -173,13 +174,13 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
     try {
       await eliminarFotoNegocio(foto.id);
       if (!montadoRef.current) return;
-      const nuevas: FotosNegocio = {
-        ...fotos,
-        galeria: fotos.galeria.filter((item) => item.id !== foto.id),
-      };
+      const nuevas: FotosNegocio =
+        tipo === 'portada'
+          ? { ...fotos, portada: null }
+          : { ...fotos, galeria: fotos.galeria.filter((item) => item.id !== foto.id) };
       actualizarFotos(nuevas);
       setFotoPorEliminar(null);
-      setExito('Foto eliminada de la galería.');
+      setExito(tipo === 'portada' ? 'Portada eliminada.' : 'Foto eliminada de la galería.');
     } catch (causa: unknown) {
       if (!montadoRef.current) return;
       setFotoPorEliminar(null);
@@ -257,15 +258,28 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               disabled={ocupado}
               onChange={seleccionarArchivo('portada')}
             />
-            <button
-              type="button"
-              className="btn-servia-secondary btn-servia-sm"
-              disabled={ocupado}
-              onClick={() => inputPortadaRef.current?.click()}
-            >
-              <Upload aria-hidden="true" />
-              {fotos.portada ? 'Cambiar portada' : 'Subir portada'}
-            </button>
+            <div className="panel-fotos-cabecera-acciones">
+              <button
+                type="button"
+                className="btn-servia-secondary btn-servia-sm"
+                disabled={ocupado}
+                onClick={() => inputPortadaRef.current?.click()}
+              >
+                <Upload aria-hidden="true" />
+                {fotos.portada ? 'Cambiar portada' : 'Subir portada'}
+              </button>
+              {fotos.portada && (
+                <button
+                  type="button"
+                  className="btn-servia-danger btn-servia-sm"
+                  disabled={ocupado}
+                  onClick={() => setFotoPorEliminar({ foto: fotos.portada!, tipo: 'portada', numero: 0 })}
+                >
+                  <Trash2 aria-hidden="true" />
+                  Quitar portada
+                </button>
+              )}
+            </div>
           </div>
 
           {pendiente?.tipo === 'portada' && (
@@ -420,7 +434,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                       className="btn-servia-danger btn-servia-sm"
                       disabled={ocupado}
                       aria-label={`Quitar foto ${indice + 1}`}
-                      onClick={() => setFotoPorEliminar({ foto, numero: indice + 1 })}
+                      onClick={() => setFotoPorEliminar({ foto, tipo: 'galeria', numero: indice + 1 })}
                     >
                       <Trash2 aria-hidden="true" />
                       Quitar
@@ -462,10 +476,12 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                 <Trash2 aria-hidden="true" />
               </div>
               <h2 id={tituloDialogoId} className="panel-dialogo-titulo">
-                ¿Quitar foto de la galería?
+                {fotoPorEliminar.tipo === 'portada' ? '¿Quitar la portada?' : '¿Quitar foto de la galería?'}
               </h2>
               <p id={textoDialogoId} className="panel-dialogo-texto">
-                Se eliminará la foto {fotoPorEliminar.numero} de tu galería y dejará de mostrarse a tus clientes.
+                {fotoPorEliminar.tipo === 'portada'
+                  ? 'Se eliminará la portada de tu negocio y dejará de mostrarse a tus clientes.'
+                  : `Se eliminará la foto ${fotoPorEliminar.numero} de tu galería y dejará de mostrarse a tus clientes.`}
               </p>
               <div className="panel-dialogo-acciones">
                 <button
@@ -483,7 +499,11 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                   disabled={ocupado}
                   onClick={() => void confirmarEliminacion()}
                 >
-                  {operacion === 'borrando' ? 'Eliminando...' : 'Quitar foto'}
+                  {operacion === 'borrando'
+                    ? 'Eliminando...'
+                    : fotoPorEliminar.tipo === 'portada'
+                      ? 'Sí, quitar portada'
+                      : 'Quitar foto'}
                 </button>
               </div>
             </div>

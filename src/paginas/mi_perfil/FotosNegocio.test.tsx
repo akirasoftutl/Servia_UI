@@ -280,4 +280,53 @@ describe('FotosNegocio (portada y galería)', () => {
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     expect(screen.getByText('Tu galería está vacía')).toBeInTheDocument();
   });
+
+  describe('quitar la portada (#116)', () => {
+    const portada = { id: 'p-1', url: 'https://cdn.servia.test/portada.jpg' };
+
+    it('C3: pide confirmación, cancelar no llama a la API y confirmar manda DELETE con el id de la portada', async () => {
+      const usuario = userEvent.setup();
+      fetchMock.mockResolvedValueOnce(respuestaJson(204));
+      render(<FotosNegocio fotosIniciales={{ portada, galeria: galeriaDe(1) }} />);
+
+      await usuario.click(screen.getByRole('button', { name: 'Quitar portada' }));
+      let dialogo = screen.getByRole('alertdialog');
+      expect(within(dialogo).getByText('¿Quitar la portada?')).toBeInTheDocument();
+      await usuario.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(screen.getByAltText('Portada actual del negocio')).toBeInTheDocument();
+
+      await usuario.click(screen.getByRole('button', { name: 'Quitar portada' }));
+      dialogo = screen.getByRole('alertdialog');
+      await usuario.click(within(dialogo).getByRole('button', { name: 'Sí, quitar portada' }));
+
+      expect(await screen.findByText('Sin foto de portada')).toBeInTheDocument();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, opciones] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('http://localhost:3000/negocios/mio/fotos/p-1');
+      expect(opciones.method).toBe('DELETE');
+      // La sección sigue usable: la galería se conserva y se puede subir otra portada.
+      expect(screen.queryByRole('button', { name: 'Quitar portada' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Subir portada' })).toBeEnabled();
+      expect(screen.getByAltText('Foto 1 de la galería')).toBeInTheDocument();
+      expect(screen.getByText('Portada eliminada.')).toBeInTheDocument();
+    });
+
+    it('C3: si la API falla, muestra el mensaje y conserva la portada', async () => {
+      const usuario = userEvent.setup();
+      fetchMock.mockResolvedValueOnce(respuestaJson(503, { message: 'Supabase Storage no está configurado en el servidor.' }));
+      render(<FotosNegocio fotosIniciales={{ portada, galeria: [] }} />);
+      await usuario.click(screen.getByRole('button', { name: 'Quitar portada' }));
+      await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Sí, quitar portada' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Supabase Storage no está configurado en el servidor.');
+      expect(screen.getByAltText('Portada actual del negocio')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Quitar portada' })).toBeEnabled();
+    });
+
+    it('C3: sin portada no hay botón para quitarla', () => {
+      render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+      expect(screen.queryByRole('button', { name: 'Quitar portada' })).not.toBeInTheDocument();
+    });
+  });
 });

@@ -1595,6 +1595,11 @@ fieldset:disabled .btn-servia-secondary {
   gap: var(--sv-esp-3);
   margin-bottom: var(--sv-esp-4);
 }
+.panel-fotos-cabecera-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sv-esp-2);
+}
 .panel-fotos-marco-portada {
   margin: 0;
   overflow: hidden;
