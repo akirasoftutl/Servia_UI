@@ -4,6 +4,8 @@ import './Reservas.css';
 import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
 import { useNavigate, useSearchParams } from 'react-router';
 import { ESTADOS_CONFIG } from './estados';
+import { CalendarCheck } from 'lucide-react';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 const estados = {
   pendiente: 'Pendiente',
@@ -121,7 +123,7 @@ export function Reservas() {
     <div className="panel-pagina"><div className="panel-contenedor">
       <header className="panel-encabezado">
         <div>
-          <span className="panel-eyebrow">ADMINISTRACIÓN</span>
+          <EyebrowPanel grupo="operacion" icono={CalendarCheck} />
           <h1 className="panel-titulo">Reservas</h1>
           <p className="panel-subtitulo">Administra las solicitudes de tus clientes.</p>
         </div>
@@ -188,7 +190,6 @@ export function Reservas() {
                     navigate(`/reservas/${r.id}`);
                   }
                 }}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
               >
                 <div className="reserva-info-principal">
                   <h3 className="panel-item-titulo">{r.cliente.nombre}</h3>
