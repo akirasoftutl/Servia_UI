@@ -1379,3 +1379,6 @@ fieldset:disabled .btn-servia-secondary {
     opacity: 0.6;
   }
 }
+
+/* Los asuntos admiten hasta 100 caracteres, incluso sin espacios. */
+.panel-reporte-asunto { overflow-wrap: anywhere; }

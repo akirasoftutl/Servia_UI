@@ -1,3 +1,4 @@
+import { ReportarProblema } from './paginas/soporte/ReportarProblema'
 import { createBrowserRouter, type RouteObject } from 'react-router'
 import { Inicio } from './paginas/Inicio'
 import { VistaPrevia } from './paginas/mi_perfil/VistaPrevia'
@@ -41,6 +42,7 @@ export const rutas: RouteObject[] = [
       {
         element: <RutaProtegida />,
         children: [
+          { path: 'soporte', element: <ReportarProblema /> },
           { path: 'resumen', element: <Resumen /> },
           { path: 'mi-perfil', element: <MiPerfil /> },
           { path: 'mi-perfil/vista-previa', element: <VistaPrevia /> },
