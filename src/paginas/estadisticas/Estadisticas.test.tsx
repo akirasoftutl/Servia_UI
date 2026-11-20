@@ -40,7 +40,8 @@ describe('Estadísticas', () => {
     const ruta = String(apiMock.mock.calls[0][0]);
     expect(ruta).toMatch(/^\/negocios\/mio\/estadisticas\?desde=\d{4}-\d{2}-\d{2}&hasta=\d{4}-\d{2}-\d{2}$/);
     expect(apiMock.mock.calls[0]).toHaveLength(1); // GET, sin escrituras.
-    expect(screen.getByText(/mientras no existan MVP-27 y MVP-21/)).toBeVisible();
+    expect(screen.queryByText(/MVP-\d+/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/mientras no existan/)).not.toBeInTheDocument();
   });
 
   it.each([0, 1, 2])('F1 usa singular solo para 1 en los tres conteos (%i)', async cantidad => {
@@ -222,7 +223,7 @@ describe('Estadísticas', () => {
     render(<Estadisticas />);
     const vacio = await screen.findByText('No hay reservas en este periodo.');
     expect(vacio).toHaveClass('panel-estado-texto');
-    expect(vacio.closest('.panel-estado')!.querySelector('.panel-estado-icono')).toBeInTheDocument();
+    expect(vacio.closest('.panel-estado')!.querySelector('.panel-ilustracion')).toBeInTheDocument();
     expect(numero('Total de reservas')).toHaveTextContent(/^0$/);
     expect(numero('Clientes atendidos')).toHaveTextContent(/^0$/);
     expect(screen.getByText('No hay servicios reservados para mostrar.')).toBeVisible();

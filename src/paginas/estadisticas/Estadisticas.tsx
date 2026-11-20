@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { ChartColumn } from 'lucide-react';
+import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api, ErrorApi } from '../../servicios/api';
 import { periodoPredefinido, validarPeriodo, type Periodo } from './fechas';
 import './Estadisticas.css';
@@ -98,9 +100,6 @@ export function Estadisticas() {
       </div>
     </section>
     <section className="panel-tarjeta" aria-label="Estadísticas del periodo" aria-busy={cargando}>
-      <div className="panel-alerta"><span className="panel-alerta-icono" aria-hidden="true">i</span>
-        <div className="panel-alerta-contenido">«Clientes atendidos» y «Cancelaciones por cliente» pueden mostrar 0 mientras no existan MVP-27 y MVP-21.</div>
-      </div>
       {cargando && <div className="panel-estado">
         <div className="spinner-border" aria-hidden="true" />
         <p className="panel-estado-texto" role="status">Cargando estadísticas...</p>
@@ -114,10 +113,11 @@ export function Estadisticas() {
         }}>Reintentar</button>
       </div>}
       {!cargando && !error && datos && <>
-        {datos.totalReservas === 0 && <div className="panel-estado">
-          <div className="panel-estado-icono" aria-hidden="true">✦</div>
-          <p className="panel-estado-texto">No hay reservas en este periodo.</p>
-        </div>}
+        {datos.totalReservas === 0 && <EstadoVacio
+          icono={ChartColumn}
+          titulo="Sin datos que mostrar"
+          texto="No hay reservas en este periodo."
+        />}
         <dl className="estadisticas-metricas">{metricas.map(([etiqueta, valor]) =>
           <div className="panel-item" key={etiqueta}><dt className="panel-item-texto">{etiqueta}</dt>
             <dd className="estadisticas-numero">{valor}</dd></div>)}</dl>
