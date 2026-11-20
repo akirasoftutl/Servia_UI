@@ -1383,6 +1383,15 @@ fieldset:disabled .btn-servia-secondary {
 
 /* Los asuntos admiten hasta 100 caracteres, incluso sin espacios. */
 .panel-reporte-asunto { overflow-wrap: anywhere; }
+
+/* Tablet: con la barra lateral fija el contenido queda angosto; menos margen lateral. */
+@media (min-width: 651px) and (max-width: 1023px) {
+  .panel-pagina {
+    padding-right: var(--sv-esp-4);
+    padding-left: var(--sv-esp-4);
+  }
+}
+
 /* Interruptor compartido: misma pista violeta y etiqueta que recepción de reservas. */
 .panel-interruptor {
   display: inline-flex;
