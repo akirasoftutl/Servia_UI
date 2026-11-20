@@ -148,3 +148,13 @@ it('C6 anuncia en español estado y destino del botón', async () => {
   expect(boton).toHaveAccessibleName('Cerrar menú')
   expect(boton).toHaveAttribute('aria-expanded', 'true')
 })
+
+it('UI102 abre Notificaciones desde el menú móvil y lo cierra al navegar', async () => {
+  pantalla(true)
+  render(<MemoryRouter><Sidebar /><Routes><Route path="/preferencias-notificaciones" element={<h1>Preferencias push</h1>} /></Routes></MemoryRouter>)
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Notificaciones' }))
+  expect(await screen.findByRole('heading', { name: 'Preferencias push' })).toBeVisible()
+  expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Abrir menú' })).toHaveAttribute('aria-expanded', 'false')
+})
