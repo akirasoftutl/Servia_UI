@@ -111,8 +111,10 @@
 
 .sidebar {
   width: 280px;
-  min-height: 100vh;
-  height: 100%;
+  /* Alto de la ventana: el menú se desplaza por dentro y la cuenta queda siempre a la vista. */
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   background-color: var(--bg-sidebar);
   color: var(--text-main);
   display: flex;
@@ -166,8 +168,14 @@
   background-color: var(--bg-hover);
 }
 
+.sidebar-header,
+.user-profile {
+  flex: none;
+}
+
 .sidebar-nav {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
 }

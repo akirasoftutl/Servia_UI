@@ -252,3 +252,29 @@ it('UI108 la barra no muestra buscador, ni en escritorio ni en el cajón', async
   expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   expect(document.querySelector('input')).toBeNull()
 })
+
+describe('UI108 la barra mide el alto de la ventana y desplaza el menú por dentro', () => {
+  const css = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8')
+  const regla = (selector: string) => css.match(new RegExp(`(?:^|\\n)${selector.replace('.', '\\.')}\\s*\\{([^}]*)\\}`))?.[1] ?? ''
+  it('.sidebar fija el alto a 100dvh y no crece con el contenido', () => {
+    const barraCss = regla('.sidebar')
+    expect(barraCss).toMatch(/height:\s*100dvh/)
+    expect(barraCss).toMatch(/min-height:\s*0/)
+    expect(barraCss).not.toMatch(/min-height:\s*100vh/)
+  })
+  it('el menú es la zona que se desplaza y el encabezado y la cuenta no se encogen', () => {
+    const nav = regla('.sidebar-nav')
+    expect(nav).toMatch(/overflow-y:\s*auto/)
+    expect(nav).toMatch(/min-height:\s*0/)
+    expect(css).toMatch(/\.sidebar-header,\s*\.user-profile\s*\{[^}]*flex:\s*none/)
+  })
+  it('la tarjeta de cuenta sigue dentro de la barra, después del menú', () => {
+    pantalla(false)
+    render(barra())
+    const aside = screen.getByRole('complementary')
+    const hijos = [...aside.children].map((el) => el.className)
+    expect(hijos.at(-1)).toContain('user-profile')
+    expect(hijos[hijos.indexOf('sidebar-nav') ]).toBe('sidebar-nav')
+    expect(within(aside).getByRole('button', { name: 'Menú de la cuenta' })).toBeVisible()
+  })
+})
