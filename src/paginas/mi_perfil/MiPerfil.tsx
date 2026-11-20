@@ -13,6 +13,7 @@ import {
   type Direccion,
   type DireccionForm,
 } from './direccion';
+import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
 import { CambiarContrasena } from './CambiarContrasena';
 import { CampoCalle, type EleccionCalle } from './CampoCalle';
 
@@ -913,6 +914,7 @@ export function MiPerfil() {
         </form>
 
         {/* Fuera del formulario del perfil: es un formulario aparte (MVP-04). */}
+        <RecepcionReservas />
         <CambiarContrasena />
       </div>
     </div>

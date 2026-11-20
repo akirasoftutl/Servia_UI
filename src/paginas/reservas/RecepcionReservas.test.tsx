@@ -103,6 +103,7 @@ describe('Recepción de reservas (MVP-12)', () => {
     await listo(false);
     expect(screen.getByRole('switch', { name: 'Recibir reservas' })).not.toBeChecked();
     await userEvent.click(screen.getByRole('switch', { name: 'Recibir reservas' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
     await waitFor(() => expect(screen.getByRole('switch', { name: 'Recibir reservas' })).toBeChecked());
   });
 
@@ -149,6 +150,7 @@ describe('Recepción de reservas (MVP-12)', () => {
     expect(screen.getByRole('switch')).not.toBeChecked();
     expect(screen.getByText(/Pausaste las reservas/)).toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: 'Reanudar' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
     await waitFor(() => expect(screen.getByRole('switch')).toBeChecked());
     expect(llamada).toHaveBeenLastCalledWith('/negocios/mio/recepcion-reservas', {
       method: 'PATCH', body: JSON.stringify({ aceptaReservas: true }),
@@ -161,11 +163,12 @@ describe('Recepción de reservas (MVP-12)', () => {
     await listo(false);
     responderPatch(new Error('Sin conexión'));
     await userEvent.click(screen.getByRole('button', { name: 'Reanudar' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(errorCambio);
     expect(screen.getByRole('switch')).not.toBeChecked();
-    expect(screen.getByRole('button', { name: 'Reanudar' })).toBeEnabled();
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' })).toBeEnabled();
     responderPatch(null);
-    await userEvent.click(screen.getByRole('button', { name: 'Reanudar' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
     await waitFor(() => expect(screen.getByRole('switch')).toBeChecked());
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
