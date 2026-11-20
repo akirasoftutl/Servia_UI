@@ -19,6 +19,11 @@ describe('NoEncontrado (404)', () => {
     expect(screen.getByRole('link', { name: 'Volver al inicio' })).toHaveClass('btn-servia-primary');
   });
 
+  it('muestra el título de la página 404 como encabezado h1', () => {
+    abrir();
+    expect(screen.getByRole('heading', { name: 'No encontramos esta página', level: 1 })).toHaveClass('panel-estado-titulo');
+  });
+
   it('el botón vuelve al inicio', () => {
     const { router } = abrir('/ruta/que/no/existe');
     screen.getByRole('link', { name: 'Volver al inicio' }).click();

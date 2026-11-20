@@ -10,6 +10,7 @@ export function NoEncontrado() {
           icono={Compass}
           titulo="No encontramos esta página"
           texto="Puede que el enlace esté mal escrito o que la página ya no exista."
+          encabezado="h1"
           accion={<Link to="/" className="btn-servia-primary">Volver al inicio</Link>}
         />
       </div>

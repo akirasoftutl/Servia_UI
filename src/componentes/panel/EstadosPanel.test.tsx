@@ -19,4 +19,9 @@ describe('EstadoVacio', () => {
     expect(container.querySelector('.panel-estado-icono')).toBeNull();
     expect(container.textContent).not.toContain('✦');
   });
+
+  it('permite cambiar el nivel del encabezado del título', () => {
+    render(<EstadoVacio icono={Tags} titulo="Sin nada" texto="Aún no hay nada." encabezado="h1" />);
+    expect(screen.getByRole('heading', { name: 'Sin nada', level: 1 })).toHaveClass('panel-estado-titulo');
+  });
 });

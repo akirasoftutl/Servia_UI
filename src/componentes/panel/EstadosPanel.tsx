@@ -16,14 +16,15 @@ export function IlustracionEstado({ icono: Icono, error = false }: { icono: Luci
 
 // Estado vacío único del panel: ilustración, título, texto y, si hay un siguiente
 // paso útil, un botón de acción (el que llama pasa un <Link> o <button> ya con su clase).
-export function EstadoVacio({ icono, titulo, texto, accion }: {
-  icono: LucideIcon; titulo: string; texto: string; accion?: ReactNode;
+export function EstadoVacio({ icono, titulo, texto, accion, encabezado = 'h3' }: {
+  icono: LucideIcon; titulo: string; texto: string; accion?: ReactNode; encabezado?: 'h1' | 'h2' | 'h3';
 }) {
+  const Encabezado = encabezado;
   return (
     <div className="panel-estado">
       <IlustracionEstado icono={icono} />
       <div className="panel-estado-cuerpo">
-        <h3 className="panel-estado-titulo">{titulo}</h3>
+        <Encabezado className="panel-estado-titulo">{titulo}</Encabezado>
         <p className="panel-estado-texto">{texto}</p>
         {accion && <div className="panel-estado-acciones">{accion}</div>}
       </div>
