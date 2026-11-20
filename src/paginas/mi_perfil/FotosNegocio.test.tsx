@@ -415,4 +415,13 @@ describe('FotosNegocio (portada y galería)', () => {
     expect(aviso.closest('.panel-tarjeta-encabezado')).toBeNull();
     expect(aviso.parentElement).toBe(screen.getByRole('heading', { name: 'Fotos' }).closest('section'));
   });
+
+  it('F6: los controles de subida quedan descritos por el aviso de «se suben aparte»', () => {
+    render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
+    const descripcion = /se suben aparte y al instante/;
+    expect(screen.getByRole('button', { name: 'Subir portada' })).toHaveAccessibleDescription(descripcion);
+    expect(screen.getByRole('button', { name: 'Agregar foto' })).toHaveAccessibleDescription(descripcion);
+    expect(screen.getByLabelText('Seleccionar archivo de portada')).toHaveAccessibleDescription(descripcion);
+    expect(screen.getByLabelText('Seleccionar archivo de galería')).toHaveAccessibleDescription(descripcion);
+  });
 });

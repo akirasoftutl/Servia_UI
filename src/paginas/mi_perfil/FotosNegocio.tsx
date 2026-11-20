@@ -280,6 +280,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               accept={ACCEPT_FOTOS}
               className="visually-hidden"
               aria-label="Seleccionar archivo de portada"
+              aria-describedby="aviso-fotos-aparte"
               disabled={ocupado}
               onChange={seleccionarArchivo('portada')}
             />
@@ -288,6 +289,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                 type="button"
                 className="btn-servia-secondary btn-servia-sm"
                 disabled={ocupado}
+                aria-describedby="aviso-fotos-aparte"
                 onClick={() => inputPortadaRef.current?.click()}
               >
                 <Upload aria-hidden="true" />
@@ -385,6 +387,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               accept={ACCEPT_FOTOS}
               className="visually-hidden"
               aria-label="Seleccionar archivo de galería"
+              aria-describedby="aviso-fotos-aparte"
               disabled={ocupado || galeriaLlena}
               onChange={seleccionarArchivo('galeria')}
             />
@@ -392,6 +395,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               type="button"
               className="btn-servia-primary btn-servia-sm"
               disabled={ocupado || galeriaLlena}
+              aria-describedby="aviso-fotos-aparte"
               onClick={() => inputGaleriaRef.current?.click()}
             >
               <Plus aria-hidden="true" />
