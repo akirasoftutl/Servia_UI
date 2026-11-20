@@ -206,6 +206,13 @@
   margin-bottom: 0.6rem;
 }
 
+.sidebar-config {
+  flex: none;
+  margin-bottom: var(--sv-esp-3);
+  padding-top: var(--sv-esp-3);
+  border-top: 1px solid var(--border-color);
+}
+
 .nav-list {
   list-style: none;
   display: flex;
