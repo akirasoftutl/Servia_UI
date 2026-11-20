@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 // Piezas visuales compartidas por los estados de los módulos del panel.
@@ -9,6 +10,23 @@ export function IlustracionEstado({ icono: Icono, error = false }: { icono: Luci
     <div className={`panel-ilustracion ${error ? 'panel-ilustracion--error' : ''}`} aria-hidden="true">
       <span className="panel-ilustracion-fondo" />
       <span className="panel-ilustracion-frente"><Icono aria-hidden="true" /></span>
+    </div>
+  );
+}
+
+// Estado vacío único del panel: ilustración, título, texto y, si hay un siguiente
+// paso útil, un botón de acción (el que llama pasa un <Link> o <button> ya con su clase).
+export function EstadoVacio({ icono, titulo, texto, accion }: {
+  icono: LucideIcon; titulo: string; texto: string; accion?: ReactNode;
+}) {
+  return (
+    <div className="panel-estado">
+      <IlustracionEstado icono={icono} />
+      <div className="panel-estado-cuerpo">
+        <h3 className="panel-estado-titulo">{titulo}</h3>
+        <p className="panel-estado-texto">{texto}</p>
+        {accion && <div className="panel-estado-acciones">{accion}</div>}
+      </div>
     </div>
   );
 }
