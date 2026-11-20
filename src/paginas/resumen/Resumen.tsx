@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { CalendarClock, Pause, LayoutDashboard } from 'lucide-react';
+import { Bell, CalendarCheck, CalendarClock, ChartColumn, ChevronRight, Clock, LayoutDashboard, Pause, Plus, Scissors, Users } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api } from '../../servicios/api';
+import { ESTADOS_CONFIG } from '../reservas/estados';
+import { etiquetaDia } from './citas';
+import '../reservas/Reservas.css';
 import './Resumen.css';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
@@ -15,6 +19,8 @@ interface ProximaCita {
   servicioNombre: string;
   inicio: string;
   fin: string;
+  // Servia_BE#106: la API lo agregará; mientras no llegue, la fila no muestra chip.
+  estado?: string;
 }
 interface DatosResumen {
   pendientes: number;
@@ -29,7 +35,6 @@ interface DatosResumen {
 interface PerfilAvisos { aceptaReservas?: boolean; visible?: boolean }
 
 const zonaHoraria = 'America/Mexico_City';
-const fecha = new Intl.DateTimeFormat('es-MX', { timeZone: zonaHoraria, dateStyle: 'short' });
 const hora = new Intl.DateTimeFormat('es-MX', { timeZone: zonaHoraria, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 function esResumen(datos: unknown): datos is DatosResumen {
@@ -37,18 +42,37 @@ function esResumen(datos: unknown): datos is DatosResumen {
   return !!d && typeof d.pendientes === 'number' && Array.isArray(d.proximas);
 }
 
-function Tarjeta({ numero, etiqueta, ruta }: { numero: number; etiqueta: string; ruta?: string }) {
+type Tono = 'info' | 'exito' | 'aviso';
+
+function Ficha({ icono: Icono, tono }: { icono: LucideIcon; tono?: Tono }) {
+  return <span className={`resumen-icono-ficha resumen-icono-ficha--sm${tono ? ` resumen-icono-ficha--${tono}` : ''}`} aria-hidden="true"><Icono /></span>;
+}
+
+function Cifra({ numero, etiqueta, icono, tono, nota, ruta, accion }: {
+  numero: number; etiqueta: string; icono: LucideIcon; tono?: Tono; nota?: string; ruta?: string; accion?: string;
+}) {
   const contenido = <>
-    <span className="resumen-numero">{numero}</span>
-    <span className="resumen-etiqueta">{etiqueta}</span>
+    <span className="resumen-kpi-top"><span className="resumen-kpi-etiqueta">{etiqueta}</span><Ficha icono={icono} tono={tono} /></span>
+    <span className="resumen-kpi-cuerpo">
+      <span className="resumen-numero resumen-kpi-valor">{numero}</span>
+      {accion ? <span className="resumen-kpi-enlace-texto">{accion}<ChevronRight aria-hidden="true" /></span> : <span className="resumen-kpi-nota">{nota}</span>}
+    </span>
   </>;
   return (
-    <li className="resumen-tarjeta">
-      {ruta ? <Link to={ruta} className="resumen-tarjeta-cuerpo resumen-tarjeta-enlace">{contenido}</Link>
-        : <div className="resumen-tarjeta-cuerpo">{contenido}</div>}
+    <li>
+      {ruta ? <Link to={ruta} className="resumen-kpi-card resumen-kpi-card--enlace">{contenido}</Link>
+        : <div className="resumen-kpi-card">{contenido}</div>}
     </li>
   );
 }
+
+// Los cuatro accesos rápidos del Resumen; las rutas son las del router.
+const ACCESOS: { ruta: string; titulo: string; sub: string; icono: LucideIcon; tono?: Tono }[] = [
+  { ruta: '/servicios/nuevo', titulo: 'Nuevo servicio', sub: 'Publicar en catálogo', icono: Plus },
+  { ruta: '/horario', titulo: 'Ajustar horario', sub: 'Días y horas hábiles', icono: Clock, tono: 'info' },
+  { ruta: '/bloqueos', titulo: 'Bloquear fecha', sub: 'Ausencias y festivos', icono: CalendarClock, tono: 'aviso' },
+  { ruta: '/estadisticas', titulo: 'Ver estadísticas', sub: 'Resumen del periodo', icono: ChartColumn, tono: 'exito' },
+];
 
 export function Resumen() {
   const [datos, setDatos] = useState<DatosResumen | null>(null);
@@ -136,15 +160,47 @@ export function Resumen() {
 
         {!cargando && !error && datos && <>
           <ul className="resumen-tarjetas" aria-label="Números de tu negocio">
-            <Tarjeta numero={datos.pendientes} etiqueta="Solicitudes pendientes" ruta="/reservas?estado=pendiente" />
-            <Tarjeta numero={datos.hoy} etiqueta="Reservas de hoy" />
-            <Tarjeta numero={datos.proximos7Dias} etiqueta="Próximos 7 días" />
-            <Tarjeta numero={datos.clientesAtendidos} etiqueta="Clientes atendidos" />
-            <Tarjeta numero={datos.serviciosPublicados} etiqueta="Servicios publicados" ruta="/servicios" />
+            <li className="resumen-hero">
+              <span className="resumen-hero-cabecera">
+                <span className="resumen-icono-ficha" aria-hidden="true"><Bell /></span>
+                {datos.pendientes > 0 && <span className="panel-insignia panel-insignia--aviso">Requiere atención</span>}
+              </span>
+              <span className="resumen-hero-cifra">
+                <span className="resumen-numero resumen-hero-numero">{datos.pendientes}</span>
+                <span className="resumen-hero-etiqueta">Solicitudes pendientes</span>
+                <span className="resumen-hero-contexto">{datos.pendientes > 0
+                  ? 'Tienes citas esperando confirmación para asegurar su horario.' : 'No tienes solicitudes esperando tu respuesta.'}</span>
+              </span>
+              <span className="resumen-hero-pie">
+                <Link to="/reservas?estado=pendiente" className="btn-servia-primary btn-servia-sm">Atender solicitudes<ChevronRight aria-hidden="true" /></Link>
+              </span>
+            </li>
+            <Cifra numero={datos.hoy} etiqueta="Reservas de hoy" icono={CalendarCheck} tono="info" nota="Agenda del día" />
+            <Cifra numero={datos.proximos7Dias} etiqueta="Próximos 7 días" icono={CalendarClock} tono="exito" nota="Citas programadas" />
+            <Cifra numero={datos.clientesAtendidos} etiqueta="Clientes atendidos" icono={Users} ruta="/clientes" accion="Ver clientes" />
+            <Cifra numero={datos.serviciosPublicados} etiqueta="Servicios publicados" icono={Scissors} tono="aviso" ruta="/servicios" accion="Gestionar catálogo" />
           </ul>
 
+          <nav className="resumen-accesos" aria-label="Accesos rápidos">
+            {ACCESOS.map(({ ruta, titulo, sub, icono, tono }) => (
+              <Link key={ruta} to={ruta} className="resumen-acceso">
+                <Ficha icono={icono} tono={tono} />
+                <span className="resumen-acceso-textos">
+                  <span className="resumen-acceso-titulo">{titulo}</span>
+                  <span className="resumen-acceso-sub">{sub}</span>
+                </span>
+              </Link>
+            ))}
+          </nav>
+
           <section className="panel-tarjeta resumen-proximas" aria-labelledby="resumen-proximas-titulo">
-            <h2 id="resumen-proximas-titulo" className="panel-tarjeta-titulo">Próximas citas</h2>
+            <div className="panel-tarjeta-encabezado">
+              <div>
+                <h2 id="resumen-proximas-titulo" className="panel-tarjeta-titulo">Próximas citas</h2>
+                <p className="panel-tarjeta-subtitulo">Tus siguientes reservas, ordenadas por fecha y hora.</p>
+              </div>
+              {datos.proximas.length > 0 && <span className="panel-contador">{datos.proximas.length} {datos.proximas.length === 1 ? 'cita' : 'citas'}</span>}
+            </div>
             {datos.proximas.length === 0 ? (
               <EstadoVacio
                 icono={CalendarClock}
@@ -154,18 +210,32 @@ export function Resumen() {
               />
             ) : (
               <ul className="panel-lista resumen-lista">
-                {datos.proximas.map((cita) => (
-                  <li key={cita.id}>
-                    <Link to={`/reservas/${cita.id}`} className="panel-item resumen-cita">
-                      <span>
-                        <span className="panel-item-titulo d-block">{cita.clienteNombre}</span>
-                        <span className="panel-item-texto d-block">
-                          {cita.servicioNombre} · {fecha.format(new Date(cita.inicio))} de {hora.format(new Date(cita.inicio))} a {hora.format(new Date(cita.fin))}
+                {datos.proximas.map((cita) => {
+                  const dia = etiquetaDia(cita.inicio, datos.generadoEn);
+                  const estado = cita.estado ? ESTADOS_CONFIG[cita.estado] : undefined;
+                  return (
+                    <li key={cita.id}>
+                      <Link to={`/reservas/${cita.id}`} className="panel-item resumen-cita">
+                        <span className="resumen-cita-principal">
+                          <span className={`resumen-cita-hora${dia.hoy ? '' : ' resumen-cita-hora--otro-dia'}`}>
+                            <span className="resumen-cita-hora-inicio">{hora.format(new Date(cita.inicio))}</span>
+                            <span className="resumen-cita-hora-dia">{dia.texto}</span>
+                          </span>
+                          <span className="resumen-cita-datos">
+                            <span className="resumen-cita-cliente">{cita.clienteNombre}</span>
+                            <span className="resumen-cita-servicio">
+                              {cita.servicioNombre} · {hora.format(new Date(cita.inicio))} a {hora.format(new Date(cita.fin))} · {cita.folio}
+                            </span>
+                          </span>
                         </span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                        <span className="resumen-cita-meta">
+                          {cita.estado && <span className={`reserva-badge ${estado?.className ?? ''}`}>{estado?.label ?? cita.estado}</span>}
+                          <ChevronRight className="resumen-cita-chevron" aria-hidden="true" />
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

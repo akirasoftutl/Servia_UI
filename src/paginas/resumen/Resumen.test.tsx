@@ -52,6 +52,11 @@ function mostrar() {
     { path: '/reservas', element: <Reservas /> },
     { path: '/reservas/:id', element: <h1>Detalle de la reserva</h1> },
     { path: '/servicios', element: <h1>Mis servicios</h1> },
+    { path: '/servicios/nuevo', element: <h1>Nuevo servicio</h1> },
+    { path: '/horario', element: <h1>Horario</h1> },
+    { path: '/bloqueos', element: <h1>Bloqueos</h1> },
+    { path: '/estadisticas', element: <h1>Estadísticas</h1> },
+    { path: '/clientes', element: <h1>Clientes</h1> },
     { path: '/mi-perfil', element: <h1>Mi perfil</h1> },
   ], { initialEntries: ['/resumen'] });
   render(<RouterProvider router={router} />);
@@ -77,9 +82,9 @@ describe('Resumen', () => {
     expect(numeroDe('Clientes atendidos')).toBe('12');
   });
 
-  it('C3 «Solicitudes pendientes» abre Reservas filtrada por Pendiente', async () => {
+  it('C3 «Atender solicitudes» abre Reservas filtrada por Pendiente', async () => {
     const router = mostrar();
-    const enlace = await screen.findByRole('link', { name: /Solicitudes pendientes/ });
+    const enlace = await screen.findByRole('link', { name: 'Atender solicitudes' });
     expect(enlace).toHaveAttribute('href', '/reservas?estado=pendiente');
     expect(screen.getByRole('link', { name: /Servicios publicados/ })).toHaveAttribute('href', '/servicios');
     fireEvent.click(enlace);
@@ -98,12 +103,78 @@ describe('Resumen', () => {
     expect(enlaces).toHaveLength(5);
     enlaces.forEach((enlace, i) => {
       expect(enlace).toHaveTextContent(`Cliente ${i + 1}`);
-      expect(enlace).toHaveTextContent(`Servicio ${i + 1} · 03/11/30 de 20:00 a 21:00`);
+      expect(enlace).toHaveTextContent(`Servicio ${i + 1} · 20:00 a 21:00 · SRV-${i + 1}`);
       expect(enlace).toHaveAttribute('href', `/reservas/r${i + 1}`);
     });
     fireEvent.click(enlaces[2]);
     await waitFor(() => expect(router.state.location.pathname).toBe('/reservas/r3'));
     expect(await screen.findByRole('heading', { name: 'Detalle de la reserva' })).toBeVisible();
+  });
+
+  it('D27 la tarjeta destacada es solo «Solicitudes pendientes» y las otras cuatro cifras van en la rejilla', async () => {
+    mostrar();
+    await screen.findByText('Solicitudes pendientes');
+    const lista = screen.getByRole('list', { name: 'Números de tu negocio' });
+    const tarjetas = within(lista).getAllByRole('listitem');
+    expect(tarjetas).toHaveLength(5);
+    expect(tarjetas[0]).toHaveClass('resumen-hero');
+    expect(tarjetas[0]).toHaveTextContent('Solicitudes pendientes');
+    expect(tarjetas[0]).toHaveTextContent('Requiere atención');
+    expect(tarjetas.slice(1).filter((t) => t.classList.contains('resumen-hero'))).toHaveLength(0);
+    expect(tarjetas.slice(1).map((t) => t.querySelector('.resumen-kpi-etiqueta')?.textContent))
+      .toEqual(['Reservas de hoy', 'Próximos 7 días', 'Clientes atendidos', 'Servicios publicados']);
+  });
+
+  it('D27 sin solicitudes pendientes la tarjeta destacada no pide atención', async () => {
+    respuestaResumen = resumen({ pendientes: 0 });
+    mostrar();
+    await screen.findByText('Solicitudes pendientes');
+    expect(screen.queryByText('Requiere atención')).not.toBeInTheDocument();
+    expect(numeroDe('Solicitudes pendientes')).toBe('0');
+  });
+
+  it('D27 los cuatro accesos rápidos llevan a las rutas reales del panel', async () => {
+    const router = mostrar();
+    const accesos = within(await screen.findByRole('navigation', { name: 'Accesos rápidos' }));
+    const esperados: [string, string][] = [['Nuevo servicio', '/servicios/nuevo'], ['Ajustar horario', '/horario'],
+      ['Bloquear fecha', '/bloqueos'], ['Ver estadísticas', '/estadisticas']];
+    expect(accesos.getAllByRole('link')).toHaveLength(4);
+    for (const [nombre, ruta] of esperados) expect(accesos.getByRole('link', { name: new RegExp(nombre) })).toHaveAttribute('href', ruta);
+    fireEvent.click(accesos.getByRole('link', { name: /Bloquear fecha/ }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/bloqueos'));
+  });
+
+  it('D28 muestra el chip de estado de cada próxima cita solo cuando la API manda «estado»', async () => {
+    respuestaResumen = resumen({ proximas: [cita(1, { estado: 'confirmada' }), cita(2, { estado: 'pendiente' }), cita(3)] });
+    mostrar();
+    const lista = within(await screen.findByRole('region', { name: 'Próximas citas' }));
+    const [primera, segunda, tercera] = lista.getAllByRole('link');
+    expect(within(primera).getByText('Confirmada')).toHaveClass('reserva-badge', 'confirmada');
+    expect(within(segunda).getByText('Pendiente')).toHaveClass('reserva-badge', 'pendiente');
+    expect(tercera.querySelector('.reserva-badge')).toBeNull();
+    expect(tercera).toHaveTextContent('Cliente 3');
+  });
+
+  it('D28 sin «estado» en ninguna cita no hay chips y la hora, el folio y el enlace siguen', async () => {
+    mostrar();
+    const lista = within(await screen.findByRole('region', { name: 'Próximas citas' }));
+    expect(document.querySelector('.reserva-badge')).toBeNull();
+    const enlaces = lista.getAllByRole('link');
+    expect(enlaces[0].querySelector('.resumen-cita-hora-inicio')).toHaveTextContent('20:00');
+    expect(enlaces[0]).toHaveTextContent('SRV-1');
+  });
+
+  it('D28 la hora destacada dice Hoy, Mañana o el día, contado en México desde generadoEn', async () => {
+    respuestaResumen = resumen({ generadoEn: '2030-11-03T14:00:00Z', proximas: [
+      cita(1), cita(2, { inicio: '2030-11-04T16:00:00Z', fin: '2030-11-04T17:00:00Z' }),
+      cita(3, { inicio: '2030-11-06T16:00:00Z', fin: '2030-11-06T17:00:00Z' })] });
+    mostrar();
+    const lista = within(await screen.findByRole('region', { name: 'Próximas citas' }));
+    const dias = lista.getAllByRole('link').map((e) => e.querySelector('.resumen-cita-hora-dia')!.textContent);
+    expect(dias).toEqual(['Hoy · 03 nov', 'Mañana · 04 nov', 'mié · 06 nov']);
+    expect(lista.getAllByRole('link')[0].querySelector('.resumen-cita-hora')).not.toHaveClass('resumen-cita-hora--otro-dia');
+    expect(lista.getAllByRole('link')[1].querySelector('.resumen-cita-hora')).toHaveClass('resumen-cita-hora--otro-dia');
+    expect(screen.getByText('3 citas')).toHaveClass('panel-contador');
   });
 
   it('C5 muestra cargando y después los datos', async () => {
