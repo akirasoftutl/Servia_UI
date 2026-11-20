@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ChartColumn } from 'lucide-react';
+import { CalendarDays, CalendarX, ChartColumn, CircleCheck, Clock, UserX, Users, type LucideIcon } from 'lucide-react';
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api, ErrorApi } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { periodoPredefinido, validarPeriodo, type Periodo } from './fechas';
+import { GraficaReservas, LeyendaGrafica } from './GraficaReservas';
+import { porcentaje } from './grafica';
 import './Estadisticas.css';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
@@ -16,6 +18,8 @@ interface EstadisticasNegocio {
   serviciosMasReservados: { servicioId: string; nombre: string; reservas: number }[];
   porDia: { fecha: string; reservas: number }[];
 }
+
+const OPCIONES_PERIODO = [['7', '7 días'], ['30', '30 días'], ['90', '90 días'], ['personalizado', 'Personalizado']] as const;
 
 function fechaLegible(fecha: string) {
   return fecha.split('-').reverse().join('/');
@@ -58,48 +62,50 @@ export function Estadisticas() {
     setPeriodo(nuevoPeriodo);
   }
 
-  const metricas = datos ? [
-    ['Total de reservas', datos.totalReservas],
-    ['Confirmadas', datos.porEstado.confirmada],
-    ['Completadas', datos.porEstado.completada],
-    ['Cancelaciones por cliente', datos.cancelaciones.porCliente],
-    ['Cancelaciones por negocio', datos.cancelaciones.porNegocio],
-    ['Clientes atendidos', datos.clientesAtendidos],
-  ] as const : [];
-  const maximo = Math.max(0, ...(datos?.porDia.map(dia => dia.reservas) ?? []));
+  const metricas: readonly (readonly [string, number, LucideIcon, string])[] = datos ? [
+    ['Total de reservas', datos.totalReservas, CalendarDays, ''],
+    ['Confirmadas', datos.porEstado.confirmada, Clock, 'info'],
+    ['Completadas', datos.porEstado.completada, CircleCheck, 'exito'],
+    ['Cancelaciones por cliente', datos.cancelaciones.porCliente, UserX, 'aviso'],
+    ['Cancelaciones por negocio', datos.cancelaciones.porNegocio, CalendarX, 'peligro'],
+    ['Clientes atendidos', datos.clientesAtendidos, Users, ''],
+  ] : [];
 
   return <div className="panel-pagina"><div className="panel-contenedor">
-    <header className="panel-encabezado"><div>
+    <header className="panel-encabezado"><div className="panel-encabezado-textos">
       <EyebrowPanel grupo="negocio" icono={ChartColumn} />
       <h1 className="panel-titulo">Estadísticas</h1>
       <p className="panel-subtitulo">Consulta las reservas y la actividad de tu negocio por periodo.</p>
-    </div></header>
+    </div>{!validacion && <div className="panel-encabezado-acciones">
+      <span className="estadisticas-periodo-rango"><CalendarDays aria-hidden="true" />{fechaLegible(periodo.desde)} – {fechaLegible(periodo.hasta)}</span>
+    </div>}</header>
     <section className="panel-tarjeta" aria-labelledby="titulo-periodo">
-      <h2 id="titulo-periodo" className="panel-tarjeta-titulo">Periodo</h2>
-      <div className="estadisticas-filtros">
-        <div><label htmlFor="periodo" className="form-label">Periodo de consulta</label>
-          <select id="periodo" className="form-select" value={seleccion} onChange={e => {
-            const valor = e.target.value;
-            setSeleccion(valor);
-            limpiar(valor === 'personalizado' ? { ...periodo } : periodoPredefinido(Number(valor)));
-          }}>
-            <option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option>
-            <option value="90">Últimos 90 días</option><option value="personalizado">Personalizado</option>
-          </select>
+      <div className="estadisticas-periodo-barra">
+        <div>
+          <h2 id="titulo-periodo" className="panel-tarjeta-titulo">Periodo de consulta</h2>
+          <p className="panel-tarjeta-subtitulo">Elige un rango rápido o define tus propias fechas.</p>
         </div>
-        {seleccion === 'personalizado' && <>
-          <div><label htmlFor="desde" className="form-label">Fecha inicial</label>
-            <input id="desde" type="date" className="form-control" value={periodo.desde}
-              aria-invalid={!!validacion} aria-describedby={validacion ? 'error-periodo' : undefined}
-              onChange={e => limpiar({ ...periodo, desde: e.target.value })} /></div>
-          <div><label htmlFor="hasta" className="form-label">Fecha final</label>
-            <input id="hasta" type="date" className="form-control" value={periodo.hasta}
-              aria-invalid={!!validacion} aria-describedby={validacion ? 'error-periodo' : undefined}
-              onChange={e => limpiar({ ...periodo, hasta: e.target.value })} />
-            {validacion && <p id="error-periodo" className="panel-error-campo" role="alert">{validacion}</p>}
-          </div>
-        </>}
+        <div className="panel-pestanas" role="group" aria-label="Rango de fechas">
+          {OPCIONES_PERIODO.map(([valor, texto]) => <button type="button" key={valor} className={seleccion === valor ? 'active' : ''}
+            aria-pressed={seleccion === valor} onClick={() => {
+              if (valor === seleccion) return;
+              setSeleccion(valor);
+              limpiar(valor === 'personalizado' ? { ...periodo } : periodoPredefinido(Number(valor)));
+            }}>{texto}</button>)}
+        </div>
       </div>
+      {seleccion === 'personalizado' && <div className="estadisticas-filtros">
+        <div><label htmlFor="desde" className="form-label">Fecha inicial</label>
+          <input id="desde" type="date" className="form-control" value={periodo.desde}
+            aria-invalid={!!validacion} aria-describedby={validacion ? 'error-periodo' : undefined}
+            onChange={e => limpiar({ ...periodo, desde: e.target.value })} /></div>
+        <div><label htmlFor="hasta" className="form-label">Fecha final</label>
+          <input id="hasta" type="date" className="form-control" value={periodo.hasta}
+            aria-invalid={!!validacion} aria-describedby={validacion ? 'error-periodo' : undefined}
+            onChange={e => limpiar({ ...periodo, hasta: e.target.value })} />
+          {validacion && <p id="error-periodo" className="panel-error-campo" role="alert">{validacion}</p>}
+        </div>
+      </div>}
     </section>
     <section className="panel-tarjeta" aria-label="Estadísticas del periodo" aria-busy={cargando}>
       {cargando && <div className="panel-estado">
@@ -120,37 +126,43 @@ export function Estadisticas() {
           titulo="Sin datos que mostrar"
           texto="Las cifras aparecerán cuando tengas reservas en este periodo."
         />}
-        <dl className="estadisticas-metricas">{metricas.map(([etiqueta, valor]) =>
-          <div className="panel-item" key={etiqueta}><dt className="panel-item-texto">{etiqueta}</dt>
+        <dl className="estadisticas-metricas">{metricas.map(([etiqueta, valor, Icono, tono]) =>
+          <div className="panel-item estadisticas-kpi" key={etiqueta}>
+            <dt className="estadisticas-kpi-top"><span className="panel-item-texto">{etiqueta}</span>
+              <span className={`estadisticas-kpi-icono${tono ? ` estadisticas-kpi-icono--${tono}` : ''}`} aria-hidden="true"><Icono /></span></dt>
             <dd className="estadisticas-numero">{valor}</dd></div>)}</dl>
-        <h2 className="panel-tarjeta-titulo">Reservas por día</h2>
-        <p className="panel-subtitulo">Del {fechaLegible(datos.periodo.desde)} al {fechaLegible(datos.periodo.hasta)} · Todos los estados.</p>
-        <div className="estadisticas-grafica panel-grafica" role="img"
-          aria-label={`Reservas por día del ${fechaLegible(datos.periodo.desde)} al ${fechaLegible(datos.periodo.hasta)}: ${datos.totalReservas} ${datos.totalReservas === 1 ? 'reserva' : 'reservas'}. Detalle en la tabla equivalente.`}>
-          <div className="panel-grafica-eje panel-ayuda" aria-hidden="true">
-            <span>{maximo}</span><span>0</span>
+        <div className="estadisticas-bloque-grafica">
+          <div className="estadisticas-grafica-cabecera">
+            <div>
+              <h2 className="panel-tarjeta-titulo">Reservas por día</h2>
+              <p className="panel-tarjeta-subtitulo">Del {fechaLegible(datos.periodo.desde)} al {fechaLegible(datos.periodo.hasta)} · Todos los estados.</p>
+            </div>
+            <LeyendaGrafica porDia={datos.porDia} />
           </div>
-          <div className="estadisticas-barras" aria-hidden="true">{datos.porDia.map(dia =>
-            <div className="estadisticas-columna" key={dia.fecha} title={`${dia.fecha}: ${dia.reservas} ${dia.reservas === 1 ? 'reserva' : 'reservas'}`}>
-              <div className="estadisticas-barra" style={{ height: `${dia.reservas / Math.max(1, maximo) * 100}%` }} />
-            </div>)}</div>
-          <div className="panel-grafica-fechas panel-ayuda" aria-hidden="true">
-            <span>{fechaLegible(datos.porDia[0]?.fecha ?? datos.periodo.desde)}</span>
-            <span>{fechaLegible(datos.porDia.at(-1)?.fecha ?? datos.periodo.hasta)}</span>
+          <GraficaReservas porDia={datos.porDia}
+            etiquetaAccesible={`Reservas por día del ${fechaLegible(datos.periodo.desde)} al ${fechaLegible(datos.periodo.hasta)}: ${datos.totalReservas} ${datos.totalReservas === 1 ? 'reserva' : 'reservas'}. Detalle en la tabla equivalente.`} />
+        </div>
+        <div className="estadisticas-bloque-servicios">
+          <div className="panel-tarjeta-encabezado">
+            <div>
+              <h2 className="panel-tarjeta-titulo">Servicios más reservados</h2>
+              {datos.serviciosMasReservados.length > 0 && <p className="panel-tarjeta-subtitulo">Participación sobre el total de {datos.totalReservas} {datos.totalReservas === 1 ? 'reserva' : 'reservas'} del periodo.</p>}
+            </div>
+            {datos.serviciosMasReservados.length > 0 && <span className="panel-contador">{datos.serviciosMasReservados.length} {datos.serviciosMasReservados.length === 1 ? 'servicio' : 'servicios'}</span>}
           </div>
+          {datos.serviciosMasReservados.length === 0 ? <p className="panel-subtitulo">No hay servicios reservados para mostrar.</p> :
+            <ul className="panel-lista estadisticas-servicios">{datos.serviciosMasReservados.map((servicio, i) => {
+              const parte = porcentaje(servicio.reservas, datos.totalReservas);
+              return <li className="panel-item estadisticas-servicio-item" key={servicio.servicioId}>
+                <div className="estadisticas-servicio-fila">
+                  <div className="estadisticas-servicio-izq"><span className="estadisticas-rango-num" aria-hidden="true">{i + 1}</span>
+                    <span className="panel-item-titulo">{servicio.nombre}</span></div>
+                  <span className="estadisticas-servicio-conteo"><span>{servicio.reservas} {servicio.reservas === 1 ? 'reserva' : 'reservas'}</span> <small>· {parte}%</small></span>
+                </div>
+                <div className="estadisticas-progreso" aria-hidden="true"><div className="estadisticas-progreso-barra" style={{ width: `${parte}%` }} /></div>
+              </li>;
+            })}</ul>}
         </div>
-        {/* Contenedor de bloque: en display:table .visually-hidden no recorta el alto de las filas y desborda el layout. */}
-        <div className="visually-hidden">
-          <table><caption>Reservas por día</caption>
-            <thead><tr><th scope="col">Fecha</th><th scope="col">Reservas</th></tr></thead>
-            <tbody>{datos.porDia.map(dia => <tr key={dia.fecha}><th scope="row">{dia.fecha}</th><td>{dia.reservas}</td></tr>)}</tbody>
-          </table>
-        </div>
-        <h2 className="panel-tarjeta-titulo">Servicios más reservados</h2>
-        {datos.serviciosMasReservados.length === 0 ? <p className="panel-subtitulo">No hay servicios reservados para mostrar.</p> :
-          <ul className="panel-lista estadisticas-servicios">{datos.serviciosMasReservados.map(servicio =>
-            <li className="panel-item" key={servicio.servicioId}><span className="panel-item-titulo">{servicio.nombre}</span>
-              <span className="panel-item-texto">{servicio.reservas} {servicio.reservas === 1 ? 'reserva' : 'reservas'}</span></li>)}</ul>}
       </>}
     </section>
   </div></div>;

@@ -3,10 +3,10 @@ import { Link } from 'react-router';
 import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import type { PaginaClientes } from './clientes';
-import { DatosCliente } from './DatosCliente';
+import { TarjetaCliente } from './TarjetaCliente';
 import { EstadoClientes } from './EstadoClientes';
 import './Clientes.css';
-import { Users } from 'lucide-react';
+import { CalendarCheck, Search, Users } from 'lucide-react';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 export function Clientes() {
@@ -39,27 +39,48 @@ export function Clientes() {
   function reintentar() { setCargando(true); setError(''); setRevision((r) => r + 1); }
   const consulta = busqueda.trim();
   const buscando = consulta.length >= 2;
+  // Cuenta solo lo cargado: con más páginas es un mínimo («+») y con una búsqueda activa no se muestra.
+  const mas = pagina.siguiente ? '+' : '';
+  const cargados = pagina.items.length > 0 && !buscando;
+  const textoCargados = `${pagina.items.length}${mas} ${pagina.items.length === 1 && !mas ? 'cliente cargado' : 'clientes cargados'}`;
   return <div className="panel-pagina"><div className="panel-contenedor">
-    <header className="panel-encabezado"><div>
-      <EyebrowPanel grupo="operacion" icono={Users} />
-      <h1 className="panel-titulo">Clientes</h1>
-      <p className="panel-subtitulo">Consulta a quienes han reservado con tu negocio.</p>
-    </div></header>
+    <header className="panel-encabezado">
+      <div className="panel-encabezado-textos">
+        <EyebrowPanel grupo="operacion" icono={Users} />
+        <h1 className="panel-titulo">Clientes</h1>
+        <p className="panel-subtitulo">Consulta a quienes han reservado con tu negocio.</p>
+        {cargados && <dl className="panel-metricas" aria-label="Resumen de clientes">
+          <div className="panel-metrica"><dt>{pagina.items.length === 1 && !mas ? 'cliente cargado' : 'clientes cargados'}</dt><dd>{pagina.items.length}{mas}</dd></div>
+        </dl>}
+      </div>
+      <div className="panel-encabezado-acciones">
+        <Link to="/reservas" className="btn-servia-secondary"><CalendarCheck aria-hidden="true" />Ver reservas</Link>
+      </div>
+    </header>
     <section className="panel-tarjeta" aria-label="Clientes del negocio">
-      <label htmlFor="clientes-busqueda" className="form-label">Buscar por nombre</label>
-      <input id="clientes-busqueda" className="form-control" type="search" maxLength={50} value={busqueda}
-        aria-describedby="clientes-ayuda" onChange={(e) => {
-          setBusqueda(e.target.value); setCursor(''); setPagina({ items: [], siguiente: null }); setError(''); setCargando(true);
-        }} />
-      <p id="clientes-ayuda" className="panel-item-texto">Escribe al menos 2 caracteres para buscar.</p>
+      <div className="panel-tarjeta-encabezado">
+        <div>
+          <h2 className="panel-tarjeta-titulo">Directorio de clientes</h2>
+          <p className="panel-tarjeta-subtitulo">Selecciona un cliente para revisar su historial de reservas.</p>
+        </div>
+        {cargados && <span className="panel-contador">{textoCargados}</span>}
+      </div>
+      <div className="clientes-buscador-bloque">
+        <label htmlFor="clientes-busqueda" className="form-label">Buscar por nombre</label>
+        <div className="clientes-buscador-campo">
+          <Search className="clientes-buscador-icono" aria-hidden="true" />
+          <input id="clientes-busqueda" className="form-control clientes-buscador-input" type="search" maxLength={50} value={busqueda}
+            aria-describedby="clientes-ayuda" onChange={(e) => {
+              setBusqueda(e.target.value); setCursor(''); setPagina({ items: [], siguiente: null }); setError(''); setCargando(true);
+            }} />
+        </div>
+        <p id="clientes-ayuda" className="panel-ayuda clientes-buscador-ayuda">Escribe al menos 2 caracteres para buscar.</p>
+      </div>
       <div className="clientes-resultados" aria-busy={cargando}>
         <EstadoClientes carga="clientes" titulo={buscando ? 'Sin resultados' : 'Aún no hay clientes'} cargando={cargando} error={error}
           vacio={pagina.items.length || consulta.length === 1 ? '' : buscando ? 'No encontramos clientes con ese nombre.' : 'Aquí aparecerán las personas que reserven contigo.'} reintentar={reintentar} />
         <div className="panel-lista">
-          {pagina.items.map((cliente) => <article className="panel-item clientes-item" key={cliente.clienteUid}>
-            <h2 className="panel-item-titulo"><Link to={`/clientes/${encodeURIComponent(cliente.clienteUid)}`}>{cliente.nombre || 'Cliente sin nombre'}</Link></h2>
-            <DatosCliente cliente={cliente} />
-          </article>)}
+          {pagina.items.map((cliente) => <TarjetaCliente cliente={cliente} key={cliente.clienteUid} />)}
         </div>
         {!cargando && !error && pagina.siguiente && <button className="btn-servia-secondary btn-servia-sm clientes-mas" onClick={() => {
           setCursor(pagina.siguiente!); setCargando(true); setError('');

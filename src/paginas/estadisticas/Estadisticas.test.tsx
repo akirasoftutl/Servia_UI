@@ -3,6 +3,7 @@ import { api, ErrorApi } from '../../servicios/api';
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { Estadisticas } from './Estadisticas';
 import { periodoPredefinido, validarPeriodo } from './fechas';
+import { MAX_ETIQUETAS, indicesEtiquetas, marcasEje, porcentaje, promedioDiario } from './grafica';
 
 vi.mock('../../servicios/api', () => ({ api: vi.fn(), ErrorApi: class extends Error {
   estado: number;
@@ -24,7 +25,8 @@ function estadisticas() {
 function numero(etiqueta: string) {
   return screen.getByText(etiqueta).closest('.panel-item')!.querySelector('dd');
 }
-function cambiar(valor: string) { fireEvent.change(screen.getByLabelText('Periodo de consulta'), { target: { value: valor } }); }
+const PESTANAS: Record<string, string> = { '7': '7 días', '30': '30 días', '90': '90 días', personalizado: 'Personalizado' };
+function cambiar(valor: string) { fireEvent.click(within(screen.getByRole('group', { name: 'Rango de fechas' })).getByRole('button', { name: PESTANAS[valor] })); }
 beforeEach(() => { apiMock.mockReset().mockResolvedValue(estadisticas()); });
 
 describe('Estadísticas', () => {
@@ -152,14 +154,11 @@ describe('Estadísticas', () => {
     const grafica = await screen.findByRole('img');
     expect(screen.getByText('Del 17/11/2026 al 19/11/2026 · Todos los estados.')).toBeVisible();
     expect(grafica).toHaveAccessibleName(expect.stringContaining('del 17/11/2026 al 19/11/2026'));
-    const eje = grafica.querySelector('.panel-grafica-eje')!;
-    expect(eje).toBeVisible();
-    expect(eje.children[0]).toHaveTextContent(new RegExp(`^${maximo}$`));
-    expect(eje.children[1]).toHaveTextContent(/^0$/);
-    const fechas = grafica.querySelector('.panel-grafica-fechas')!;
-    expect(fechas).toBeVisible();
-    expect(fechas.children[0]).toHaveTextContent('17/11/2026');
-    expect(fechas.children[1]).toHaveTextContent(valores.length === 1 ? '17/11/2026' : '19/11/2026');
+    const marcas = [...grafica.querySelectorAll('.grafica-eje-marcas span')].map((marca) => marca.textContent);
+    expect(marcas[0]).toBe(String(Math.max(1, maximo)));
+    expect(marcas.at(-1)).toBe('0');
+    const fechas = [...grafica.querySelectorAll('.grafica-fecha')].map((fecha) => fecha.textContent);
+    expect(fechas).toEqual(valores.length === 0 ? [] : valores.length === 1 ? ['17/11'] : ['17/11', '18/11', '19/11']);
     const filas = within(screen.getByRole('table', { name: 'Reservas por día' })).getAllByRole('row').slice(1);
     expect(filas).toHaveLength(valores.length);
     porDia.forEach((dia, i) => {
@@ -190,21 +189,120 @@ describe('Estadísticas', () => {
       expect(barras[i].parentElement).toHaveAttribute('title', `${dia.fecha}: ${dia.reservas} ${dia.reservas === 1 ? 'reserva' : 'reservas'}`);
       expect(barras[i]).toHaveStyle({ height: `${dia.reservas / 366 * 100}%` });
     });
-    const eje = grafica.querySelector('.panel-grafica-eje')!;
-    expect(eje).toBeVisible();
-    expect(eje.children[0]).toHaveTextContent(/^366$/);
-    expect(eje.children[1]).toHaveTextContent(/^0$/);
-    const fechas = grafica.querySelector('.panel-grafica-fechas')!;
-    expect(fechas.children[0]).toBeVisible();
-    expect(fechas.children[0]).toHaveTextContent(/^01\/01\/2028$/);
-    expect(fechas.children[1]).toBeVisible();
-    expect(fechas.children[1]).toHaveTextContent(/^31\/12\/2028$/);
+    const marcas = [...grafica.querySelectorAll('.grafica-eje-marcas span')].map((marca) => marca.textContent);
+    expect(marcas[0]).toBe('366');
+    expect(marcas.at(-1)).toBe('0');
+    const fechas = [...grafica.querySelectorAll('.grafica-fecha')];
+    expect(fechas).toHaveLength(MAX_ETIQUETAS);
+    expect(fechas[0]).toHaveTextContent(/^01\/01$/);
+    expect(fechas.at(-1)).toHaveTextContent(/^31\/12$/);
+    expect(grafica).toHaveClass('grafica-marco--densa');
     const peticiones = apiMock.mock.calls.length;
     fireEvent.change(screen.getByLabelText('Fecha final'), { target: { value: '2029-01-01' } });
     expect(screen.getByRole('alert')).toHaveTextContent('El periodo no puede pasar de 366 días.');
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
     await act(async () => {});
     expect(apiMock).toHaveBeenCalledTimes(peticiones);
+  });
+
+  it('D19 el periodo se elige con pestañas rápidas y solo la activa está pulsada', async () => {
+    render(<Estadisticas />);
+    await screen.findByText('Total de reservas');
+    const grupo = within(screen.getByRole('group', { name: 'Rango de fechas' }));
+    expect(grupo.getAllByRole('button').map((b) => b.textContent)).toEqual(['7 días', '30 días', '90 días', 'Personalizado']);
+    expect(grupo.getByRole('button', { name: '30 días' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Fecha inicial')).not.toBeInTheDocument();
+    cambiar('7');
+    await screen.findByText('Total de reservas');
+    expect(grupo.getByRole('button', { name: '7 días' })).toHaveAttribute('aria-pressed', 'true');
+    expect(grupo.getByRole('button', { name: '30 días' })).toHaveAttribute('aria-pressed', 'false');
+    const [ruta] = apiMock.mock.lastCall!;
+    const consulta = new URL(String(ruta), 'http://local').searchParams;
+    expect((Date.parse(consulta.get('hasta')!) - Date.parse(consulta.get('desde')!)) / 86400000 + 1).toBe(7);
+    cambiar('personalizado');
+    expect(await screen.findByLabelText('Fecha inicial')).toBeVisible();
+    expect(grupo.getByRole('button', { name: 'Personalizado' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('D19 pulsar la pestaña activa no vuelve a consultar', async () => {
+    render(<Estadisticas />);
+    await screen.findByText('Total de reservas');
+    const llamadas = apiMock.mock.calls.length;
+    cambiar('30');
+    await act(async () => {});
+    expect(apiMock).toHaveBeenCalledTimes(llamadas);
+  });
+
+  it('D19 muestra el rango consultado junto al título y lo oculta si las fechas no son válidas', async () => {
+    render(<Estadisticas />);
+    await screen.findByText('Total de reservas');
+    const rango = document.querySelector('.estadisticas-periodo-rango')!;
+    expect(rango.textContent).toMatch(/^\d{2}\/\d{2}\/\d{4} – \d{2}\/\d{2}\/\d{4}$/);
+    cambiar('personalizado');
+    fireEvent.change(screen.getByLabelText('Fecha inicial'), { target: { value: '' } });
+    expect(document.querySelector('.estadisticas-periodo-rango')).toBeNull();
+  });
+
+  it('D19 cada una de las seis métricas lleva su ícono', async () => {
+    render(<Estadisticas />);
+    await screen.findByText('Total de reservas');
+    const tarjetas = document.querySelectorAll('.estadisticas-metricas .estadisticas-kpi');
+    expect(tarjetas).toHaveLength(6);
+    tarjetas.forEach((tarjeta) => expect(tarjeta.querySelector('.estadisticas-kpi-icono svg')).toBeInTheDocument());
+  });
+
+  it('D19 la gráfica muestra el valor de cada barra, resalta el pico y explica el promedio en la leyenda', async () => {
+    render(<Estadisticas />);
+    const grafica = await screen.findByRole('img');
+    expect([...grafica.querySelectorAll('.grafica-valor')].map((v) => v.textContent)).toEqual(['9', '12', '16']);
+    const pico = grafica.querySelector('.grafica-col--pico')!;
+    expect(pico).toHaveAttribute('title', '2026-11-19: 16 reservas');
+    expect(grafica.querySelectorAll('.grafica-col--pico')).toHaveLength(1);
+    const leyenda = within(screen.getByRole('list', { name: 'Leyenda de la gráfica' }));
+    expect(leyenda.getByText(/Pico \(19\/11 · 16\)/)).toBeVisible();
+    expect(leyenda.getByText(/Promedio: 12[.,]3 \/ día/)).toBeVisible();
+    expect(grafica.querySelector('.grafica-promedio-linea')).toHaveStyle({ bottom: `${12.3 / 16 * 100}%` });
+    expect(grafica.querySelectorAll('.grafica-guia').length).toBeGreaterThan(0);
+  });
+
+  it('D19 con 90 días solo el pico lleva valor, las etiquetas se espacian y la tabla oculta conserva todos los días', async () => {
+    const porDia = Array.from({ length: 90 }, (_, i) => ({ fecha: new Date(Date.UTC(2026, 7, 22 + i)).toISOString().slice(0, 10), reservas: i % 7 === 3 ? 8 : i % 5 }));
+    apiMock.mockResolvedValue({ ...estadisticas(), porDia });
+    render(<Estadisticas />);
+    const grafica = await screen.findByRole('img');
+    expect(grafica.querySelectorAll('.estadisticas-barra')).toHaveLength(90);
+    expect(grafica.querySelectorAll('.grafica-valor')).toHaveLength(1);
+    expect(grafica.querySelector('.grafica-col--pico .grafica-valor')).toHaveTextContent('8');
+    expect(grafica.querySelectorAll('.grafica-fecha')).toHaveLength(MAX_ETIQUETAS);
+    expect(grafica).toHaveClass('grafica-marco--densa');
+    expect(within(screen.getByRole('table', { name: 'Reservas por día' })).getAllByRole('row')).toHaveLength(91);
+  });
+
+  it('D19 «Servicios más reservados» muestra la participación sobre el total como barra y porcentaje', async () => {
+    render(<Estadisticas />);
+    await screen.findByText('Total de reservas');
+    const corte = screen.getByText('Corte de cabello').closest('li')!;
+    expect(corte).toHaveTextContent('13 reservas');
+    expect(within(corte).getByText('· 35%')).toBeVisible();
+    expect(corte.querySelector('.estadisticas-progreso-barra')).toHaveStyle({ width: '35%' });
+    const barba = screen.getByText('Arreglo de barba').closest('li')!;
+    expect(within(barba).getByText('· 22%')).toBeVisible();
+    expect(barba.querySelector('.estadisticas-progreso-barra')).toHaveStyle({ width: '22%' });
+    expect(screen.getByText('Participación sobre el total de 37 reservas del periodo.')).toBeVisible();
+    expect(screen.getByText('2 servicios')).toHaveClass('panel-contador');
+  });
+
+  it('D19 los ayudantes de la gráfica: escala, etiquetas, promedio y porcentaje', () => {
+    expect(marcasEje(16)).toEqual([16, 11, 5, 0]);
+    expect(marcasEje(2)).toEqual([2, 1, 0]);
+    expect(indicesEtiquetas(3)).toEqual([0, 1, 2]);
+    expect(indicesEtiquetas(90)).toEqual([0, 18, 36, 53, 71, 89]);
+    expect(indicesEtiquetas(366).at(-1)).toBe(365);
+    expect(promedioDiario([{ fecha: 'a', reservas: 9 }, { fecha: 'b', reservas: 12 }, { fecha: 'c', reservas: 16 }])).toBe(12.3);
+    expect(promedioDiario([])).toBe(0);
+    expect(porcentaje(13, 37)).toBe(35);
+    expect(porcentaje(5, 0)).toBe(0);
   });
 
   it('C5 cargando usa el estado y spinner compartidos del panel', async () => {
