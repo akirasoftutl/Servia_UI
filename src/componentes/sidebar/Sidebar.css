@@ -127,7 +127,7 @@
   border-right: 1px solid var(--border-color);
   position: sticky;
   top: 0;
-  align-self: stretch;
+  align-self: flex-start;
 }
 
 .sidebar-header {
