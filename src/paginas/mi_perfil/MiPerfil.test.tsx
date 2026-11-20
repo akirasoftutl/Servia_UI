@@ -385,3 +385,32 @@ describe('Mi perfil: domicilio por campos al elegir una sugerencia (#93)', () =>
     expect(valor('Estado *')).toBe('Guanajuato')
   })
 })
+
+describe('Mi perfil: sección Fotos (#42)', () => {
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  it('muestra la portada y la galería que llegan en fotos de GET /negocios/mio', async () => {
+    responder({
+      ...perfilBase,
+      direccion: direccionGuardada,
+      fotos: {
+        portada: { id: 'p-1', url: 'https://cdn.servia.test/portada.jpg' },
+        galeria: [
+          { id: 'g-1', url: 'https://cdn.servia.test/g1.jpg' },
+          { id: 'g-2', url: 'https://cdn.servia.test/g2.jpg' },
+        ],
+      },
+    })
+
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+
+    expect(await screen.findByRole('heading', { name: 'Fotos' })).toBeInTheDocument()
+    expect(screen.getByAltText('Portada actual del negocio')).toHaveAttribute('src', 'https://cdn.servia.test/portada.jpg')
+    expect(screen.getByAltText('Foto 1 de la galería')).toHaveAttribute('src', 'https://cdn.servia.test/g1.jpg')
+    expect(screen.getByAltText('Foto 2 de la galería')).toHaveAttribute('src', 'https://cdn.servia.test/g2.jpg')
+    expect(screen.getByText('2 / 5 en galería')).toBeInTheDocument()
+  })
+})
