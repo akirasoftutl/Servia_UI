@@ -26,3 +26,17 @@ export const horaMexico = new Intl.DateTimeFormat('es-MX', { timeZone: zonaHorar
 export function fechaHoraMexico(valor: string) {
   return `${fechaMexico.format(new Date(valor))} a las ${horaMexico.format(new Date(valor))}`;
 }
+const diaCorto = new Intl.DateTimeFormat('es-MX', { timeZone: zonaHoraria, day: '2-digit', month: 'short' });
+const diaMedio = new Intl.DateTimeFormat('es-MX', { timeZone: zonaHoraria, dateStyle: 'medium' });
+const diaLargo = new Intl.DateTimeFormat('es-MX', { timeZone: zonaHoraria, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+// «04 nov», «3 nov 2030» y «domingo, 3 de noviembre de 2030», siempre en hora de México.
+export const diaCortoMexico = (valor: string) => diaCorto.format(new Date(valor)).replace(/[.-]/g, ' ').replace(/\s+/g, ' ').trim();
+export const diaMedioMexico = (valor: string) => diaMedio.format(new Date(valor)).replace('.', '');
+export const diaLargoMexico = (valor: string) => diaLargo.format(new Date(valor));
+
+// Iniciales del avatar: primera y última palabra del nombre; una sola si solo hay una.
+export function iniciales(nombre: string) {
+  const palabras = nombre.trim().split(/\s+/).filter(Boolean).map((palabra) => Array.from(palabra)[0]);
+  if (!palabras.length) return '?';
+  return (palabras.length === 1 ? palabras[0] : palabras[0] + palabras[palabras.length - 1]).toLocaleUpperCase('es-MX');
+}

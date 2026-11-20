@@ -7,11 +7,12 @@ const regla = (fuente: string, selector: string) => {
 };
 
 describe('responsividad del panel (reglas de CSS)', () => {
-  it('Resumen: 2 columnas en móvil y 5 en pantallas anchas, sin auto-fit', () => {
+  it('Resumen: rejilla 2x2 bajo la tarjeta destacada en móvil y destacada + dos columnas en pantallas anchas, sin auto-fit', () => {
     const fuente = css('../paginas/resumen/Resumen.css');
     expect(regla(fuente, '.resumen-tarjetas')).toContain('repeat(2, minmax(0, 1fr))');
+    expect(regla(fuente, '.resumen-hero')).toContain('grid-column: 1 / -1');
     expect(fuente).not.toContain('auto-fit');
-    expect(fuente).toMatch(/@media \(min-width: 1100px\)[\s\S]*repeat\(5, minmax\(0, 1fr\)\)/);
+    expect(fuente).toMatch(/@media \(min-width: 1100px\)[\s\S]*minmax\(0, 1\.15fr\) repeat\(2, minmax\(0, 1fr\)\)/);
   });
 
   it('Estadísticas: 2 columnas en móvil y 3x2 desde tablet, sin auto-fit', () => {
