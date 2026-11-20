@@ -238,3 +238,17 @@ describe('UI108 íconos del menú', () => {
     expect(readFileSync('src/estilos/panel.css', 'utf8')).toMatch(/--sv-icono-nav:\s*20px/)
   })
 })
+
+it('UI108 la barra no muestra buscador, ni en escritorio ni en el cajón', async () => {
+  pantalla(false)
+  const vista = render(barra())
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument()
+  expect(document.querySelector('.search-container, .search-input, input')).toBeNull()
+  vista.unmount()
+  pantalla(true)
+  render(barra())
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  expect(document.querySelector('input')).toBeNull()
+})

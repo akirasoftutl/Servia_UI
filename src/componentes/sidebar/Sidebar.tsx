@@ -41,7 +41,7 @@ export const Sidebar: React.FC = () => {
     const activador = botonMenu.current;
     const contenido = barra.current?.closest('.layout')?.querySelector('main');
     contenido?.setAttribute('inert', '');
-    const controles = () => Array.from(barra.current?.querySelectorAll<HTMLElement>('button, input') ?? []);
+    const controles = () => Array.from(barra.current?.querySelectorAll<HTMLElement>('button') ?? []);
     controles()[0]?.focus();
     const teclado = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); setAbierta(false); }
@@ -62,7 +62,6 @@ export const Sidebar: React.FC = () => {
   }, [angosta, abierta]);
 
   const { pathname } = useLocation();
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { cerrarSesion, usuario } = useAuth();
@@ -137,20 +136,6 @@ export const Sidebar: React.FC = () => {
           <h1 className="brand-title">Servia</h1>
         </div>
 
-      </div>
-
-      <div className="search-container">
-        <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Buscar..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
       </div>
 
       <nav className="sidebar-nav">
