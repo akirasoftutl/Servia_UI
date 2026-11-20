@@ -67,6 +67,21 @@ it('C5 muestra vacío', async () => {
   mock.mockResolvedValue({ items: [], siguiente: null }); abrir(); await avanzar();
   expect(screen.getByText('Todavía no tienes clientes.')).toHaveClass('panel-estado-texto');
 });
+it('distingue búsqueda sin resultados del estado vacío sin clientes', async () => {
+  mock.mockResolvedValue({ items: [cliente], siguiente: null });
+  abrir(); await avanzar();
+  mock.mockResolvedValue({ items: [], siguiente: null });
+  const input = screen.getByLabelText('Buscar por nombre');
+  fireEvent.change(input, { target: { value: 'Zzz' } });
+  await avanzar(300);
+  expect(screen.getByRole('heading', { name: 'Sin resultados' })).toHaveClass('panel-estado-titulo');
+  expect(screen.getByText('No encontramos clientes con ese nombre.')).toHaveClass('panel-estado-texto');
+  expect(screen.queryByRole('heading', { name: 'Aún no hay clientes' })).not.toBeInTheDocument();
+  fireEvent.change(input, { target: { value: '' } });
+  await avanzar();
+  expect(screen.getByRole('heading', { name: 'Aún no hay clientes' })).toHaveClass('panel-estado-titulo');
+  expect(screen.queryByRole('heading', { name: 'Sin resultados' })).not.toBeInTheDocument();
+});
 it('C5 muestra error y permite reintentar sin alert', async () => {
   const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {});
   mock.mockRejectedValueOnce(new Error('Sin red')); abrir(); await avanzar();
