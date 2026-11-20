@@ -170,7 +170,7 @@ export function Avisos() {
         )}
 
         {estadoPermiso === 'default' && (
-          <div className="panel-alerta panel-alerta--info">
+          <div className="panel-alerta panel-alerta--info panel-alerta--apilable">
             <span className="panel-alerta-icono" aria-hidden="true">
               <Bell aria-hidden="true" />
             </span>

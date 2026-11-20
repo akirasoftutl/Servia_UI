@@ -1466,6 +1466,7 @@ fieldset:disabled .btn-servia-secondary {
 }
 .panel-aviso-item {
   width: 100%;
+  flex-wrap: wrap;
   text-align: left;
   cursor: pointer;
   font-family: inherit;
@@ -1482,7 +1483,7 @@ fieldset:disabled .btn-servia-secondary {
   transform: scaleY(1);
 }
 .panel-aviso-cuerpo {
-  flex: 1 1 auto;
+  flex: 1 1 calc(var(--sv-esp-7) * 5);
   min-width: 0;
 }
 .panel-aviso-titulo,
@@ -1491,10 +1492,18 @@ fieldset:disabled .btn-servia-secondary {
 }
 .panel-aviso-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: var(--sv-esp-2);
   flex: 0 0 auto;
+}
+.panel-alerta--apilable {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.panel-alerta--apilable .panel-alerta-contenido {
+  flex: 1 1 calc(var(--sv-esp-7) * 5);
 }
 .panel-aviso-fecha {
   color: var(--sv-texto-tenue);
