@@ -1379,3 +1379,15 @@ fieldset:disabled .btn-servia-secondary {
     opacity: 0.6;
   }
 }
+
+/* Acordeones: controles y respuestas con el mismo sistema del panel. */
+.panel-acordeon-boton {
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+  white-space: normal;
+  border-radius: var(--sv-radio-sm);
+}
+.panel-acordeon > [role='region'] {
+  padding: var(--sv-esp-3) var(--sv-esp-4);
+}
