@@ -41,6 +41,8 @@ type RespuestaPerfil = Partial<PerfilNegocio> & {
   fotos?: Partial<FotosNegocioDatos> | null;
 };
 
+const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function MiPerfil() {
 
   // Estado para controlar el paso actual (1, 2 o 3)
@@ -58,7 +60,6 @@ export function MiPerfil() {
 
   // Estados adicionales para los campos extendidos de la UI
   const [camposExtra, setCamposExtra] = useState({
-    email: '',
     referencias: '',
   });
 
@@ -114,7 +115,7 @@ export function MiPerfil() {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (['email', 'referencias'].includes(name)) {
+    if (name === 'referencias') {
       setCamposExtra({ ...camposExtra, [name]: value });
     } else {
       setForm({ ...form, [name]: value });
@@ -162,7 +163,7 @@ export function MiPerfil() {
     if (paso === 1) {
       if (!form.nombre.trim()) nuevosErrores.nombre = 'El nombre es obligatorio';
       if (!form.telefono.trim()) nuevosErrores.telefono = 'El teléfono es obligatorio';
-      if (!camposExtra.email.includes('@')) nuevosErrores.email = 'Correo inválido';
+      if (!CORREO_VALIDO.test(form.correoContacto.trim())) nuevosErrores.correoContacto = 'Escribe un correo válido, por ejemplo contacto@negocio.com';
       if (!form.descripcion.trim()) nuevosErrores.descripcion = 'La descripción es obligatoria';
     }
 
@@ -201,7 +202,8 @@ export function MiPerfil() {
 
     setGuardando(true);
     try {
-      const { nombre, descripcion, categoriaId, telefono, correoContacto } = form;
+      const { nombre, descripcion, categoriaId, telefono } = form;
+      const correoContacto = form.correoContacto.trim();
       const respuesta = await api<RespuestaPerfil>('/negocios/mio', {
         method: 'PUT',
         body: JSON.stringify({ nombre, descripcion, categoriaId, telefono, correoContacto, direccion: direccionParaApi(direccion) }),
@@ -423,28 +425,32 @@ export function MiPerfil() {
 
                         <div className="col-12">
                           <label
-                            htmlFor="email"
+                            htmlFor="correoContacto"
                             className="form-label"
                           >
-                            Correo electrónico *
+                            Correo de contacto del negocio *
                           </label>
 
                           <input
-                            id="email"
+                            id="correoContacto"
                             type="email"
-                            name="email"
-                            className={`form-control ${errores.email ? 'is-invalid' : ''
+                            name="correoContacto"
+                            className={`form-control ${errores.correoContacto ? 'is-invalid' : ''
                               }`}
-                            value={camposExtra.email}
+                            value={form.correoContacto}
                             onChange={handleChange}
                             placeholder="contacto@negocio.com"
                             autoComplete="email"
                             required
                           />
 
-                          {errores.email && (
+                          {errores.correoContacto ? (
                             <div className="invalid-feedback">
-                              {errores.email}
+                              {errores.correoContacto}
+                            </div>
+                          ) : (
+                            <div className="panel-ayuda">
+                              Es el correo que verán tus clientes. No cambia el correo con el que inicias sesión.
                             </div>
                           )}
                         </div>

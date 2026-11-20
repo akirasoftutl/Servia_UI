@@ -46,7 +46,7 @@ function responder(perfil: Record<string, unknown>) {
 
 async function abrirPaso2() {
   render(<MemoryRouter><MiPerfil /></MemoryRouter>)
-  await userEvent.type(await screen.findByLabelText(/Correo/i, { selector: 'input[name="email"]' }), 'norte@correo.com')
+  await screen.findByLabelText(/Correo de contacto/i)
   await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
   await screen.findByLabelText('Calle *')
 }
@@ -412,5 +412,42 @@ describe('Mi perfil: sección Fotos (#42)', () => {
     expect(screen.getByAltText('Foto 1 de la galería')).toHaveAttribute('src', 'https://cdn.servia.test/g1.jpg')
     expect(screen.getByAltText('Foto 2 de la galería')).toHaveAttribute('src', 'https://cdn.servia.test/g2.jpg')
     expect(screen.getByText('2 / 5 en galería')).toBeInTheDocument()
+  })
+})
+
+describe('Mi perfil: correo de contacto (#122)', () => {
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  const put = () => apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')
+
+  it('C1: carga el correo de contacto desde GET /negocios/mio y el PUT envía el valor nuevo', async () => {
+    responder({ ...perfilBase, correoContacto: 'viejo@negocio.com', direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    const correo = await screen.findByLabelText(/Correo de contacto del negocio/)
+    expect(correo).toHaveValue('viejo@negocio.com')
+
+    await userEvent.clear(correo)
+    await userEvent.type(correo, 'nuevo@negocio.com')
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+
+    expect(JSON.parse(String(put()![1]!.body)).correoContacto).toBe('nuevo@negocio.com')
+    expect(JSON.parse(String(put()![1]!.body)).nombre).toBe('Barbería Norte')
+  })
+
+  it('C1: un correo inválido muestra el error en español y no avanza', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    const correo = await screen.findByLabelText(/Correo de contacto del negocio/)
+    await userEvent.clear(correo)
+    await userEvent.type(correo, 'sin-arroba')
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(screen.getByText(/Escribe un correo válido/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Calle *')).not.toBeInTheDocument()
   })
 })
