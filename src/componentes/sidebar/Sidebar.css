@@ -103,7 +103,10 @@
   transform: rotate(-90deg); /* O rotate(90deg) según la dirección inicial de tu flecha */
 }
 
-* {
+/* Reinicio de márgenes solo dentro de la barra y de la barra móvil (antes era global
+   y afectaba a todas las pantallas). :where() lo deja sin especificidad, como el
+   selector universal, para que sus reglas por clase sigan mandando. */
+:where(.sidebar, .sidebar *, .panel-barra-movil, .panel-barra-movil *) {
   box-sizing: border-box;
   margin: 0;
   padding: 0;

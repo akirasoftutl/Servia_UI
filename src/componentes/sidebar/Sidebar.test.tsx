@@ -322,3 +322,17 @@ describe('UI108 barra móvil y cajón', () => {
     }
   })
 })
+
+describe('UI108 el reinicio de márgenes ya no es global', () => {
+  const css = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+  const selectores = [...css.matchAll(/(?<=^|\})\s*([^{}@][^{}]*)\{([^}]*)\}/g)].map(([, selector, cuerpo]) => ({ selector: selector.trim(), cuerpo }))
+  it('ninguna regla con selector universal solo reinicia margin o padding', () => {
+    const globales = selectores.filter(({ selector, cuerpo }) => /^\*(\s*,\s*\*)*$/.test(selector) && /margin:\s*0|padding:\s*0/.test(cuerpo))
+    expect(globales).toEqual([])
+  })
+  it('el reinicio queda acotado a la barra y a la barra móvil', () => {
+    const acotado = selectores.find(({ selector, cuerpo }) => selector.startsWith(':where(') && /margin:\s*0/.test(cuerpo) && /padding:\s*0/.test(cuerpo))
+    expect(acotado?.selector).toContain('.sidebar')
+    expect(acotado?.selector).toContain('.panel-barra-movil')
+  })
+})
