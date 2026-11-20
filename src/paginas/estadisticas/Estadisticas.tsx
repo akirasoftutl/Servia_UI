@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChartColumn } from 'lucide-react';
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api, ErrorApi } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { periodoPredefinido, validarPeriodo, type Periodo } from './fechas';
 import './Estadisticas.css';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
@@ -41,7 +42,7 @@ export function Estadisticas() {
       } catch (causa) {
         if (vigente) setError(causa instanceof ErrorApi && causa.estado === 400 && /demasiadas reservas/i.test(causa.message)
           ? `${causa.message} Acorta el periodo.`
-          : 'No pudimos cargar las estadísticas. Intenta de nuevo.');
+          : mensajeDeError(causa, 'No pudimos cargar las estadísticas. Intenta de nuevo.'));
       } finally {
         if (vigente) setCargando(false);
       }

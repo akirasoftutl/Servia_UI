@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import './Reservas.css';
 import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
 import { Link, useNavigate, useSearchParams } from 'react-router';
@@ -87,8 +88,8 @@ export function Reservas() {
     };
     cargar().then((datos) => {
       if (vigente && datos) setPagina(datos);
-    }).catch(() => {
-      if (vigente) setError('No pudimos cargar las reservas. Intenta de nuevo.');
+    }).catch((causa: unknown) => {
+      if (vigente) setError(mensajeDeError(causa, 'No pudimos cargar las reservas. Intenta de nuevo.'));
     }).finally(() => {
       if (vigente) setCargando(false);
     });

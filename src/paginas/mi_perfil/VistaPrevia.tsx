@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Tags, Eye } from 'lucide-react'
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel'
 import { api, ErrorApi } from '../../servicios/api'
+import { mensajeDeError } from '../../servicios/mensajeDeError'
 import type { Direccion } from './direccion'
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel'
 import './VistaPrevia.css'
@@ -63,7 +64,7 @@ function direccionEnTexto(perfil: Perfil) {
 
 export function VistaPrevia() {
   const [datos, setDatos] = useState<Datos | null>(null)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
 
   useEffect(() => {
@@ -98,8 +99,8 @@ export function VistaPrevia() {
           servicios: servicios.filter(servicio => servicio.activo !== false),
           categoria: categorias.find(c => c.id === perfil.categoriaId)?.nombre ?? 'Categoría no disponible',
         })
-      } catch {
-        if (vigente) setError(true)
+      } catch (causa: unknown) {
+        if (vigente) setError(mensajeDeError(causa, 'No pudimos cargar la vista previa. Intenta nuevamente.'))
       }
     }
     void cargar()
@@ -108,7 +109,7 @@ export function VistaPrevia() {
 
   function reintentar() {
     setDatos(null)
-    setError(false)
+    setError('')
     setRevision(valor => valor + 1)
   }
 
@@ -125,7 +126,7 @@ export function VistaPrevia() {
         </header>
         {error ? <div className="panel-estado">
           <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
-          <p className="panel-estado-texto" role="alert">No pudimos cargar la vista previa. Intenta nuevamente.</p>
+          <p className="panel-estado-texto" role="alert">{error}</p>
           <button type="button" className="btn-servia-primary" onClick={reintentar}>Reintentar</button>
         </div> : !datos ? <div className="panel-estado">
           <div className="spinner-border" aria-hidden="true" />

@@ -10,6 +10,7 @@ import {
   type Aviso,
   type EstadoPermisoPush,
 } from '../../servicios/notificaciones'
+import { mensajeDeError } from '../../servicios/mensajeDeError'
 import '../../estilos/panel.css'
 
 const formatoFecha = new Intl.DateTimeFormat('es-MX', {
@@ -67,9 +68,9 @@ export function Avisos() {
         actualizarNoLeidas(datos.noLeidas)
         cargaInicialCompleta.current = true
       })
-      .catch(() => {
+      .catch((causa: unknown) => {
         if (vigente && mostrarEsqueleto) {
-          setError('No se pudieron cargar tus avisos.')
+          setError(mensajeDeError(causa, 'No se pudieron cargar tus avisos.'))
         }
       })
       .finally(() => {
@@ -100,8 +101,8 @@ export function Avisos() {
       })
       setSiguiente(datos.siguiente)
       actualizarNoLeidas(datos.noLeidas)
-    } catch {
-      setErrorMas('No se pudieron cargar más avisos. Inténtalo de nuevo.')
+    } catch (causa: unknown) {
+      setErrorMas(mensajeDeError(causa, 'No se pudieron cargar más avisos. Inténtalo de nuevo.'))
     } finally {
       setCargandoMas(false)
     }
@@ -118,8 +119,8 @@ export function Avisos() {
       if (resultado === 'granted') {
         setPushActivadoAhora(true)
       }
-    } catch {
-      setErrorPush('No se pudieron activar las notificaciones. Inténtalo de nuevo.')
+    } catch (causa: unknown) {
+      setErrorPush(mensajeDeError(causa, 'No se pudieron activar las notificaciones. Inténtalo de nuevo.'))
     } finally {
       setActivandoPush(false)
     }

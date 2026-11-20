@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { CalendarClock, Pause, LayoutDashboard } from 'lucide-react';
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import './Resumen.css';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
@@ -65,8 +66,8 @@ export function Resumen() {
         if (!esResumen(respuesta)) throw new Error('Respuesta inesperada');
         setDatos(respuesta);
       })
-      .catch(() => {
-        if (vigente) setError('No pudimos cargar el resumen. Intenta de nuevo.');
+      .catch((causa: unknown) => {
+        if (vigente) setError(mensajeDeError(causa, 'No pudimos cargar el resumen. Intenta de nuevo.'));
       })
       .finally(() => {
         if (vigente) setCargando(false);

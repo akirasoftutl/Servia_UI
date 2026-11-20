@@ -5,6 +5,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../../servicios/firebase';
 import { useLocation, useNavigate } from 'react-router';
 import { api } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import '../../estilos/panel.css';
 
 async function cerrarSesionVencida() {
@@ -30,7 +31,7 @@ export function RecepcionReservas() {
   // Recepción de reservas (antes vivía en el Layout).
   const [aceptaReservas, setAceptaReservas] = useState<boolean | null>(null);
   const [cargandoRecepcion, setCargandoRecepcion] = useState(false);
-  const [errorCargaRecepcion, setErrorCargaRecepcion] = useState(false);
+  const [errorCargaRecepcion, setErrorCargaRecepcion] = useState('');
   const [reintentoRecepcion, setReintentoRecepcion] = useState(0);
   const [mensajeReservas, setMensajeReservas] = useState('');
   const [errorCambio, setErrorCambio] = useState(false);
@@ -55,7 +56,9 @@ export function RecepcionReservas() {
           navigate('/login', { replace: true });
           return;
         }
-        if (actual === solicitudes.version) setErrorCargaRecepcion(true);
+        if (actual === solicitudes.version) {
+          setErrorCargaRecepcion(mensajeDeError(error, 'Intenta de nuevo para consultar el estado actual.'));
+        }
       });
     return () => { solicitudes.version++; };
   }, [reintentoRecepcion, navigate]);
@@ -96,7 +99,7 @@ export function RecepcionReservas() {
         return;
       }
       setErrorCambio(true);
-      setMensajeReservas('No pudimos cambiar la recepción de reservas. Intenta de nuevo.');
+      setMensajeReservas(mensajeDeError(error, 'No pudimos cambiar la recepción de reservas. Intenta de nuevo.'));
     } finally {
       if (actual === solicitudRecepcion.current.version) setCargandoRecepcion(false);
     }
@@ -133,10 +136,10 @@ export function RecepcionReservas() {
             <span className="panel-alerta-icono" aria-hidden="true">!</span>
             <div className="panel-alerta-contenido">
               <strong>No pudimos cargar la recepción de reservas.</strong>
-              <p>Intenta de nuevo para consultar el estado actual.</p>
+              <p>{errorCargaRecepcion}</p>
             </div>
             <button className="btn-servia-secondary btn-servia-sm panel-alerta-accion" onClick={() => {
-              setErrorCargaRecepcion(false);
+              setErrorCargaRecepcion('');
               setReintentoRecepcion((valor) => valor + 1);
             }}>
               Reintentar

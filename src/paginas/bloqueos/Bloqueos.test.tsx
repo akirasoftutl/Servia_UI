@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { api, ErrorApi } from '../../servicios/api'
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import { Bloqueos } from './Bloqueos'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
@@ -89,12 +90,36 @@ it('B08 limita motivo a 200 y valida cambios programáticos', async () => {
   expect(screen.getByLabelText('Motivo (opcional)')).toHaveAccessibleDescription('El motivo no puede tener más de 200 caracteres.')
   expect(llamada).toHaveBeenCalledTimes(1)
 })
-it.each([400, 500])('B09 muestra error %s en el formulario sin alert', async (estado) => {
+it.each([
+  [new ErrorApi(400, 'Fallo de validación'), 'Fallo de validación'],
+  [new ErrorApi(429, 'Demasiados bloqueos; inténtalo más tarde.'), 'Demasiados bloqueos; inténtalo más tarde.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos guardar el bloqueo. Intenta de nuevo.'],
+])('B09 distingue 4xx, 500 y red al crear bloqueo sin alert', async (error, esperado) => {
   const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {})
-  await abrir(); preparar(); llamada.mockRejectedValueOnce(new ErrorApi(estado, 'Fallo')); enviar()
-  expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos guardar el bloqueo. Intenta de nuevo.')
+  await abrir(); preparar(); llamada.mockRejectedValueOnce(error); enviar()
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
   expect(alerta).not.toHaveBeenCalled()
   expect(screen.queryByText('Bloqueo creado.')).not.toBeInTheDocument()
+})
+it.each([
+  [new ErrorApi(429, 'Demasiadas consultas.'), 'Demasiadas consultas.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos cargar tus bloqueos.'],
+])('distingue 429, 500 y red al cargar bloqueos', async (error, esperado) => {
+  llamada.mockRejectedValueOnce(error)
+  await abrir()
+  expect(screen.getByRole('alert')).toHaveTextContent(esperado)
+})
+it.each([
+  [new ErrorApi(429, 'Demasiadas eliminaciones.'), 'Demasiadas eliminaciones.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+])('distingue 429 y 500 al quitar un bloqueo', async (error, esperado) => {
+  llamada.mockResolvedValueOnce([bloqueo]); await abrir()
+  llamada.mockRejectedValueOnce(error)
+  await userEvent.click(screen.getByRole('button', { name: 'Quitar' }))
+  await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Quitar' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
 })
 it('B10 presenta reservas Pendientes y Confirmadas desde ErrorApi.datos', async () => {
   await abrir(); preparar()

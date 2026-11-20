@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api, ErrorApi } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { DialogoServicio } from './DialogoServicio';
 
 const AVISO = 'Ya no tienes servicios activos: tu negocio no aparece para los clientes hasta que actives uno.';
@@ -33,9 +34,9 @@ export function AccionesServicio({ id, nombre, activo, alCambiarEstado, alElimin
       alCambiarEstado(nuevoActivo);
       alMensaje(`Servicio ${nuevoActivo ? 'activado' : 'desactivado'}.${respuesta.visible === false ? ` ${AVISO}` : ''}`);
       setDialogo(null);
-    } catch {
+    } catch (error: unknown) {
       setDialogo(null);
-      setError(ERROR);
+      setError(mensajeDeError(error, ERROR));
     } finally { setOcupado(false); }
   }
 
@@ -47,7 +48,7 @@ export function AccionesServicio({ id, nombre, activo, alCambiarEstado, alElimin
     } catch (error) {
       setOcupado(false);
       if (error instanceof ErrorApi && error.estado === 409) setDialogo('reservas');
-      else { setDialogo(null); setError(ERROR); }
+      else { setDialogo(null); setError(mensajeDeError(error, ERROR)); }
       return;
     }
     setEliminado(true);
