@@ -74,7 +74,6 @@ export function MiPerfil() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
-  const [mostrarModalExito, setMostrarModalExito] = useState(false);
 
   // Estado local para la vista previa de la imagen
   const [imagenPreview, setImagenPreview] = useState<string | null>(null);
@@ -196,7 +195,6 @@ export function MiPerfil() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setMensajeExito('');
-    setMostrarModalExito(false);
     setErrorApi('');
 
     if (pasoActual !== 3) return;
@@ -235,7 +233,8 @@ export function MiPerfil() {
         setFotos(normalizarFotosNegocio(respuesta.fotos));
       }
       setMensajeExito('Perfil actualizado correctamente');
-      setMostrarModalExito(true);
+      // El botón de guardar está al final de la página: se sube para que el aviso quede a la vista.
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error: any) {
       setErrorApi(error.message || 'Error al guardar el perfil');
     } finally {
@@ -288,38 +287,13 @@ export function MiPerfil() {
           )}
 
         {/* Mensaje de éxito */}
-        {mensajeExito && !mostrarModalExito && (
+        {mensajeExito && (
           <div
             className="panel-alerta panel-alerta--exito"
             role="status"
           >
             <Check aria-hidden="true" />
             <strong>{mensajeExito}</strong>
-          </div>
-        )}
-
-        {mostrarModalExito && (
-          <div
-            className="panel-dialogo-fondo"
-            onClick={() => setMostrarModalExito(false)}
-          >
-            <div
-              className="panel-dialogo"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="panel-dialogo-icono panel-dialogo-icono--exito" aria-hidden="true">
-                <Check />
-              </div>
-              <h4 className="panel-dialogo-titulo">¡Éxito!</h4>
-              <p className="panel-dialogo-texto">{mensajeExito}</p>
-              <button
-                type="button"
-                className="btn-servia-primary"
-                onClick={() => setMostrarModalExito(false)}
-              >
-                Aceptar
-              </button>
-            </div>
           </div>
         )}
 

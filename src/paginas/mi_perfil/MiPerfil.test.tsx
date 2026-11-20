@@ -486,3 +486,48 @@ describe('Mi perfil: teléfono (#122)', () => {
     expect(put()).toBeUndefined()
   })
 })
+
+describe('Mi perfil: después de guardar (#122)', () => {
+  beforeEach(() => {
+    apiMock.mockReset()
+    window.scrollTo = vi.fn()
+  })
+
+  it('C2: sube al inicio y deja el aviso de éxito visible, sin modal que atrape', async () => {
+    responder({ ...perfilBase, direccion: direccionGuardada })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    await screen.findByLabelText(/Correo de contacto/)
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+    const guardar = await screen.findByRole('button', { name: 'Guardar cambios' })
+    vi.mocked(window.scrollTo).mockClear()
+
+    await userEvent.click(guardar)
+
+    const aviso = await screen.findByRole('status')
+    expect(aviso).toHaveTextContent('Perfil actualizado correctamente')
+    expect(window.scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }))
+    expect(screen.queryByText('¡Éxito!')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Aceptar' })).not.toBeInTheDocument()
+    // Sigue en Mi perfil y se puede seguir editando sin cerrar nada.
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled()
+  })
+
+  it('C2: si la API falla no sube ni muestra el aviso de éxito', async () => {
+    apiMock.mockImplementation(async (ruta: string, opciones?: RequestInit) => {
+      if (ruta === '/categorias') return [{ id: 'cabello-barba', nombre: 'Cabello y barba' }]
+      if (opciones?.method === 'PUT') throw new ErrorApi(400, 'Datos inválidos')
+      return { ...perfilBase, direccion: direccionGuardada }
+    })
+    render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    await screen.findByLabelText(/Correo de contacto/)
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+    const guardar = await screen.findByRole('button', { name: 'Guardar cambios' })
+    vi.mocked(window.scrollTo).mockClear()
+    await userEvent.click(guardar)
+    await screen.findByRole('alert')
+    expect(screen.queryByText('Perfil actualizado correctamente')).not.toBeInTheDocument()
+    expect(window.scrollTo).not.toHaveBeenCalled()
+  })
+})
