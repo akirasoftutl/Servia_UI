@@ -1343,6 +1343,10 @@ fieldset:disabled .btn-servia-secondary {
   .panel-dialogo-acciones > * {
     width: 100%;
   }
+
+  .panel-fotos-previa {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Navegación angosta: conserva la barra del escritorio y libera el contenido. */
@@ -1450,4 +1454,92 @@ fieldset:disabled .btn-servia-secondary {
 }
 .panel-acordeon > [role='region'] {
   padding: var(--sv-esp-3) var(--sv-esp-4);
+}
+/* Fotos del negocio: portada, vista previa y cuadrícula de galería. */
+.panel-fotos-bloque + .panel-fotos-bloque {
+  margin-top: var(--sv-esp-5);
+  padding-top: var(--sv-esp-5);
+  border-top: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
+}
+.panel-fotos-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sv-esp-3);
+  margin-bottom: var(--sv-esp-4);
+}
+.panel-fotos-marco-portada {
+  margin: 0;
+  overflow: hidden;
+  border: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
+  border-radius: var(--sv-radio-md);
+  background: var(--sv-superficie-hundida);
+}
+.panel-fotos-imagen-portada {
+  display: block;
+  width: 100%;
+  max-height: calc(var(--sv-esp-7) * 6);
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.panel-fotos-previa {
+  display: grid;
+  grid-template-columns: minmax(0, calc(var(--sv-esp-7) * 5)) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sv-esp-4);
+  margin-bottom: var(--sv-esp-4);
+  padding: var(--sv-esp-4);
+  border: calc(var(--sv-esp-1) / 4) dashed var(--sv-acento-borde);
+  border-radius: var(--sv-radio-md);
+  background: var(--sv-superficie-suave);
+}
+.panel-fotos-previa-imagen {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--sv-radio-sm);
+  object-fit: cover;
+  background: var(--sv-superficie-hundida);
+}
+.panel-fotos-previa-cuerpo {
+  min-width: 0;
+}
+.panel-fotos-previa-nombre {
+  margin: 0 0 var(--sv-esp-3);
+  overflow-wrap: anywhere;
+}
+.panel-fotos-previa-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sv-esp-2);
+}
+.panel-fotos-cuadricula {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--sv-esp-7) * 4)), 1fr));
+  gap: var(--sv-esp-4);
+}
+.panel-fotos-tarjeta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
+  border-radius: var(--sv-radio-md);
+  background: var(--sv-superficie);
+  box-shadow: var(--sv-sombra-item);
+}
+.panel-fotos-imagen-galeria {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--sv-superficie-hundida);
+}
+.panel-fotos-tarjeta-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sv-esp-2);
+  padding: var(--sv-esp-2) var(--sv-esp-3);
+  border-top: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
 }
