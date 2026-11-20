@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { api } from '../../servicios/api';
 import './Resumen.css';
+import { LayoutDashboard } from 'lucide-react';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 // Contrato de GET /negocios/mio/resumen (Servia_BE#89). Los números se calculan en la API
 // (T14); aquí solo se muestran, sin recalcular.
@@ -88,7 +90,7 @@ export function Resumen() {
     <div className="panel-pagina"><div className="panel-contenedor">
       <header className="panel-encabezado">
         <div>
-          <span className="panel-eyebrow">PRINCIPAL</span>
+          <EyebrowPanel grupo="operacion" icono={LayoutDashboard} />
           <h1 className="panel-titulo">Resumen</h1>
           <p className="panel-subtitulo">La actividad de tu negocio de un vistazo.</p>
         </div>
