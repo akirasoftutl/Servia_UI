@@ -49,7 +49,7 @@ export function Clientes() {
           setBusqueda(e.target.value); setCursor(''); setPagina({ items: [], siguiente: null }); setError(''); setCargando(true);
         }} />
       <p id="clientes-ayuda" className="panel-item-texto">Escribe al menos 2 caracteres para buscar.</p>
-      <div aria-busy={cargando}>
+      <div className="clientes-resultados" aria-busy={cargando}>
         <EstadoClientes carga="clientes" titulo={buscando ? 'Sin resultados' : 'Aún no hay clientes'} cargando={cargando} error={error}
           vacio={pagina.items.length || consulta.length === 1 ? '' : buscando ? 'No encontramos clientes con ese nombre.' : 'Aquí aparecerán las personas que reserven contigo.'} reintentar={reintentar} />
         <div className="panel-lista">
