@@ -51,10 +51,10 @@ it('C3 descarta el nombre previo y respuestas tardías al cambiar de cuenta', as
   expect(screen.getByText('Salón Carla')).toBeInTheDocument()
 })
 
-it('B18 navega a Bloqueos desde Operaciones', async () => {
+it('B18 navega a Bloqueos desde Mi negocio', async () => {
   render(<MemoryRouter initialEntries={['/']}><Sidebar /><Routes><Route path="/bloqueos" element={<p>Página de bloqueos</p>} /></Routes></MemoryRouter>)
   const enlace = screen.getByRole('button', { name: 'Bloqueos' })
-  expect(enlace.closest('.nav-group')).toHaveTextContent('OPERACIONES')
+  expect(enlace.closest('.nav-group')).toHaveTextContent('MI NEGOCIO')
   await userEvent.click(enlace)
   expect(await screen.findByText('Página de bloqueos')).toBeInTheDocument()
 })
@@ -70,27 +70,27 @@ it('abre Reservas desde el menú lateral', async () => {
   expect(router.state.location.pathname).toBe('/reservas')
 })
 
-it('C1 «Resumen» es el primer elemento de Principal y abre /resumen', async () => {
+it('C1 «Resumen» es el primer elemento de Operación diaria y abre /resumen', async () => {
   const router = createMemoryRouter([
     { path: '/', element: <Sidebar /> },
     { path: '/resumen', element: <h1>Resumen del negocio</h1> },
   ])
   render(<RouterProvider router={router} />)
-  const principal = screen.getByText('PRINCIPAL').closest('.nav-group') as HTMLElement
+  const principal = screen.getByText('OPERACIÓN DIARIA').closest('.nav-group') as HTMLElement
   expect(within(principal).getAllByRole('button')[0]).toHaveTextContent('Resumen')
   fireEvent.click(within(principal).getByRole('button', { name: 'Resumen' }))
   expect(await screen.findByRole('heading', { name: 'Resumen del negocio' })).toBeInTheDocument()
   expect(router.state.location.pathname).toBe('/resumen')
 })
-it('UI88 abre Estadísticas desde Operaciones', async () => {
+it('UI88 abre Estadísticas desde Mi negocio', async () => {
   render(<MemoryRouter initialEntries={['/']}><Sidebar /><Routes><Route path="/estadisticas" element={<h1>Estadísticas del negocio</h1>} /></Routes></MemoryRouter>)
   const enlace = screen.getByRole('button', { name: 'Estadísticas' })
-  expect(enlace.closest('.nav-group')).toHaveTextContent('OPERACIONES')
+  expect(enlace.closest('.nav-group')).toHaveTextContent('MI NEGOCIO')
   await userEvent.click(enlace)
   expect(await screen.findByRole('heading', { name: 'Estadísticas del negocio' })).toBeVisible()
 })
 
-it('abre Clientes desde Principal después de Servicios y Resumen al inicio', async () => {
+it('abre Clientes desde Operación diaria, con Avisos como cuarto ítem', async () => {
   const router = createMemoryRouter([
     { path: '/', element: <Sidebar /> },
     { path: '/clientes', element: <h1>Clientes del negocio</h1> },
@@ -98,8 +98,8 @@ it('abre Clientes desde Principal después de Servicios y Resumen al inicio', as
   render(<RouterProvider router={router} />)
   const clientes = screen.getByRole('button', { name: 'Clientes' })
   const grupo = clientes.closest('.nav-group')!
-  expect(grupo).toHaveTextContent('PRINCIPAL')
-  expect([...grupo.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Resumen', 'Reservas', 'Servicios', 'Clientes', 'Avisos'])
+  expect(grupo).toHaveTextContent('OPERACIÓN DIARIA')
+  expect([...grupo.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Resumen', 'Reservas', 'Clientes', 'Avisos'])
   fireEvent.click(clientes)
   expect(await screen.findByRole('heading', { name: 'Clientes del negocio' })).toBeInTheDocument()
   expect(router.state.location.pathname).toBe('/clientes')
@@ -151,17 +151,17 @@ it('C6 anuncia en español estado y destino del botón', async () => {
   expect(boton).toHaveAttribute('aria-expanded', 'true')
 })
 
-it('UI102 abre Notificaciones desde el menú móvil y lo cierra al navegar', async () => {
+it('UI102 abre Configuración desde el menú móvil y lo cierra al navegar', async () => {
   pantalla(true)
-  render(<MemoryRouter><Sidebar /><Routes><Route path="/preferencias-notificaciones" element={<h1>Preferencias push</h1>} /></Routes></MemoryRouter>)
+  render(<MemoryRouter><Sidebar /><Routes><Route path="/configuracion" element={<h1>Página de configuración</h1>} /></Routes></MemoryRouter>)
   await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
-  await userEvent.click(screen.getByRole('button', { name: 'Notificaciones' }))
-  expect(await screen.findByRole('heading', { name: 'Preferencias push' })).toBeVisible()
+  await userEvent.click(screen.getByRole('button', { name: 'Configuración' }))
+  expect(await screen.findByRole('heading', { name: 'Página de configuración' })).toBeVisible()
   expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Abrir menú' })).toHaveAttribute('aria-expanded', 'false')
 })
 
-it('UI69 muestra Avisos en PRINCIPAL con globo cuando hay no leídas y sin globo en 0', async () => {
+it('UI69 muestra Avisos en Operación diaria con globo cuando hay no leídas y sin globo en 0', async () => {
   pantalla(false)
   const contextoBase: NotificacionesContextValue = {
     noLeidas: 3,
@@ -182,7 +182,7 @@ it('UI69 muestra Avisos en PRINCIPAL con globo cuando hay no leídas y sin globo
     </MemoryRouter>,
   )
   const botonAvisos = screen.getByRole('button', { name: /Avisos/ })
-  expect(botonAvisos.closest('.nav-group')).toHaveTextContent('PRINCIPAL')
+  expect(botonAvisos.closest('.nav-group')).toHaveTextContent('OPERACIÓN DIARIA')
   expect(within(botonAvisos).getByText('3')).toHaveClass('panel-sidebar-globo')
   // El globo vive dentro de un botón (hijos presentacionales): el aviso sin leer se anuncia en el nombre del botón.
   expect(screen.getByRole('button', { name: 'Avisos, 3 avisos sin leer' })).toBe(botonAvisos)
@@ -217,11 +217,15 @@ describe('UI108 ítem activo según la ruta', () => {
   })
   it.each([
     ['/resumen', 'Resumen'], ['/reservas', 'Reservas'], ['/servicios', 'Servicios'], ['/clientes', 'Clientes'],
-    ['/soporte', 'Reportar un problema'], ['/preferencias-notificaciones', 'Notificaciones'], ['/ayuda', 'Ayuda'],
+    ['/configuracion', 'Configuración'],
     ['/estadisticas', 'Estadísticas'], ['/bloqueos', 'Bloqueos'], ['/horario', 'Horario'],
   ])('en %s solo está activo «%s»', (ruta, nombre) => {
     enRuta(ruta)
     expect(activos()).toEqual([nombre])
+  })
+  it.each(['/soporte', '/preferencias-notificaciones', '/ayuda'])('en %s no hay ítem activo: sus rutas siguen abriendo pero ya no están en el menú', (ruta) => {
+    enRuta(ruta)
+    expect(activos()).toEqual([])
   })
   it('conserva el ítem en rutas anidadas', () => {
     enRuta('/reservas/r0')
@@ -260,7 +264,7 @@ describe('UI108 íconos del menú', () => {
 
   it('cada ítem lleva un único svg de lucide, decorativo y sin glifos de texto', () => {
     render(barra())
-    expect(items()).toHaveLength(11)
+    expect(items()).toHaveLength(9)
     for (const b of items()) {
       expect(b.querySelectorAll('svg')).toHaveLength(1)
       expect(b.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
@@ -379,5 +383,53 @@ describe('UI108 el reinicio de márgenes ya no es global', () => {
     const acotado = selectores.find(({ selector, cuerpo }) => selector.startsWith(':where(') && /margin:\s*0/.test(cuerpo) && /padding:\s*0/.test(cuerpo))
     expect(acotado?.selector).toContain('.sidebar')
     expect(acotado?.selector).toContain('.panel-barra-movil')
+  })
+})
+
+describe('UI109 menú en tres zonas', () => {
+  beforeEach(() => pantalla(false))
+  const botones = (zona: HTMLElement) => [...zona.querySelectorAll('button')].map((b) => b.textContent)
+
+  it('lista Operación diaria, Mi negocio y Configuración al pie, con sus ítems en orden', () => {
+    render(barra())
+    const titulos = [...document.querySelectorAll('.group-title')].map((t) => t.textContent)
+    expect(titulos).toEqual(['OPERACIÓN DIARIA', 'MI NEGOCIO'])
+    const [operacion, negocio] = [...document.querySelectorAll<HTMLElement>('.nav-group')]
+    expect(botones(operacion)).toEqual(['Resumen', 'Reservas', 'Clientes', 'Avisos'])
+    expect(botones(negocio)).toEqual(['Servicios', 'Horario', 'Bloqueos', 'Estadísticas'])
+    const pie = screen.getByRole('navigation', { name: 'Configuración' })
+    expect(botones(pie)).toEqual(['Configuración'])
+    const aside = screen.getByRole('complementary')
+    expect([...aside.children].map((el) => el.className.split(' ')[0])).toEqual(['sidebar-header', 'sidebar-nav', 'sidebar-config', 'user-profile'])
+  })
+  it('ya no lista Ayuda, Reportar un problema ni Notificaciones', () => {
+    render(barra())
+    for (const nombre of ['Ayuda', 'Reportar un problema', 'Notificaciones']) {
+      expect(screen.queryByRole('button', { name: nombre })).not.toBeInTheDocument()
+    }
+    expect(screen.queryByText('PRINCIPAL')).not.toBeInTheDocument()
+    expect(screen.queryByText('OPERACIONES')).not.toBeInTheDocument()
+  })
+  it('Configuración navega a /configuracion y queda activa', async () => {
+    const router = createMemoryRouter([{ path: '*', element: <Sidebar /> }])
+    render(<RouterProvider router={router} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Configuración' }))
+    expect(router.state.location.pathname).toBe('/configuracion')
+    expect(screen.getByRole('button', { name: 'Configuración' })).toHaveAttribute('aria-current', 'page')
+  })
+  it('el menú de la cuenta solo tiene Mi perfil y Cerrar sesión, y ninguno es un ítem muerto', async () => {
+    const registro = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const router = createMemoryRouter([{ path: '*', element: <Sidebar /> }])
+    render(<RouterProvider router={router} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Menú de la cuenta' }))
+    const menu = document.querySelector<HTMLElement>('.user-dropdown-menu')!
+    expect(botones(menu)).toEqual(['Mi Perfil', 'Cerrar sesión'])
+    await userEvent.click(within(menu).getByRole('button', { name: 'Mi Perfil' }))
+    expect(router.state.location.pathname).toBe('/mi-perfil')
+    expect(registro).not.toHaveBeenCalled()
+    registro.mockRestore()
+  })
+  it('el código de la barra ya no contiene console.log', () => {
+    expect(readFileSync('src/componentes/sidebar/Sidebar.tsx', 'utf8')).not.toContain('console.log')
   })
 })

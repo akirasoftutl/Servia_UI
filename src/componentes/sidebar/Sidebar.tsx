@@ -1,4 +1,4 @@
-import { Bell, CalendarCheck, CalendarOff, ChartColumn, ChevronRight, CircleHelp, Clock, Inbox, LayoutDashboard, LogOut, Menu, MessageSquareWarning, Scissors, Settings, UserRound, Users, X, type LucideIcon } from 'lucide-react';
+import { CalendarCheck, CalendarOff, ChartColumn, ChevronRight, Clock, Inbox, LayoutDashboard, LogOut, Menu, Scissors, Settings, UserRound, Users, X, type LucideIcon } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import './Sidebar.css';
@@ -107,27 +107,25 @@ export const Sidebar: React.FC = () => {
 
   const navGroups: NavGroup[] = [
     {
-      title: 'PRINCIPAL',
+      title: 'OPERACIÓN DIARIA',
       items: [
         { id: 'resumen', label: 'Resumen', ruta: '/resumen', icono: LayoutDashboard },
         { id: 'reservas', label: 'Reservas', ruta: '/reservas', icono: CalendarCheck },
-        { id: 'servicios', label: 'Servicios', ruta: '/servicios', icono: Scissors },
         { id: 'clientes', label: 'Clientes', ruta: '/clientes', icono: Users },
         { id: 'avisos', label: 'Avisos', ruta: '/avisos', icono: Inbox, badge: noLeidas },
       ],
     },
     {
-      title: 'OPERACIONES',
+      title: 'MI NEGOCIO',
       items: [
-        { id: 'soporte', label: 'Reportar un problema', ruta: '/soporte', icono: MessageSquareWarning },
-        { id: 'preferencias-notificaciones', label: 'Notificaciones', ruta: '/preferencias-notificaciones', icono: Bell },
-        { id: 'ayuda', label: 'Ayuda', ruta: '/ayuda', icono: CircleHelp },
-        { id: 'estadisticas', label: 'Estadísticas', ruta: '/estadisticas', icono: ChartColumn },
-        { id: 'bloqueos', label: 'Bloqueos', ruta: '/bloqueos', icono: CalendarOff },
+        { id: 'servicios', label: 'Servicios', ruta: '/servicios', icono: Scissors },
         { id: 'horario', label: 'Horario', ruta: '/horario', icono: Clock },
+        { id: 'bloqueos', label: 'Bloqueos', ruta: '/bloqueos', icono: CalendarOff },
+        { id: 'estadisticas', label: 'Estadísticas', ruta: '/estadisticas', icono: ChartColumn },
       ],
     },
   ];
+  const configuracionActiva = esRutaActiva('/configuracion', pathname);
 
   return (
     <>
@@ -180,6 +178,16 @@ export const Sidebar: React.FC = () => {
         ))}
       </nav>
 
+      <nav className="sidebar-config" aria-label="Configuración">
+        <button
+          className={`nav-link ${configuracionActiva ? 'active' : ''}`}
+          aria-current={configuracionActiva ? 'page' : undefined}
+          onClick={() => { setIsUserMenuOpen(false); setAbierta(false); navigate('/configuracion'); }}
+        >
+          <Settings aria-hidden="true" />
+          <span>Configuración</span>
+        </button>
+      </nav>
 
       <div className="user-profile" ref={userMenuRef}>
         {isUserMenuOpen && (
@@ -187,11 +195,6 @@ export const Sidebar: React.FC = () => {
             <button className="dropdown-item" onClick={() => { setIsUserMenuOpen(false); setAbierta(false); navigate('/mi-perfil'); }}>
               <UserRound aria-hidden="true" />
               <span>Mi Perfil</span>
-            </button>
-
-            <button className="dropdown-item" onClick={() => { setIsUserMenuOpen(false); setAbierta(false); console.log('Configuración'); }}>
-              <Settings aria-hidden="true" />
-              <span>Configuración</span>
             </button>
 
             <div className="dropdown-divider"></div>
