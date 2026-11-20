@@ -3,6 +3,7 @@ import { CircleAlert, CircleHelp, LogOut, MessageSquareWarning, Settings, UserRo
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../contextos/AuthContext';
 import { api } from '../../servicios/api';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EsqueletoLista } from '../../componentes/panel/EstadosPanel';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { PreferenciasNotificaciones } from '../../componentes/panel/PreferenciasNotificaciones';
@@ -44,14 +45,14 @@ function TarjetaCuenta() {
 function TarjetaAyuda() {
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     let vigente = true;
     api<Reporte[]>('/soporte/reportes/mios')
       .then(datos => { if (vigente) setReportes([...datos].sort((a, b) => b.creadaEn.localeCompare(a.creadaEn)).slice(0, ULTIMOS_REPORTES)); })
-      .catch(() => { if (vigente) setError(true); })
+      .catch((causa: unknown) => { if (vigente) setError(mensajeDeError(causa, 'No pudimos cargar tus reportes.')); })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
   }, [revision]);
@@ -72,8 +73,8 @@ function TarjetaAyuda() {
         {!cargando && error && (
           <div className="panel-alerta panel-alerta--error" role="alert">
             <span className="panel-alerta-icono"><CircleAlert aria-hidden="true" /></span>
-            <div className="panel-alerta-contenido">No pudimos cargar tus reportes.</div>
-            <button type="button" className="btn-servia-secondary" onClick={() => { setError(false); setCargando(true); setRevision(r => r + 1); }}>Reintentar</button>
+            <div className="panel-alerta-contenido">{error}</div>
+            <button type="button" className="btn-servia-secondary" onClick={() => { setError(''); setCargando(true); setRevision(r => r + 1); }}>Reintentar</button>
           </div>
         )}
         {!cargando && !error && reportes.length === 0 && <p className="panel-ayuda">Todavía no has enviado reportes.</p>}
