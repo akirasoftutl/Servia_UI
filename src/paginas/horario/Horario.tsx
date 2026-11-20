@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { ShieldAlert } from 'lucide-react'
+import { ShieldAlert, Clock } from 'lucide-react'
 import { api } from '../../servicios/api'
 import './Horario.css'
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel'
 
 const DIAS = [
   { clave: 'lunes', nombre: 'Lunes' },
@@ -383,7 +384,7 @@ export function Horario() {
       <div className="panel-contenedor horario-container" inert={dialogoAbierto}>
         <header className="panel-encabezado">
           <div>
-            <span className="panel-eyebrow">OPERACIONES</span>
+            <EyebrowPanel grupo="negocio" icono={Clock} />
             <h1 className="panel-titulo">Horario de atención</h1>
             <p className="panel-subtitulo">
               Define qué días trabaja tu negocio y en qué horario puedes recibir
@@ -396,7 +397,6 @@ export function Horario() {
                   configurado ? 'panel-insignia--exito' : 'panel-insignia--aviso'
                 }`}
               >
-                <span className="horario-estado-punto" aria-hidden="true" />
                 {configurado ? 'Horario configurado' : 'Horario pendiente'}
               </span>
               <span className="horario-meta-texto">

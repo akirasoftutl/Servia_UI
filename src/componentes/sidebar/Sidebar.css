@@ -87,6 +87,13 @@
   margin: 4px 0;
 }
 
+.dropdown-item svg,
+.chevron-icon {
+  width: var(--sv-icono-menu);
+  height: var(--sv-icono-menu);
+  flex: none;
+}
+
 /* Rotación de la flecha al estar abierto */
 .chevron-icon {
   transition: transform 0.2s ease;
@@ -96,7 +103,10 @@
   transform: rotate(-90deg); /* O rotate(90deg) según la dirección inicial de tu flecha */
 }
 
-* {
+/* Reinicio de márgenes solo dentro de la barra y de la barra móvil (antes era global
+   y afectaba a todas las pantallas). :where() lo deja sin especificidad, como el
+   selector universal, para que sus reglas por clase sigan mandando. */
+:where(.sidebar, .sidebar *, .panel-barra-movil, .panel-barra-movil *) {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -104,8 +114,10 @@
 
 .sidebar {
   width: 280px;
-  min-height: 100vh;
-  height: 100%;
+  /* Alto de la ventana: el menú se desplaza por dentro y la cuenta queda siempre a la vista. */
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   background-color: var(--bg-sidebar);
   color: var(--text-main);
   display: flex;
@@ -159,45 +171,14 @@
   background-color: var(--bg-hover);
 }
 
-.search-container {
-  position: relative;
-  margin-bottom: 1.5rem;
-}
-
-.search-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.65rem 1rem 0.65rem 2.5rem;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 9999px;
-  color: var(--text-main);
-  font-size: 0.875rem;
-  font-family: 'Inter', sans-serif;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.search-input::placeholder {
-  color: #6b7280;
-}
-
-.search-input:focus {
-  border-color: var(--active-border);
-  background-color: #000000;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+.sidebar-header,
+.user-profile {
+  flex: none;
 }
 
 .sidebar-nav {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -235,18 +216,19 @@
 }
 
 .nav-item {
-  width: 90%;
+  width: 100%;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-height: var(--sv-objetivo-tactil);
   padding: 0.6rem 0.8rem;
   border-radius: 12px;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.82rem;
+  font-size: var(--sv-texto-md);
   font-weight: 500;
   cursor: pointer;
   border: 1px solid transparent;
@@ -259,6 +241,44 @@
 .nav-link:hover {
   background-color: var(--bg-hover);
   color: var(--text-main);
+}
+
+/* Botón solo de ícono para la barra y el cajón oscuros (abrir y cerrar el menú). */
+.panel-boton-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--sv-objetivo-tactil);
+  height: var(--sv-objetivo-tactil);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--sv-radio-sm);
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color var(--sv-rapido) var(--sv-curva);
+}
+
+.panel-boton-icono:hover {
+  background-color: var(--bg-hover);
+}
+
+.panel-boton-icono:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
+}
+
+.panel-boton-icono svg {
+  width: var(--sv-icono-nav);
+  height: var(--sv-icono-nav);
+}
+
+/* Todos los íconos del menú comparten tamaño; el trazo lo pone lucide. */
+.nav-link svg {
+  width: var(--sv-icono-nav);
+  height: var(--sv-icono-nav);
+  flex: none;
 }
 
 /* Estado Activo: Borde Morado Fuerte + Interior Translúcido */

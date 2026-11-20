@@ -10,7 +10,7 @@
 }
 .estadisticas-metricas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--sv-esp-7) * 4)), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sv-esp-3);
   margin: 0 0 var(--sv-esp-5);
 }
@@ -22,6 +22,11 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--sv-esp-2);
+}
+@media (min-width: 651px) {
+  .estadisticas-metricas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 .estadisticas-numero {
   margin: 0;

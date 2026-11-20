@@ -4,6 +4,7 @@ import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api, ErrorApi } from '../../servicios/api';
 import { periodoPredefinido, validarPeriodo, type Periodo } from './fechas';
 import './Estadisticas.css';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 interface EstadisticasNegocio {
   periodo: Periodo;
@@ -68,7 +69,7 @@ export function Estadisticas() {
 
   return <div className="panel-pagina"><div className="panel-contenedor">
     <header className="panel-encabezado"><div>
-      <span className="panel-eyebrow">OPERACIONES</span>
+      <EyebrowPanel grupo="negocio" icono={ChartColumn} />
       <h1 className="panel-titulo">Estadísticas</h1>
       <p className="panel-subtitulo">Consulta las reservas y la actividad de tu negocio por periodo.</p>
     </div></header>

@@ -261,3 +261,11 @@ it('C3 aplica el filtro de la URL aunque la página ya estuviera abierta', async
   await waitFor(() => expect(parametros().get('estado')).toBe('pendiente'));
   expect(screen.getByLabelText('Estado')).toHaveValue('pendiente');
 });
+
+it('la tarjeta de reserva no trae estilos en línea que anulen la media query móvil', async () => {
+  renderReservas();
+  const titulo = await screen.findByRole('heading', { name: 'Ana' });
+  const tarjeta = titulo.closest('.reserva-card') as HTMLElement;
+  expect(tarjeta).not.toBeNull();
+  expect(tarjeta).not.toHaveAttribute('style');
+});

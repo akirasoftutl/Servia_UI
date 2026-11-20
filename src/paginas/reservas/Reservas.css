@@ -16,6 +16,10 @@
   min-width: 160px;
 }
 
+.reserva-card {
+  cursor: pointer;
+}
+
 .reserva-info-principal {
   min-width: 0;
 }

@@ -5,6 +5,7 @@ import { api } from '../../servicios/api';
 import { EsqueletoLista, EstadoVacio, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 // Iniciales del servicio para la ficha decorativa de cada tarjeta.
 function iniciales(nombre: string) {
@@ -65,7 +66,7 @@ export function MisServicios() {
 
         <header className="panel-encabezado">
           <div className="panel-encabezado-textos">
-            <span className="panel-eyebrow"><Tags aria-hidden="true" />ADMINISTRACIÓN</span>
+            <EyebrowPanel grupo="negocio" icono={Tags} />
             <h1 className="panel-titulo">Mis servicios</h1>
             <p className="panel-subtitulo">Organiza y administra los servicios de tu negocio.</p>
             <dl className="panel-metricas">

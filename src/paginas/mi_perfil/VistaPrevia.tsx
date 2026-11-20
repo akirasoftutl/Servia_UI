@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { Tags } from 'lucide-react'
+import { Tags, Eye } from 'lucide-react'
 import { EstadoVacio } from '../../componentes/panel/EstadosPanel'
 import { api, ErrorApi } from '../../servicios/api'
 import type { Direccion } from './direccion'
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel'
 import './VistaPrevia.css'
 
 interface Perfil {
@@ -116,6 +117,7 @@ export function VistaPrevia() {
       <div className="panel-contenedor">
         <header className="panel-encabezado">
           <div>
+            <EyebrowPanel grupo="negocio" icono={Eye} />
             <h1 className="panel-titulo">Vista previa: así te ven tus clientes</h1>
             <p className="panel-subtitulo">Consulta cómo se muestran tu perfil y tus servicios.</p>
           </div>

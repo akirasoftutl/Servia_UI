@@ -6,6 +6,8 @@ import { fechaHoraMexico, horaMexico, type HistorialCliente } from './clientes';
 import { DatosCliente } from './DatosCliente';
 import { EstadoClientes } from './EstadoClientes';
 import './Clientes.css';
+import { Users } from 'lucide-react';
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 // La clave reinicia el historial al navegar a otro cliente sin desmontar la ruta.
 export function DetalleCliente() {
@@ -38,7 +40,7 @@ function Historial({ clienteUid }: { clienteUid: string }) {
 
   return <div className="panel-pagina"><div className="panel-contenedor">
     <header className="panel-encabezado"><div>
-      <span className="panel-eyebrow">PRINCIPAL</span>
+      <EyebrowPanel grupo="operacion" icono={Users} />
       <h1 className="panel-titulo">Detalle del cliente</h1>
       <p className="panel-subtitulo">Su historial de reservas con tu negocio.</p>
     </div><Link className="btn-servia-secondary btn-servia-sm clientes-volver" to="/clientes">Volver a clientes</Link></header>
