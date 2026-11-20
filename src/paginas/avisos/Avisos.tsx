@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell, BellOff, CircleAlert } from 'lucide-react'
+import { Bell, BellOff, CircleAlert, Inbox } from 'lucide-react'
+import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel'
 import { EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel'
 import { useNotificaciones } from '../../contextos/notificacionesContexto'
 import {
@@ -142,10 +143,7 @@ export function Avisos() {
       <div className="panel-contenedor">
         <header className="panel-encabezado">
           <div className="panel-encabezado-textos">
-            <span className="panel-eyebrow">
-              <Bell aria-hidden="true" />
-              PRINCIPAL
-            </span>
+            <EyebrowPanel grupo="operacion" icono={Inbox} />
             <h1 className="panel-titulo">Avisos</h1>
             <p className="panel-subtitulo">
               Consulta tus solicitudes nuevas y cancelaciones de clientes.
