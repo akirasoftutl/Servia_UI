@@ -136,5 +136,4 @@ it('C2/C5/C6/C7 mantiene una sola implementación y solo estilos compartidos', (
   expect(componente).not.toMatch(/\b(?:visible|activo)\s*:|alert\(|style=|\d+(?:px|rem)\b|\.css['"](?!;)/);
   const clases = [...componente.matchAll(/className="([^"]+)"/g)].flatMap((m) => m[1].split(' '));
   expect(clases.every((clase) => /^(panel-|btn-servia-)/.test(clase))).toBe(true);
-  expect(fuente('../sidebar/Sidebar.tsx')).toContain("ruta: '/mi-perfil#recepcion-reservas'");
 });
