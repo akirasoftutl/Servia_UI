@@ -148,3 +148,19 @@ it('C6 anuncia en español estado y destino del botón', async () => {
   expect(boton).toHaveAccessibleName('Cerrar menú')
   expect(boton).toHaveAttribute('aria-expanded', 'true')
 })
+
+it.each([true, false])('UI101 abre la recepción en Mi perfil y cierra la barra móvil (%s)', async (angosta) => {
+  pantalla(angosta)
+  const router = createMemoryRouter([
+    { path: '/', element: <Sidebar /> },
+    { path: '/mi-perfil', element: <h1>Perfil del negocio</h1> },
+  ])
+  render(<RouterProvider router={router} />)
+  if (angosta) await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
+  const entrada = screen.getByRole('button', { name: 'Recepción de reservas' })
+  expect(entrada.closest('.nav-group')).toHaveTextContent('OPERACIONES')
+  await userEvent.click(entrada)
+  expect(await screen.findByRole('heading', { name: 'Perfil del negocio' })).toBeVisible()
+  expect(router.state.location.pathname).toBe('/mi-perfil')
+  expect(router.state.location.hash).toBe('#recepcion-reservas')
+})

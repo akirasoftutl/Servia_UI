@@ -26,6 +26,7 @@ const direccionGuardada = {
 }
 
 const perfilBase = {
+  aceptaReservas: true,
   nombre: 'Barbería Norte',
   descripcion: 'Cortes y barba',
   categoriaId: 'cabello-barba',
