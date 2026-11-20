@@ -144,6 +144,7 @@ export const Sidebar: React.FC = () => {
       title: 'OPERACIONES',
       items: [
         { id: 'preferencias-notificaciones', label: 'Notificaciones', ruta: '/preferencias-notificaciones', icon: <Bell aria-hidden="true" /> },
+        { id: 'ayuda', label: 'Ayuda', ruta: '/ayuda', icon: <span aria-hidden="true">?</span> },
         { id: 'estadisticas', label: 'Estadísticas', ruta: '/estadisticas', icon: <span aria-hidden="true">▥</span> },
         { id: 'bloqueos', label: 'Bloqueos', ruta: '/bloqueos', icon: <span aria-hidden="true">▣</span> },
         {
