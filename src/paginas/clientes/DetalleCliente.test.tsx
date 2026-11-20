@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { DetalleCliente } from './DetalleCliente';
 import { Clientes } from './Clientes';
 
@@ -62,4 +63,12 @@ it('C5 conserva los datos del cliente cuando el historial está vacío', async (
 });
 it('F5 muestra fecha y rango horario de México sin repetir la preposición, incluso en UTC', async () => {
   abrir(); await waitFor(() => expect(screen.getByText('03/11/30 a las 20:00 – 21:00')).toBeInTheDocument());
+});
+it.each([
+  [new ErrorApi(429, 'Demasiadas consultas de historial.'), 'Demasiadas consultas de historial.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos cargar el historial. Intenta de nuevo.'],
+])('distingue 429, 500 y red al cargar el historial del cliente', async (error, esperado) => {
+  mock.mockRejectedValueOnce(error); abrir();
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
 });

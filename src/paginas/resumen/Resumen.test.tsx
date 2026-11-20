@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
-import { api } from '../../servicios/api';
+import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { Reservas } from '../reservas/Reservas';
 import { Resumen } from './Resumen';
 
@@ -15,7 +16,10 @@ afterAll(() => {
   else process.env.TZ = zonaOriginal;
 });
 
-vi.mock('../../servicios/api', () => ({ api: vi.fn() }));
+vi.mock('../../servicios/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../servicios/api')>()),
+  api: vi.fn(),
+}));
 const apiMock = vi.mocked(api);
 
 function cita(numero: number, extra = {}) {
@@ -226,5 +230,15 @@ describe('Resumen', () => {
     expect(numeroDe('Clientes atendidos')).toBe('12');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.queryByText('Pausaste las reservas')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [new ErrorApi(429, 'Demasiadas consultas de resumen.'), 'Demasiadas consultas de resumen.'],
+    [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+    [new TypeError('Failed to fetch'), 'No pudimos cargar el resumen. Intenta de nuevo.'],
+  ])('distingue 429, 500 y red al cargar el resumen', async (error, esperado) => {
+    respuestaResumen = error;
+    mostrar();
+    expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
   });
 });

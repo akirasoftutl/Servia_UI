@@ -1,9 +1,13 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router'; // <-- IMPORTANTE: Agregado
-import { api } from '../../servicios/api';
+import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { Reservas } from './Reservas';
 
-vi.mock('../../servicios/api', () => ({ api: vi.fn() }));
+vi.mock('../../servicios/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../servicios/api')>()),
+  api: vi.fn(),
+}));
 const apiMock = vi.mocked(api);
 const ahora = Date.parse('2030-11-03T14:00:00Z');
 
@@ -268,4 +272,14 @@ it('la tarjeta de reserva no trae estilos en lÃ­nea que anulen la media query mÃ
   const tarjeta = titulo.closest('.reserva-card') as HTMLElement;
   expect(tarjeta).not.toBeNull();
   expect(tarjeta).not.toHaveAttribute('style');
+});
+
+it.each([
+  [new ErrorApi(429, 'Demasiadas consultas de reservas.'), 'Demasiadas consultas de reservas.'],
+  [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
+  [new TypeError('Failed to fetch'), 'No pudimos cargar las reservas. Intenta de nuevo.'],
+])('distingue 429, 500 y red al cargar la lista de reservas', async (error, esperado) => {
+  responder(error);
+  renderReservas();
+  expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
 });
