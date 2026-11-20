@@ -331,6 +331,18 @@ describe('UI108 la barra mide el alto de la ventana y desplaza el menú por dent
     expect(hijos[hijos.indexOf('sidebar-nav') ]).toBe('sidebar-nav')
     expect(within(aside).getByRole('button', { name: 'Menú de la cuenta' })).toBeVisible()
   })
+  it('UI119 mantiene la barra fija en scroll con align-self: flex-start y fondo del panel en el layout', () => {
+    const barraCss = regla('.sidebar')
+    expect(barraCss).toMatch(/position:\s*sticky/)
+    expect(barraCss).toMatch(/top:\s*0/)
+    expect(barraCss).toMatch(/align-self:\s*flex-start/)
+    expect(barraCss).not.toMatch(/align-self:\s*stretch/)
+
+    const layoutCss = readFileSync('src/componentes/layout/Layout.css', 'utf8')
+    const conBarra = layoutCss.match(/\.layout--with-sidebar\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(conBarra).toMatch(/background:\s*var\(--sv-fondo\)/)
+    expect(conBarra).not.toMatch(/overflow\s*:\s*(hidden|auto|scroll)/)
+  })
 })
 
 it('UI108 los ítems ocupan todo el ancho y comparten letra y alto mínimo del sistema', () => {

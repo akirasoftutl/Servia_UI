@@ -125,7 +125,9 @@ describe('Estadísticas', () => {
     render(<Estadisticas />);
     const grafica = await screen.findByRole('img', { name: /Reservas por día del 17\/11\/2026 al 19\/11\/2026: 37 reservas/ });
     const tabla = screen.getByRole('table', { name: 'Reservas por día' });
-    expect(tabla).toHaveClass('visually-hidden');
+    expect(tabla).not.toHaveClass('visually-hidden');
+    expect(tabla.parentElement?.tagName).toBe('DIV');
+    expect(tabla.parentElement).toHaveClass('visually-hidden');
     const filas = within(tabla).getAllByRole('row').slice(1);
     expect(filas).toHaveLength(3);
     estadisticas().porDia.forEach((dia, i) => {

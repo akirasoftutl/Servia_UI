@@ -138,10 +138,13 @@ export function Estadisticas() {
             <span>{fechaLegible(datos.porDia.at(-1)?.fecha ?? datos.periodo.hasta)}</span>
           </div>
         </div>
-        <table className="visually-hidden"><caption>Reservas por día</caption>
-          <thead><tr><th scope="col">Fecha</th><th scope="col">Reservas</th></tr></thead>
-          <tbody>{datos.porDia.map(dia => <tr key={dia.fecha}><th scope="row">{dia.fecha}</th><td>{dia.reservas}</td></tr>)}</tbody>
-        </table>
+        {/* Contenedor de bloque: en display:table .visually-hidden no recorta el alto de las filas y desborda el layout. */}
+        <div className="visually-hidden">
+          <table><caption>Reservas por día</caption>
+            <thead><tr><th scope="col">Fecha</th><th scope="col">Reservas</th></tr></thead>
+            <tbody>{datos.porDia.map(dia => <tr key={dia.fecha}><th scope="row">{dia.fecha}</th><td>{dia.reservas}</td></tr>)}</tbody>
+          </table>
+        </div>
         <h2 className="panel-tarjeta-titulo">Servicios más reservados</h2>
         {datos.serviciosMasReservados.length === 0 ? <p className="panel-subtitulo">No hay servicios reservados para mostrar.</p> :
           <ul className="panel-lista estadisticas-servicios">{datos.serviciosMasReservados.map(servicio =>
