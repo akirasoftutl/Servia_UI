@@ -24,6 +24,8 @@ interface NavGroup {
 const esRutaActiva = (ruta: string | undefined, pathname: string) =>
   !!ruta && (pathname === ruta || pathname.startsWith(`${ruta}/`));
 
+const RUTAS_DE_CONFIGURACION = ['/configuracion', '/ayuda', '/soporte', '/preferencias-notificaciones'];
+
 // Debe coincidir con el punto de corte del cajón en panel.css (@media (max-width: 900px)).
 const CONSULTA_CAJON = '(max-width: 900px)';
 
@@ -125,7 +127,8 @@ export const Sidebar: React.FC = () => {
       ],
     },
   ];
-  const configuracionActiva = esRutaActiva('/configuracion', pathname);
+  // Ayuda, Soporte y Preferencias ya no están en el menú; sus cabeceras dicen «Configuración», así que ese botón queda activo.
+  const configuracionActiva = RUTAS_DE_CONFIGURACION.some((ruta) => esRutaActiva(ruta, pathname));
 
   return (
     <>

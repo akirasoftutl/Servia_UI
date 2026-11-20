@@ -223,9 +223,14 @@ describe('UI108 ítem activo según la ruta', () => {
     enRuta(ruta)
     expect(activos()).toEqual([nombre])
   })
-  it.each(['/soporte', '/preferencias-notificaciones', '/ayuda'])('en %s no hay ítem activo: sus rutas siguen abriendo pero ya no están en el menú', (ruta) => {
+  it.each(['/soporte', '/preferencias-notificaciones', '/ayuda'])('en %s solo está activo «Configuración», aunque Ayuda, Soporte y Notificaciones ya no estén en el menú', (ruta) => {
     enRuta(ruta)
-    expect(activos()).toEqual([])
+    expect(activos()).toEqual(['Configuración'])
+    expect(screen.getByRole('button', { name: 'Configuración' })).toHaveAttribute('aria-current', 'page')
+  })
+  it('en rutas ajenas a Configuración el botón no figura activo', () => {
+    enRuta('/clientes')
+    expect(screen.getByRole('button', { name: 'Configuración' })).not.toHaveAttribute('aria-current')
   })
   it('conserva el ítem en rutas anidadas', () => {
     enRuta('/reservas/r0')
