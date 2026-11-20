@@ -38,18 +38,18 @@ export function Clientes() {
   function reintentar() { setCargando(true); setError(''); setRevision((r) => r + 1); }
   const consulta = busqueda.trim();
   const buscando = consulta.length >= 2;
-  const reservasCargadas = pagina.items.reduce((suma, cliente) => suma + cliente.totalReservas, 0);
-  // Con más páginas por cargar las cifras son un mínimo: se marcan con «+» para no afirmar de más.
+  // Cuenta solo lo cargado: con más páginas es un mínimo («+») y con una búsqueda activa no se muestra.
   const mas = pagina.siguiente ? '+' : '';
+  const cargados = pagina.items.length > 0 && !buscando;
+  const textoCargados = `${pagina.items.length}${mas} ${pagina.items.length === 1 && !mas ? 'cliente cargado' : 'clientes cargados'}`;
   return <div className="panel-pagina"><div className="panel-contenedor">
     <header className="panel-encabezado">
       <div className="panel-encabezado-textos">
         <EyebrowPanel grupo="operacion" icono={Users} />
         <h1 className="panel-titulo">Clientes</h1>
         <p className="panel-subtitulo">Consulta a quienes han reservado con tu negocio.</p>
-        {pagina.items.length > 0 && <dl className="panel-metricas" aria-label="Resumen de clientes">
-          <div className="panel-metrica"><dt>{pagina.items.length === 1 && !mas ? 'cliente' : 'clientes'}</dt><dd>{pagina.items.length}{mas}</dd></div>
-          <div className="panel-metrica"><dt>reservas acumuladas</dt><dd>{reservasCargadas}{mas}</dd></div>
+        {cargados && <dl className="panel-metricas" aria-label="Resumen de clientes">
+          <div className="panel-metrica"><dt>{pagina.items.length === 1 && !mas ? 'cliente cargado' : 'clientes cargados'}</dt><dd>{pagina.items.length}{mas}</dd></div>
         </dl>}
       </div>
       <div className="panel-encabezado-acciones">
@@ -62,7 +62,7 @@ export function Clientes() {
           <h2 className="panel-tarjeta-titulo">Directorio de clientes</h2>
           <p className="panel-tarjeta-subtitulo">Selecciona un cliente para revisar su historial de reservas.</p>
         </div>
-        {pagina.items.length > 0 && <span className="panel-contador">{pagina.items.length}{mas} {pagina.items.length === 1 && !mas ? 'cliente' : 'clientes'}</span>}
+        {cargados && <span className="panel-contador">{textoCargados}</span>}
       </div>
       <div className="clientes-buscador-bloque">
         <label htmlFor="clientes-busqueda" className="form-label">Buscar por nombre</label>

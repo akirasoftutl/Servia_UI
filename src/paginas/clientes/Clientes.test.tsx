@@ -41,15 +41,26 @@ it('D17 las iniciales usan la primera y la última palabra, o un signo si no hay
   expect(iniciales('Álvaro Núñez')).toBe('ÁN');
   expect(iniciales('')).toBe('?');
 });
-it('D17 la cabecera cuenta clientes y reservas cargadas, con «+» si faltan páginas, y enlaza a Reservas', async () => {
+it('D17 la cabecera cuenta solo los clientes cargados, con «+» si faltan páginas, sin reservas acumuladas, y enlaza a Reservas', async () => {
   mock.mockResolvedValue({ items: [cliente, { ...cliente, clienteUid: 'b', nombre: 'Beto', totalReservas: 4 }], siguiente: 'mas' });
   abrir(); await avanzar();
   const metricas = document.querySelector('dl[aria-label="Resumen de clientes"]')!;
-  const cifra = (etiqueta: string) => within(metricas as HTMLElement).getByText(etiqueta, { selector: 'dt' }).closest('.panel-metrica')!.querySelector('dd')!.textContent;
-  expect(cifra('clientes')).toBe('2+');
-  expect(cifra('reservas acumuladas')).toBe('17+');
-  expect(screen.getByText('2+ clientes')).toHaveClass('panel-contador');
+  expect(within(metricas as HTMLElement).getByText('clientes cargados', { selector: 'dt' }).closest('.panel-metrica')!.querySelector('dd')!.textContent).toBe('2+');
+  expect(screen.getByText('2+ clientes cargados')).toHaveClass('panel-contador');
+  expect(screen.queryByText(/reservas acumuladas/)).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Ver reservas' })).toHaveAttribute('href', '/reservas');
+});
+it('D17 sin más páginas el contador no lleva «+» y usa el singular con un solo cliente', async () => {
+  abrir(); await avanzar();
+  expect(screen.getByText('1 cliente cargado')).toHaveClass('panel-contador');
+});
+it('D17 con una búsqueda activa (2 o más caracteres) la cabecera no muestra contadores', async () => {
+  abrir(); await avanzar();
+  expect(document.querySelector('.panel-metricas')).not.toBeNull();
+  fireEvent.change(screen.getByLabelText('Buscar por nombre'), { target: { value: 'An' } }); await avanzar(300);
+  expect(screen.getByText('Ana Pérez')).toBeInTheDocument();
+  expect(document.querySelector('.panel-metricas')).toBeNull();
+  expect(document.querySelector('.panel-contador')).toBeNull();
 });
 it('D17 sin clientes la cabecera no muestra contadores', async () => {
   mock.mockResolvedValue({ items: [], siguiente: null }); abrir(); await avanzar();
