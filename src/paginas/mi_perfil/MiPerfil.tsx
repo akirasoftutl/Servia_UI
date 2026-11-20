@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Link } from 'react-router';
-import { ShieldAlert, Store } from 'lucide-react'
+import { Check, ShieldAlert, Store } from 'lucide-react'
 import './MiPerfil.css';
 import { api, type FotosNegocio as FotosNegocioDatos } from '../../servicios/api';
 import {
@@ -13,8 +13,6 @@ import {
   type Direccion,
   type DireccionForm,
 } from './direccion';
-import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
-import { CambiarContrasena } from './CambiarContrasena';
 import { CampoCalle, type EleccionCalle } from './CampoCalle';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { FotosNegocio } from './FotosNegocio';
@@ -286,7 +284,7 @@ export function MiPerfil() {
             className="panel-alerta panel-alerta--exito"
             role="status"
           >
-            <span aria-hidden="true">✓</span>
+            <Check aria-hidden="true" />
             <strong>{mensajeExito}</strong>
           </div>
         )}
@@ -301,7 +299,7 @@ export function MiPerfil() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="panel-dialogo-icono panel-dialogo-icono--exito" aria-hidden="true">
-                ✓
+                <Check />
               </div>
               <h4 className="panel-dialogo-titulo">¡Éxito!</h4>
               <p className="panel-dialogo-texto">{mensajeExito}</p>
@@ -924,8 +922,6 @@ export function MiPerfil() {
 
         {/* Fuera del formulario del perfil: secciones independientes. */}
         <FotosNegocio fotosIniciales={fotos} alCambiar={setFotos} />
-        <RecepcionReservas />
-        <CambiarContrasena />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+.clientes-resultados { margin-top: var(--sv-esp-5); }
 .clientes-item { display: block; }
 .clientes-datos { display: grid; gap: var(--sv-esp-2); overflow-wrap: break-word; }
 .clientes-datos p { margin: 0; }

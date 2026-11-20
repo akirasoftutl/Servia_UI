@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../servicios/firebase';
 import { api, ErrorApi } from '../../servicios/api';
-import { MiPerfil } from '../../paginas/mi_perfil/MiPerfil';
+import { Configuracion } from '../../paginas/configuracion/Configuracion';
 import { Reservas } from '../../paginas/reservas/Reservas';
 
 vi.mock('../../servicios/api', async (original) => ({
@@ -37,23 +37,28 @@ beforeEach(() => {
       if (carga) throw carga;
       return { nombre: 'Barbería Norte', aceptaReservas: recibe, camposFaltantes: [] };
     }
-    if (ruta === '/categorias') return [];
+    if (ruta === '/categorias' || ruta === '/soporte/reportes/mios') return [];
     return { items: [], siguiente: null };
   });
 });
 
-function mostrar(Pagina: typeof MiPerfil) {
+// Configuración también trae los interruptores de notificaciones: se acota a la tarjeta de recepción.
+const zona = () => screen.queryByRole('region', { name: 'Recepción de reservas', hidden: true }) ?? document.body;
+const getInterruptor = () => within(zona()).getByRole('switch');
+const findInterruptor = () => screen.findByRole('region', { name: 'Recepción de reservas' }).then(() => getInterruptor());
+
+function mostrar(Pagina: typeof Configuracion) {
   return render(<MemoryRouter initialEntries={['/panel']}><Routes>
     <Route path="/panel" element={<Pagina />} />
     <Route path="/login" element={<h1>Inicia sesión</h1>} />
   </Routes></MemoryRouter>);
 }
 
-describe.each([['Mi perfil', MiPerfil], ['Reservas', Reservas]] as const)('%s: recepción compartida #101', (_nombre, Pagina) => {
+describe.each([['Configuración', Configuracion], ['Reservas', Reservas]] as const)('%s: recepción compartida #101', (_nombre, Pagina) => {
   it.each([true, false])('C1-C3/C5 pausa o reanuda (%s) solo tras confirmar, sin alterar otros campos', async (inicial) => {
     recibe = inicial;
     mostrar(Pagina);
-    const control = await screen.findByRole('switch');
+    const control = await findInterruptor();
     await waitFor(() => expect(control).toBeEnabled());
     expect(control).toHaveAttribute('aria-checked', String(inicial));
     await userEvent.click(control);
@@ -75,11 +80,11 @@ describe.each([['Mi perfil', MiPerfil], ['Reservas', Reservas]] as const)('%s: r
     fallo = error;
     const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {});
     mostrar(Pagina);
-    await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
-    await userEvent.click(screen.getByRole('switch'));
+    await waitFor(() => expect(getInterruptor()).toBeEnabled());
+    await userEvent.click(getInterruptor());
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Pausar' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cambiar la recepción de reservas. Intenta de nuevo.');
-    expect(screen.getByRole('switch', { hidden: true })).toHaveAttribute('aria-checked', 'true');
+    expect(within(zona()).getByRole('switch', { hidden: true })).toHaveAttribute('aria-checked', 'true');
     expect(alerta).not.toHaveBeenCalled();
     alerta.mockRestore();
   });
@@ -89,8 +94,8 @@ describe.each([['Mi perfil', MiPerfil], ['Reservas', Reservas]] as const)('%s: r
     else fallo = new ErrorApi(401, 'Unauthorized');
     mostrar(Pagina);
     if (metodo === 'PATCH') {
-      await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
-      await userEvent.click(screen.getByRole('switch'));
+      await waitFor(() => expect(getInterruptor()).toBeEnabled());
+      await userEvent.click(getInterruptor());
       await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Pausar' }));
     }
     expect(await screen.findByRole('heading', { name: 'Inicia sesión' })).toBeVisible();
@@ -102,8 +107,8 @@ describe.each([['Mi perfil', MiPerfil], ['Reservas', Reservas]] as const)('%s: r
     let resolver!: () => void;
     enviar = () => new Promise<void>((resolve) => { resolver = resolve; });
     mostrar(Pagina);
-    await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
-    await userEvent.click(screen.getByRole('switch'));
+    await waitFor(() => expect(getInterruptor()).toBeEnabled());
+    await userEvent.click(getInterruptor());
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
     expect(screen.getByRole('button', { name: 'Reanudando...' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
@@ -113,21 +118,21 @@ describe.each([['Mi perfil', MiPerfil], ['Reservas', Reservas]] as const)('%s: r
   });
 });
 
-it('C1-C2 conserva el estado al pasar de Mi perfil a Reservas', async () => {
-  const vista = mostrar(MiPerfil);
-  await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
-  await userEvent.click(screen.getByRole('switch'));
+it('C1-C2 conserva el estado al pasar de Configuración a Reservas', async () => {
+  const vista = mostrar(Configuracion);
+  await waitFor(() => expect(getInterruptor()).toBeEnabled());
+  await userEvent.click(getInterruptor());
   await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Pausar' }));
   await screen.findByText('Reservas pausadas.');
   vista.unmount();
   mostrar(Reservas);
-  await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
-  expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+  await waitFor(() => expect(getInterruptor()).toBeEnabled());
+  expect(getInterruptor()).toHaveAttribute('aria-checked', 'false');
 });
 
 it('C2/C5/C6/C7 mantiene una sola implementación y solo estilos compartidos', () => {
   const fuente = (ruta: string) => readFileSync(new URL(ruta, import.meta.url), 'utf8');
-  for (const pagina of ['../../paginas/mi_perfil/MiPerfil.tsx', '../../paginas/reservas/Reservas.tsx']) {
+  for (const pagina of ['../../paginas/configuracion/Configuracion.tsx', '../../paginas/reservas/Reservas.tsx']) {
     const codigo = fuente(pagina);
     expect(codigo).toContain('<RecepcionReservas />');
     expect(codigo).not.toContain('/recepcion-reservas\'');

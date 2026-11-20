@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Check } from 'lucide-react';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { useAuth } from '../../contextos/AuthContext';
 
@@ -15,7 +16,7 @@ const etiquetas: Record<Campo, string> = {
 };
 
 // MVP-04: con la sesión iniciada, el negocio cambia su contraseña con Firebase Authentication (D9).
-export function CambiarContrasena() {
+export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean }) {
   const { usuario } = useAuth();
   const [valores, setValores] = useState<Record<Campo, string>>({ actual: '', nueva: '', confirmacion: '' });
   const [errores, setErrores] = useState<Errores>({});
@@ -38,6 +39,10 @@ export function CambiarContrasena() {
   });
 
   if (!usuario) return null;
+
+  // Dentro de otra tarjeta (Configuración) no se anida una tarjeta: es una subsección con título de nivel 3.
+  const Contenedor = incrustada ? 'div' : 'section';
+  const Titulo = incrustada ? 'h3' : 'h2';
 
   const entraConContrasena = usuario.providerData.some((p) => p.providerId === 'password');
 
@@ -96,12 +101,12 @@ export function CambiarContrasena() {
   };
 
   return (
-    <section className="panel-tarjeta perfil-tarjeta-contrasena" aria-labelledby="titulo-cambiar-contrasena">
+    <Contenedor className={incrustada ? 'panel-subseccion' : 'panel-tarjeta perfil-tarjeta-contrasena'} aria-labelledby="titulo-cambiar-contrasena">
       <div className="panel-tarjeta-encabezado">
         <div>
-          <h2 id="titulo-cambiar-contrasena" className="panel-tarjeta-titulo">
+          <Titulo id="titulo-cambiar-contrasena" className={incrustada ? 'panel-item-titulo' : 'panel-tarjeta-titulo'}>
             Cambiar contraseña
-          </h2>
+          </Titulo>
           <p className="panel-tarjeta-subtitulo">
             {entraConContrasena
               ? `Escribe tu contraseña actual y la nueva. La nueva debe tener al menos ${MINIMO} caracteres.`
@@ -114,7 +119,7 @@ export function CambiarContrasena() {
         <>
           {exito && (
             <div className="panel-alerta panel-alerta--exito" role="status">
-              <span aria-hidden="true">✓</span>
+              <Check aria-hidden="true" />
               <span>{exito}</span>
             </div>
           )}
@@ -165,6 +170,6 @@ export function CambiarContrasena() {
           </form>
         </>
       )}
-    </section>
+    </Contenedor>
   );
 }

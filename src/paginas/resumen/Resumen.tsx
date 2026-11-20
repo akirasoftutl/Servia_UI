@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
+import { CalendarClock, Pause, LayoutDashboard } from 'lucide-react';
+import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { api } from '../../servicios/api';
 import './Resumen.css';
-import { LayoutDashboard } from 'lucide-react';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 // Contrato de GET /negocios/mio/resumen (Servia_BE#89). Los números se calculan en la API
@@ -98,7 +99,7 @@ export function Resumen() {
 
       {perfil?.aceptaReservas === false && (
         <div className="panel-alerta panel-alerta--aviso">
-          <span className="panel-alerta-icono" aria-hidden="true">⏸</span>
+          <span className="panel-alerta-icono" aria-hidden="true"><Pause /></span>
           <div className="panel-alerta-contenido">
             <strong>Pausaste las reservas</strong>
             <p>Los clientes no pueden pedir reservas nuevas.</p>
@@ -145,12 +146,12 @@ export function Resumen() {
           <section className="panel-tarjeta resumen-proximas" aria-labelledby="resumen-proximas-titulo">
             <h2 id="resumen-proximas-titulo" className="panel-tarjeta-titulo">Próximas citas</h2>
             {datos.proximas.length === 0 ? (
-              <div className="panel-estado">
-                <div className="panel-estado-icono" aria-hidden="true">✦</div>
-                <p className="panel-estado-texto">
-                  {sinReservas ? 'Todavía no tienes reservas.' : 'No tienes reservas próximas.'}
-                </p>
-              </div>
+              <EstadoVacio
+                icono={CalendarClock}
+                titulo={sinReservas ? 'Tu agenda está libre' : 'Sin citas próximas'}
+                texto={sinReservas ? 'Todavía no tienes reservas.' : 'No tienes reservas próximas.'}
+                accion={datos.serviciosPublicados === 0 ? <Link to="/servicios/nuevo" className="btn-servia-primary">Crear servicio</Link> : undefined}
+              />
             ) : (
               <ul className="panel-lista resumen-lista">
                 {datos.proximas.map((cita) => (

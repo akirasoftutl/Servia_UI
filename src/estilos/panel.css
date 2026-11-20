@@ -652,6 +652,14 @@ fieldset:disabled .btn-servia-secondary {
   line-height: 1.45;
 }
 
+/* Bloque dentro de una tarjeta, separado del anterior por un filo (p. ej. Cuenta en Configuración) */
+.panel-subseccion {
+  margin-top: var(--sv-esp-5);
+  padding-top: var(--sv-esp-5);
+  border-top: 1px solid var(--sv-borde);
+  overflow-wrap: anywhere;
+}
+
 /* Barra de acciones al pie de un formulario */
 .panel-formulario-acciones {
   display: flex;
@@ -662,6 +670,18 @@ fieldset:disabled .btn-servia-secondary {
   margin-top: var(--sv-esp-2);
   padding-top: var(--sv-esp-5);
   border-top: 1px solid var(--sv-borde);
+}
+
+/* Botones en fila que se parten en líneas en pantallas angostas */
+.panel-acciones-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sv-esp-3);
+}
+
+.panel-formulario-acciones--separado {
+  margin-top: var(--sv-esp-5);
 }
 
 /* Nota breve al pie de una tarjeta */
@@ -746,6 +766,13 @@ fieldset:disabled .btn-servia-secondary {
 .panel-alerta-icono svg {
   width: 18px;
   height: 18px;
+}
+
+/* Ícono suelto (sin ficha) al inicio de una alerta */
+.panel-alerta > svg {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
 }
 
 .panel-alerta-contenido {
@@ -1459,6 +1486,11 @@ fieldset:disabled .btn-servia-secondary {
   text-align: left;
   white-space: normal;
   border-radius: var(--sv-radio-sm);
+}
+.panel-acordeon-boton svg {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
 }
 .panel-acordeon > [role='region'] {
   padding: var(--sv-esp-3) var(--sv-esp-4);
