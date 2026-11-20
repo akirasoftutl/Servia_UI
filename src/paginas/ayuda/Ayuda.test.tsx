@@ -49,5 +49,5 @@ it('C4 conserva cabecera, tarjetas y clases del sistema compartido sin CSS ni de
   const css = readFileSync('src/estilos/panel.css', 'utf8');
   expect(fuente).not.toMatch(/\b\d+(px|rem)\b|#[\da-f]{3,8}\b|alert\(/i);
   expect(fuente.match(/import .*\.css['"]/g)).toEqual(["import '../../estilos/panel.css'"]);
-  for (const nodo of container.querySelectorAll('[class]')) for (const clase of nodo.classList) expect(css).toContain(`.${clase}`);
+  for (const nodo of container.querySelectorAll('[class]')) for (const clase of nodo.classList) if (!clase.startsWith('lucide')) expect(css).toContain(`.${clase}`);
 });

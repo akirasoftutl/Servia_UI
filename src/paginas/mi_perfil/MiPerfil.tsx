@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Link } from 'react-router';
-import { ShieldAlert } from 'lucide-react'
+import { Check, ShieldAlert } from 'lucide-react'
 import './MiPerfil.css';
 import { api } from '../../servicios/api';
 import {
@@ -277,7 +277,7 @@ export function MiPerfil() {
             className="panel-alerta panel-alerta--exito"
             role="status"
           >
-            <span aria-hidden="true">✓</span>
+            <Check aria-hidden="true" />
             <strong>{mensajeExito}</strong>
           </div>
         )}
@@ -292,7 +292,7 @@ export function MiPerfil() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="panel-dialogo-icono panel-dialogo-icono--exito" aria-hidden="true">
-                ✓
+                <Check />
               </div>
               <h4 className="panel-dialogo-titulo">¡Éxito!</h4>
               <p className="panel-dialogo-texto">{mensajeExito}</p>

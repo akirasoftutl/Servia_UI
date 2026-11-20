@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Pause } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../servicios/firebase';
@@ -145,7 +146,7 @@ export function RecepcionReservas() {
 
         {aceptaReservas === false && (
           <div className="panel-alerta panel-alerta--aviso">
-            <span className="panel-alerta-icono" aria-hidden="true">⏸</span>
+            <span className="panel-alerta-icono" aria-hidden="true"><Pause /></span>
             <div className="panel-alerta-contenido">
               <strong>Pausaste las reservas</strong>
               <p>Los clientes no pueden pedir reservas nuevas.</p>
@@ -193,7 +194,7 @@ export function RecepcionReservas() {
             }}
             className="panel-dialogo"
           >
-            <div className="panel-dialogo-icono panel-dialogo-icono--aviso" aria-hidden="true">⏸</div>
+            <div className="panel-dialogo-icono panel-dialogo-icono--aviso" aria-hidden="true"><Pause /></div>
             <h2 id="tituloPausa" className="panel-dialogo-titulo">{aceptaReservas ? '¿Pausar las reservas?' : '¿Reanudar las reservas?'}</h2>
             <p id="descripcionPausa" className="panel-dialogo-texto">
               {aceptaReservas
