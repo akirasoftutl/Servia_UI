@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { Minus, Plus, CircleHelp } from 'lucide-react';
 import '../../estilos/panel.css';
-import { CircleHelp } from 'lucide-react';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 const grupos = [
@@ -44,7 +44,7 @@ export function Ayuda() {
         const abierta = abiertas.includes(p.id);
         return <div className="panel-acordeon" key={p.id}>
           <h3 className="panel-item-titulo"><button id={`pregunta-${p.id}`} className="btn-servia-secondary panel-acordeon-boton" aria-expanded={abierta} aria-controls={`respuesta-${p.id}`} onClick={() => setAbiertas(prev => abierta ? prev.filter(id => id !== p.id) : [...prev, p.id])}>
-            <span>{p.pregunta}</span><span aria-hidden="true">{abierta ? '−' : '+'}</span>
+            <span>{p.pregunta}</span>{abierta ? <Minus aria-hidden="true" /> : <Plus aria-hidden="true" />}
           </button></h3>
           <div id={`respuesta-${p.id}`} role="region" aria-labelledby={`pregunta-${p.id}`} hidden={!abierta}><p className="panel-item-texto">{p.respuesta}</p></div>
         </div>;

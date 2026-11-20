@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, type ReactNode, type FormEvent } from 'react';
-import { api, ErrorApi } from '../../servicios/api';
-import './Bloqueos.css';
 import { CalendarOff } from 'lucide-react';
+import { api, ErrorApi } from '../../servicios/api';
+import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import './Bloqueos.css';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 interface Bloqueo {
@@ -283,10 +284,11 @@ export function Bloqueos() {
                 <div className="spinner-border" aria-hidden="true" />
                 <p className="panel-estado-texto">Cargando...</p>
               </div>}
-              {!cargando && !error && bloqueos.length === 0 && <div className="panel-estado bloqueos-vacio">
-                <div className="panel-estado-icono" aria-hidden="true">✦</div>
-                <p className="panel-estado-texto">No tienes bloqueos.</p>
-              </div>}
+              {!cargando && !error && bloqueos.length === 0 && <EstadoVacio
+                icono={CalendarOff}
+                titulo="Tu agenda no tiene bloqueos"
+                texto="Cuando necesites cerrar una fecha u hora, crea un bloqueo en el formulario."
+              />}
 
               {!cargando && !error && bloqueos.length > 0 && (
                 <div className="panel-lista">

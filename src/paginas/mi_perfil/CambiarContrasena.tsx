@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Check } from 'lucide-react';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { useAuth } from '../../contextos/AuthContext';
 
@@ -118,7 +119,7 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
         <>
           {exito && (
             <div className="panel-alerta panel-alerta--exito" role="status">
-              <span aria-hidden="true">✓</span>
+              <Check aria-hidden="true" />
               <span>{exito}</span>
             </div>
           )}

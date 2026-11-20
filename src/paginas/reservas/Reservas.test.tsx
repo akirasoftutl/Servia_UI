@@ -229,7 +229,7 @@ it('muestra carga, vacío y error, y reintenta conservando los filtros', async (
   expect(screen.getByRole('status')).toHaveTextContent('Cargando reservas');
   expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar');
   fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
-  expect(await screen.findByText('No tienes reservas pendientes.')).toBeInTheDocument();
+  expect(await screen.findByText('Cuando un cliente solicite una cita, la verás aquí para aceptarla o rechazarla.')).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2030-11-03' } });
   await screen.findByRole('alert');
   fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
