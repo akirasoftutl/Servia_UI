@@ -1,3 +1,4 @@
+import { Preferencias } from './paginas/preferencias/Preferencias'
 import { Ayuda } from './paginas/ayuda/Ayuda'
 import { createBrowserRouter, type RouteObject } from 'react-router'
 import { Inicio } from './paginas/Inicio'
@@ -44,6 +45,7 @@ export const rutas: RouteObject[] = [
         children: [
           { path: 'ayuda', element: <Ayuda /> },
           { path: 'resumen', element: <Resumen /> },
+          { path: 'preferencias-notificaciones', element: <Preferencias /> },
           { path: 'mi-perfil', element: <MiPerfil /> },
           { path: 'mi-perfil/vista-previa', element: <VistaPrevia /> },
           { path: 'servicios', element: <MisServicios /> },
