@@ -1,6 +1,6 @@
 import { Bell } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import './Sidebar.css';
 import '../../estilos/panel.css';
 import { api } from '../../servicios/api';
@@ -17,6 +17,10 @@ interface NavGroup {
   title: string;
   items: NavItem[];
 }
+
+/** Un ítem está activo en su ruta y en las que cuelgan de ella (/reservas/:id, /servicios/nuevo). */
+const esRutaActiva = (ruta: string | undefined, pathname: string) =>
+  !!ruta && (pathname === ruta || pathname.startsWith(`${ruta}/`));
 
 export const Sidebar: React.FC = () => {
   const [angosta, setAngosta] = useState(() => window.matchMedia?.('(max-width: 650px)').matches ?? false);
@@ -57,7 +61,7 @@ export const Sidebar: React.FC = () => {
     };
   }, [angosta, abierta]);
 
-  const [activeItem, setActiveItem] = useState<string>('dashboard');
+  const { pathname } = useLocation();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -201,13 +205,13 @@ export const Sidebar: React.FC = () => {
             <h2 className="group-title">{group.title}</h2>
             <ul className="nav-list">
               {group.items.map((item) => {
-                const isActive = activeItem === item.id;
+                const isActive = esRutaActiva(item.ruta, pathname);
                 return (
                   <li key={item.id} className="nav-item">
                     <button
                       className={`nav-link ${isActive ? 'active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
                       onClick={() => {
-                        setActiveItem(item.id);
                         setAbierta(false);
                         if (item.ruta) navigate(item.ruta);
                       }}

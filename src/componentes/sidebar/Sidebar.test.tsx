@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, MemoryRouter, Route, RouterProvider, Routes } from 'react-router'
 import { Sidebar } from './Sidebar'
@@ -157,4 +157,52 @@ it('UI102 abre Notificaciones desde el menú móvil y lo cierra al navegar', asy
   expect(await screen.findByRole('heading', { name: 'Preferencias push' })).toBeVisible()
   expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Abrir menú' })).toHaveAttribute('aria-expanded', 'false')
+})
+
+describe('UI108 ítem activo según la ruta', () => {
+  beforeEach(() => pantalla(false))
+  const enRuta = (ruta: string) => render(<MemoryRouter initialEntries={[ruta]}><Sidebar /></MemoryRouter>)
+  const activos = () => screen.queryAllByRole('button').filter((b) => b.classList.contains('active')).map((b) => b.querySelector('span:not([aria-hidden])')?.textContent)
+
+  it('resalta el ítem de la ruta al cargar directo, sin haber hecho clic', () => {
+    enRuta('/clientes')
+    expect(activos()).toEqual(['Clientes'])
+    expect(screen.getByRole('button', { name: 'Clientes' })).toHaveAttribute('aria-current', 'page')
+  })
+  it.each([
+    ['/resumen', 'Resumen'], ['/reservas', 'Reservas'], ['/servicios', 'Servicios'], ['/clientes', 'Clientes'],
+    ['/soporte', 'Reportar un problema'], ['/preferencias-notificaciones', 'Notificaciones'], ['/ayuda', 'Ayuda'],
+    ['/estadisticas', 'Estadísticas'], ['/bloqueos', 'Bloqueos'], ['/horario', 'Horario'],
+  ])('en %s solo está activo «%s»', (ruta, nombre) => {
+    enRuta(ruta)
+    expect(activos()).toEqual([nombre])
+  })
+  it('conserva el ítem en rutas anidadas', () => {
+    enRuta('/reservas/r0')
+    expect(activos()).toEqual(['Reservas'])
+    cleanup()
+    enRuta('/servicios/nuevo')
+    expect(activos()).toEqual(['Servicios'])
+    cleanup()
+    enRuta('/clientes/c1')
+    expect(activos()).toEqual(['Clientes'])
+  })
+  it('no confunde rutas que solo comparten prefijo ni resalta nada fuera del menú', () => {
+    enRuta('/reservas-antiguas')
+    expect(activos()).toEqual([])
+    cleanup()
+    enRuta('/mi-perfil')
+    expect(activos()).toEqual([])
+    expect(document.querySelector('[aria-current]')).toBeNull()
+  })
+  it('sigue la ruta con el botón atrás, sin depender de un clic previo', async () => {
+    const router = createMemoryRouter([{ path: '*', element: <Sidebar /> }], { initialEntries: ['/resumen'] })
+    render(<RouterProvider router={router} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Horario' }))
+    expect(activos()).toEqual(['Horario'])
+    await act(async () => { await router.navigate(-1) })
+    expect(activos()).toEqual(['Resumen'])
+    await act(async () => { await router.navigate('/bloqueos') })
+    expect(activos()).toEqual(['Bloqueos'])
+  })
 })
