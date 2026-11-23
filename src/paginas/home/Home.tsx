@@ -1,6 +1,15 @@
+import { useNavigate } from 'react-router';
 import './Home.css'
 
 function Home() {
+
+  const navigate = useNavigate();
+
+   const handleLoginClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate('/login');
+  }; 
+
   const features = [
     {
       title: "Administra",
@@ -71,9 +80,9 @@ function Home() {
           Todo lo que necesitas para crecer y prosperar. Servia ofrece numerosas herramientas para aumentar las ventas, 
           administrar tu calendario y retener a los clientes, así puedes concentrarte en lo que mejor sabes hacer.
         </p>
-        <a href="#registro" className="btn btn--dark">
+        <button type='button' className="btn btn--dark" onClick={handleLoginClick}>
           Empezar hoy 
-        </a>
+        </button>
       </div>
 
       <div className="platform__grid">

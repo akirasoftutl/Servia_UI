@@ -21,7 +21,7 @@ import { Bloqueos } from './paginas/bloqueos/Bloqueos.tsx'
 import { Estadisticas } from './paginas/estadisticas/Estadisticas.tsx'
 import { Reservas } from './paginas/reservas/Reservas.tsx'
 import { Resumen } from './paginas/resumen/Resumen.tsx'
-
+import {Precios} from './paginas/precios/Precios.tsx'
 import { Clientes } from './paginas/clientes/Clientes'
 import { DetalleCliente } from './paginas/clientes/DetalleCliente'
 
@@ -39,6 +39,7 @@ export const rutas: RouteObject[] = [
         children: [
           { path: 'registro-negocio', element: <RegistroNegocio /> },
           { path: 'login', element: <Login /> },
+          { path: 'precios', element: <Precios /> },
         ],
       },
 

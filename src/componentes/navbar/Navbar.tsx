@@ -20,6 +20,12 @@ function Navbar() {
     navigate('/login');
   };
 
+  const handlePreciosClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenuOpen(false);
+    navigate('/precios');
+  };
+
   const handleRegistrarClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setMenuOpen(false);
@@ -96,7 +102,7 @@ function Navbar() {
           </div>
         </div>
 
-        <a href="#precios">Precios</a>
+        <a href="/precios" onClick={handlePreciosClick}>Precios</a>
       </nav>
 
       <div className="navbar__actions">
