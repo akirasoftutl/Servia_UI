@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import { CircleAlert, type LucideIcon } from 'lucide-react';
 
-// Piezas visuales compartidas por los estados de los módulos del panel.
-// Son decorativas: no tienen texto ni roles, así que quedan ocultas para
-// lectores de pantalla; el mensaje accesible lo pone cada pantalla.
+// Piezas visuales compartidas por los estados de los módulos del panel,
+// alineadas con lib/core/widgets/estados.dart de la app móvil.
 
 export function IlustracionEstado({ icono: Icono, error = false }: { icono: LucideIcon; error?: boolean }) {
   return (
@@ -14,8 +13,7 @@ export function IlustracionEstado({ icono: Icono, error = false }: { icono: Luci
   );
 }
 
-// Estado vacío único del panel: ilustración, título, texto y, si hay un siguiente
-// paso útil, un botón de acción (el que llama pasa un <Link> o <button> ya con su clase).
+// Estado vacío único del panel: ícono, título, texto y acción opcional.
 export function EstadoVacio({ icono, titulo, texto, accion, encabezado = 'h3' }: {
   icono: LucideIcon; titulo: string; texto: string; accion?: ReactNode; encabezado?: 'h1' | 'h2' | 'h3';
 }) {
@@ -27,6 +25,56 @@ export function EstadoVacio({ icono, titulo, texto, accion, encabezado = 'h3' }:
         <Encabezado className="panel-estado-titulo">{titulo}</Encabezado>
         <p className="panel-estado-texto">{texto}</p>
         {accion && <div className="panel-estado-acciones">{accion}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Estado de carga estándar con indicador circular y texto accesible.
+export function EstadoCargando({ mensaje = 'Cargando...' }: { mensaje?: string }) {
+  return (
+    <div className="panel-estado">
+      <div className="spinner-border" aria-hidden="true" />
+      <p className="panel-estado-texto" role="status">{mensaje}</p>
+    </div>
+  );
+}
+
+// Estado de error estándar con ícono semántico, mensaje en role="alert" y botón Reintentar opcional.
+export function EstadoError({
+  titulo,
+  mensaje,
+  onReintentar,
+  textoReintentar = 'Reintentar',
+  accionSecundaria,
+  icono = CircleAlert,
+  encabezado = 'h3',
+}: {
+  titulo?: string;
+  mensaje: string;
+  onReintentar?: () => void;
+  textoReintentar?: string;
+  accionSecundaria?: ReactNode;
+  icono?: LucideIcon;
+  encabezado?: 'h1' | 'h2' | 'h3';
+}) {
+  const Encabezado = encabezado;
+  return (
+    <div className="panel-estado panel-estado--error">
+      <IlustracionEstado icono={icono} error />
+      <div className="panel-estado-cuerpo">
+        {titulo && <Encabezado className="panel-estado-titulo">{titulo}</Encabezado>}
+        <p className="panel-estado-texto" role="alert">{mensaje}</p>
+        {(onReintentar || accionSecundaria) && (
+          <div className="panel-estado-acciones">
+            {onReintentar && (
+              <button type="button" className="btn-servia-primary" onClick={onReintentar}>
+                {textoReintentar}
+              </button>
+            )}
+            {accionSecundaria}
+          </div>
+        )}
       </div>
     </div>
   );
