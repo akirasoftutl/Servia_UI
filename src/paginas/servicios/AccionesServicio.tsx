@@ -12,7 +12,6 @@ export function AccionesServicio({ id, nombre, activo, alCambiarEstado, alElimin
   id: string; nombre: string; activo: boolean;
   alCambiarEstado: (activo: boolean) => void;
   alEliminar: (mensaje: string) => void;
-  alMensaje?: (mensaje: string) => void;
 }) {
   const [ocupado, setOcupado] = useState(false);
   const [errorVisibilidad, setErrorVisibilidad] = useState(false);
