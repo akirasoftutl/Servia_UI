@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Check } from 'lucide-react';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { useAuth } from '../../contextos/AuthContext';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
+import { error as alertaError, exito as alertaExito } from '../../servicios/alertas';
+import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
+import { atributosErrorCampo, idErrorCampo } from '../../utilidades/validacion';
 
 type Campo = 'actual' | 'nueva' | 'confirmacion';
 type Errores = Partial<Record<Campo, string>>;
@@ -21,8 +23,6 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
   const { usuario } = useAuth();
   const [valores, setValores] = useState<Record<Campo, string>>({ actual: '', nueva: '', confirmacion: '' });
   const [errores, setErrores] = useState<Errores>({});
-  const [errorGeneral, setErrorGeneral] = useState('');
-  const [exito, setExito] = useState('');
   const [guardando, setGuardando] = useState(false);
   const campos = {
     actual: useRef<HTMLInputElement>(null),
@@ -69,8 +69,6 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setErrorGeneral('');
-    setExito('');
     const nuevos = validar();
     if (Object.keys(nuevos).length > 0) {
       mostrarErrores(nuevos);
@@ -84,7 +82,7 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
       await reauthenticateWithCredential(usuario, credencial);
       await updatePassword(usuario, valores.nueva);
       setValores({ actual: '', nueva: '', confirmacion: '' });
-      setExito('Listo: cambiaste tu contraseña. Úsala la próxima vez que inicies sesión.');
+      await alertaExito('Listo: cambiaste tu contraseña. Úsala la próxima vez que inicies sesión.');
     } catch (error: unknown) {
       const codigo = (error as { code?: string })?.code;
       if (codigo === 'auth/wrong-password' || codigo === 'auth/invalid-credential') {
@@ -92,9 +90,9 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
       } else if (codigo === 'auth/weak-password') {
         mostrarErrores({ nueva: 'La contraseña nueva es muy débil. Elige otra más segura.' });
       } else if (codigo === 'auth/too-many-requests') {
-        setErrorGeneral('Demasiados intentos. Inténtalo más tarde.');
+        await alertaError('Demasiados intentos. Inténtalo más tarde.');
       } else {
-        setErrorGeneral('No pudimos cambiar la contraseña. Inténtalo de nuevo.');
+        await alertaError('No pudimos cambiar la contraseña. Inténtalo de nuevo.');
       }
     } finally {
       setGuardando(false);
@@ -117,59 +115,40 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
       </div>
 
       {entraConContrasena && (
-        <>
-          {exito && (
-            <div className="panel-alerta panel-alerta--exito" role="status">
-              <Check aria-hidden="true" />
-              <span>{exito}</span>
-            </div>
-          )}
-          {errorGeneral && (
-            <div className="panel-alerta panel-alerta--error" role="alert">
-              {errorGeneral}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="row g-3">
+            {(['actual', 'nueva', 'confirmacion'] as Campo[]).map((campo) => {
+              const id = `contrasena-${campo}`;
+              const error = errores[campo];
+              return (
+                <div className="col-12 col-md-4" key={campo}>
+                  <label htmlFor={id} className="form-label">{etiquetas[campo]}</label>
+                  <input
+                    ref={campos[campo]}
+                    id={id}
+                    type="password"
+                    autoComplete={campo === 'actual' ? 'current-password' : 'new-password'}
+                    className={`form-control ${error ? 'is-invalid' : ''}`}
+                    value={valores[campo]}
+                    onChange={(e) => {
+                      setValores({ ...valores, [campo]: e.target.value });
+                      setErrores({ ...errores, [campo]: undefined });
+                    }}
+                    disabled={guardando}
+                    {...atributosErrorCampo(id, error)}
+                  />
+                  <ErrorCampo id={idErrorCampo(id)} mensaje={error} />
+                </div>
+              );
+            })}
+          </div>
 
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="row g-3">
-              {(['actual', 'nueva', 'confirmacion'] as Campo[]).map((campo) => {
-                const id = `contrasena-${campo}`;
-                const error = errores[campo];
-                return (
-                  <div className="col-12 col-md-4" key={campo}>
-                    <label htmlFor={id} className="form-label">{etiquetas[campo]}</label>
-                    <input
-                      ref={campos[campo]}
-                      id={id}
-                      type="password"
-                      autoComplete={campo === 'actual' ? 'current-password' : 'new-password'}
-                      className={`form-control ${error ? 'is-invalid' : ''}`}
-                      value={valores[campo]}
-                      onChange={(e) => {
-                        setValores({ ...valores, [campo]: e.target.value });
-                        setErrores({ ...errores, [campo]: undefined });
-                      }}
-                      disabled={guardando}
-                      aria-invalid={error ? true : undefined}
-                      aria-describedby={error ? `${id}-error` : undefined}
-                    />
-                    {error && (
-                      <div id={`${id}-error`} className="invalid-feedback" role="alert">
-                        {error}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="panel-formulario-acciones perfil-contrasena-acciones">
-              <BotonPanel type="submit" variante="primario" disabled={guardando}>
-                {guardando ? 'Cambiando...' : 'Cambiar contraseña'}
-              </BotonPanel>
-            </div>
-          </form>
-        </>
+          <div className="panel-formulario-acciones perfil-contrasena-acciones">
+            <BotonPanel type="submit" variante="primario" disabled={guardando}>
+              {guardando ? 'Cambiando...' : 'Cambiar contraseña'}
+            </BotonPanel>
+          </div>
+        </form>
       )}
     </Contenedor>
   );

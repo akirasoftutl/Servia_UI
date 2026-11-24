@@ -1,5 +1,6 @@
 // Dirección del negocio por campos. Mismo contrato y mismas reglas que la API
 // (Servia_BE#65, DireccionDto). Ajusta la decisión D8.
+import { longitudEntre, longitudMaxima, validarCodigoPostal } from '../../utilidades/validacion';
 
 // Ubicación del negocio que entrega Google al elegir una sugerencia (Servia_BE#109).
 export interface Ubicacion {
@@ -71,17 +72,18 @@ export function direccionAForm(direccion: Direccion): DireccionForm {
 // Valida con las mismas reglas que la API; devuelve un error por campo.
 export function validarDireccion(d: DireccionForm): Record<string, string> {
   const e: Record<string, string> = {};
-  const calle = d.calle.trim();
-  const exterior = d.numeroExterior.trim();
-  const colonia = d.colonia.trim();
-  const municipio = d.municipio.trim();
-
-  if (calle.length < 2 || calle.length > 100) e.calle = 'La calle debe tener entre 2 y 100 caracteres';
-  if (exterior.length < 1 || exterior.length > 10) e.numeroExterior = 'El número exterior debe tener entre 1 y 10 caracteres';
-  if (d.numeroInterior.trim().length > 10) e.numeroInterior = 'El número interior no puede exceder 10 caracteres';
-  if (colonia.length < 2 || colonia.length > 80) e.colonia = 'La colonia debe tener entre 2 y 80 caracteres';
-  if (!/^\d{5}$/.test(d.codigoPostal.trim())) e.codigoPostal = 'El código postal debe contener exactamente 5 dígitos';
-  if (municipio.length < 2 || municipio.length > 80) e.municipio = 'El municipio debe tener entre 2 y 80 caracteres';
+  const errCalle = longitudEntre(d.calle, 2, 100, { mensaje: 'La calle debe tener entre 2 y 100 caracteres' });
+  if (errCalle) e.calle = errCalle;
+  const errExterior = longitudEntre(d.numeroExterior, 1, 10, { mensaje: 'El número exterior debe tener entre 1 y 10 caracteres' });
+  if (errExterior) e.numeroExterior = errExterior;
+  const errInterior = longitudMaxima(d.numeroInterior, 10, 'El número interior no puede exceder 10 caracteres');
+  if (errInterior) e.numeroInterior = errInterior;
+  const errColonia = longitudEntre(d.colonia, 2, 80, { mensaje: 'La colonia debe tener entre 2 y 80 caracteres' });
+  if (errColonia) e.colonia = errColonia;
+  const errCp = validarCodigoPostal(d.codigoPostal);
+  if (errCp) e.codigoPostal = errCp;
+  const errMunicipio = longitudEntre(d.municipio, 2, 80, { mensaje: 'El municipio debe tener entre 2 y 80 caracteres' });
+  if (errMunicipio) e.municipio = errMunicipio;
   if (!(ESTADOS_MEXICO as readonly string[]).includes(d.estado)) e.estado = 'Selecciona un estado de la lista';
   return e;
 }

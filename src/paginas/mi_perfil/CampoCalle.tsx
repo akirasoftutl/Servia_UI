@@ -1,6 +1,8 @@
 import { useState, type ChangeEvent, type KeyboardEvent } from 'react'
 import { camposSinDato, type DetalleLugar } from './direccion'
 import { useAutocompletarDomicilio } from './useAutocompletarDomicilio'
+import { ErrorCampo } from '../../componentes/panel/ErrorCampo'
+import { atributosErrorCampo, idErrorCampo } from '../../utilidades/validacion'
 
 export const AVISO_SUGERENCIA = 'Revisa que la calle quede sin colonia ni ciudad y completa el resto de los campos.'
 
@@ -111,6 +113,7 @@ export function CampoCalle({ value, error, onChange, onElegir }: Props) {
         aria-expanded={expandida}
         aria-controls={ID_LISTA}
         aria-activedescendant={hayOpciones && activa >= 0 ? idOpcion(activa) : undefined}
+        {...atributosErrorCampo('calle', error)}
       />
 
       <div className="perfil-calle-lista" hidden={!expandida}>
@@ -138,7 +141,7 @@ export function CampoCalle({ value, error, onChange, onElegir }: Props) {
         <p className="perfil-calle-atribucion" translate="no">Google Maps</p>
       </div>
 
-      {error && <div className="invalid-feedback">{error}</div>}
+      <ErrorCampo id={idErrorCampo('calle')} mensaje={error} />
 
       <p className="panel-ayuda perfil-calle-nota" aria-live="polite">{nota}</p>
       {aviso && (

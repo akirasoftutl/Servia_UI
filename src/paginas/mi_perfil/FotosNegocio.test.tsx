@@ -1,8 +1,10 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { FotoNegocio, FotosNegocio as FotosNegocioDatos } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { FotosNegocio } from './FotosNegocio';
 import { MAX_FOTO_BYTES, MENSAJE_TAMANO_EXCEDIDO, MENSAJE_TIPO_INVALIDO } from './fotos';
+import { mockearConfirmacion, swalFireMock, ultimaAlerta } from '../../pruebas/mockAlertas';
 
 function respuestaJson(estado: number, cuerpo?: unknown): Response {
   return new Response(cuerpo === undefined ? null : JSON.stringify(cuerpo), { status: estado });
@@ -125,36 +127,33 @@ describe('FotosNegocio (portada y galería)', () => {
     );
 
     // Quitar la foto 2: primero cancelar confirmación no borra nada
+    mockearConfirmacion(false);
     await usuario.click(screen.getByRole('button', { name: 'Quitar foto 2' }));
-    const dialogo1 = screen.getByRole('alertdialog');
-    await usuario.click(within(dialogo1).getByRole('button', { name: 'Cancelar' }));
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(ultimaAlerta()).toMatchObject({ title: '¿Quitar foto de la galería?', showCancelButton: true });
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     // Confirmar eliminación de la foto 2
+    mockearConfirmacion(true);
     await usuario.click(screen.getByRole('button', { name: 'Quitar foto 2' }));
-    const dialogo2 = screen.getByRole('alertdialog');
-    await usuario.click(within(dialogo2).getByRole('button', { name: 'Quitar foto' }));
 
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
-    expect(screen.getByText('4 / 5 en galería')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('4 / 5 en galería')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: 'Agregar foto' })).toBeEnabled();
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3000/negocios/mio/fotos/foto-2',
       expect.objectContaining({ method: 'DELETE' }),
     );
+    expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Foto eliminada de la galería.' });
   });
 
   it.each([
     ['PDF', crearImagen('catalogo.pdf', 'application/pdf', 1024), MENSAJE_TIPO_INVALIDO],
     ['GIF', crearImagen('animacion.gif', 'image/gif', 1024), MENSAJE_TIPO_INVALIDO],
     ['mayor a 5 MB', crearImagen('grande.jpg', 'image/jpeg', MAX_FOTO_BYTES + 1), MENSAJE_TAMANO_EXCEDIDO],
-  ])('C3: rechaza %s en el navegador con mensaje claro y sin llamar a la API', (_caso, archivo, mensajeEsperado) => {
+  ])('C3: rechaza %s en el navegador con aviso estándar y sin llamar a la API', (_caso, archivo, mensajeEsperado) => {
     render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
     subirEnInput('Seleccionar archivo de portada', archivo);
 
-    const alerta = screen.getByRole('alert');
-    expect(alerta).toHaveTextContent(mensajeEsperado);
+    expect(ultimaAlerta()).toMatchObject({ icon: 'warning', text: mensajeEsperado });
     expect(screen.queryByAltText('Vista previa de la portada')).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -163,16 +162,16 @@ describe('FotosNegocio (portada y galería)', () => {
     render(<FotosNegocio fotosIniciales={{ portada: null, galeria: [] }} />);
     subirEnInput('Seleccionar archivo de galería', crearImagen('exacta.webp', 'image/webp', MAX_FOTO_BYTES));
 
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(swalFireMock).not.toHaveBeenCalled();
     expect(screen.getByAltText('Vista previa para la galería')).toBeInTheDocument();
   });
 
   it.each([
-    [400, 'El archivo debe ser una imagen JPEG, PNG o WebP válida.'],
-    [409, 'La galería ya tiene 5 fotos. Elimina una antes de subir otra.'],
-    [413, 'La foto supera el tamaño máximo de 5 MB.'],
-    [503, 'El almacenamiento de fotos no está disponible en este momento.'],
-  ])('C4: muestra el mensaje de la API en error %i y la sección sigue usable', async (estado, mensaje) => {
+    [400, 'El archivo debe ser una imagen JPEG, PNG o WebP válida.', 'El archivo debe ser una imagen JPEG, PNG o WebP válida.'],
+    [409, 'La galería ya tiene 5 fotos. Elimina una antes de subir otra.', 'La galería ya tiene 5 fotos. Elimina una antes de subir otra.'],
+    [413, 'La foto supera el tamaño máximo de 5 MB.', 'La foto supera el tamaño máximo de 5 MB.'],
+    [503, 'El almacenamiento de fotos no está disponible en este momento.', MENSAJE_ERROR_SERVIDOR],
+  ])('C4: muestra la alerta de error en %i y la sección sigue usable', async (estado, mensaje, esperado) => {
     const usuario = userEvent.setup();
     fetchMock
       .mockResolvedValueOnce(respuestaJson(estado, { message: mensaje }))
@@ -182,8 +181,7 @@ describe('FotosNegocio (portada y galería)', () => {
     subirEnInput('Seleccionar archivo de galería', crearImagen('trabajo.jpg', 'image/jpeg', 1024));
     await usuario.click(screen.getByRole('button', { name: 'Subir a la galería' }));
 
-    const alerta = await screen.findByRole('alert');
-    expect(alerta).toHaveTextContent(mensaje);
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: esperado }));
 
     // La sección sigue usable: se puede volver a intentar subir
     const botonReintentar = screen.getByRole('button', { name: 'Subir a la galería' });
@@ -194,23 +192,20 @@ describe('FotosNegocio (portada y galería)', () => {
       'src',
       'https://cdn.servia.test/ok-1.jpg',
     );
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Foto agregada a la galería.' });
   });
 
-  it('C4: si falla al borrar en la API, muestra el mensaje y mantiene la foto usable', async () => {
+  it('C4: si falla al borrar en la API, muestra alerta de error y mantiene la foto usable', async () => {
     const usuario = userEvent.setup();
     fetchMock.mockResolvedValueOnce(
       respuestaJson(503, { message: 'Supabase Storage no está configurado en el servidor.' }),
     );
 
     render(<FotosNegocio fotosIniciales={{ portada: null, galeria: galeriaDe(1) }} />);
+    mockearConfirmacion(true);
     await usuario.click(screen.getByRole('button', { name: 'Quitar foto 1' }));
-    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Quitar foto' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Supabase Storage no está configurado en el servidor.',
-    );
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: MENSAJE_ERROR_SERVIDOR }));
     expect(screen.getByAltText('Foto 1 de la galería')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Quitar foto 1' })).toBeEnabled();
   });
@@ -261,24 +256,20 @@ describe('FotosNegocio (portada y galería)', () => {
     );
 
     render(<FotosNegocio fotosIniciales={{ portada: null, galeria: galeriaDe(1) }} />);
+    mockearConfirmacion(true);
     await usuario.click(screen.getByRole('button', { name: 'Quitar foto 1' }));
-    const dialogo = screen.getByRole('alertdialog');
-    await usuario.click(within(dialogo).getByRole('button', { name: 'Quitar foto' }));
 
-    expect(screen.getByText('Eliminando foto...')).toBeInTheDocument();
-    const botonEliminando = within(dialogo).getByRole('button', { name: 'Eliminando...' });
-    expect(botonEliminando).toBeDisabled();
-    expect(within(dialogo).getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+    await waitFor(() => expect(screen.getByText('Eliminando foto...')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Quitar foto 1' })).toBeDisabled();
 
-    fireEvent.click(botonEliminando);
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar foto 1' }));
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       resolverBorrado(respuestaJson(204));
     });
 
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
-    expect(screen.getByText('Tu galería está vacía')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Tu galería está vacía')).toBeInTheDocument());
   });
 
   describe('quitar la portada (#116)', () => {
@@ -289,17 +280,14 @@ describe('FotosNegocio (portada y galería)', () => {
       fetchMock.mockResolvedValueOnce(respuestaJson(204));
       render(<FotosNegocio fotosIniciales={{ portada, galeria: galeriaDe(1) }} />);
 
+      mockearConfirmacion(false);
       await usuario.click(screen.getByRole('button', { name: 'Quitar portada' }));
-      let dialogo = screen.getByRole('alertdialog');
-      expect(within(dialogo).getByText('¿Quitar la portada?')).toBeInTheDocument();
-      await usuario.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
-      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      expect(ultimaAlerta()).toMatchObject({ title: '¿Quitar la portada?', showCancelButton: true });
       expect(fetchMock).not.toHaveBeenCalled();
       expect(screen.getByAltText('Portada actual del negocio')).toBeInTheDocument();
 
+      mockearConfirmacion(true);
       await usuario.click(screen.getByRole('button', { name: 'Quitar portada' }));
-      dialogo = screen.getByRole('alertdialog');
-      await usuario.click(within(dialogo).getByRole('button', { name: 'Sí, quitar portada' }));
 
       expect(await screen.findByText('Sin foto de portada')).toBeInTheDocument();
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -310,16 +298,16 @@ describe('FotosNegocio (portada y galería)', () => {
       expect(screen.queryByRole('button', { name: 'Quitar portada' })).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Subir portada' })).toBeEnabled();
       expect(screen.getByAltText('Foto 1 de la galería')).toBeInTheDocument();
-      expect(screen.getByText('Portada eliminada.')).toBeInTheDocument();
+      expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Portada eliminada.' });
     });
 
-    it('C3: si la API falla, muestra el mensaje y conserva la portada', async () => {
+    it('C3: si la API falla, muestra alerta de error y conserva la portada', async () => {
       const usuario = userEvent.setup();
       fetchMock.mockResolvedValueOnce(respuestaJson(503, { message: 'Supabase Storage no está configurado en el servidor.' }));
       render(<FotosNegocio fotosIniciales={{ portada, galeria: [] }} />);
+      mockearConfirmacion(true);
       await usuario.click(screen.getByRole('button', { name: 'Quitar portada' }));
-      await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Sí, quitar portada' }));
-      expect(await screen.findByRole('alert')).toHaveTextContent('Supabase Storage no está configurado en el servidor.');
+      await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: MENSAJE_ERROR_SERVIDOR }));
       expect(screen.getByAltText('Portada actual del negocio')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Quitar portada' })).toBeEnabled();
     });

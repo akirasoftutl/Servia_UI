@@ -1,14 +1,13 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
-import { createPortal } from 'react-dom';
-import { CheckCircle2, CircleAlert, Image as ImageIcon, ImageOff, Images, Plus, Trash2, Upload } from 'lucide-react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Image as ImageIcon, ImageOff, Images, Plus, Trash2, Upload } from 'lucide-react';
 import {
   eliminarFotoNegocio,
-  ErrorApi,
   subirFotoNegocio,
   type FotoNegocio,
   type FotosNegocio,
   type TipoFotoNegocio,
 } from '../../servicios/api';
+import { alertaDeError, aviso, confirmar, exito } from '../../servicios/alertas';
 import { IlustracionEstado } from '../../componentes/panel/EstadosPanel';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import {
@@ -31,12 +30,6 @@ interface VistaPreviaPendiente {
   archivo: File;
   url: string;
   revocable: boolean;
-}
-
-interface FotoEnEliminacion {
-  foto: FotoNegocio;
-  tipo: TipoFotoNegocio;
-  numero: number;
 }
 
 function crearUrlPrevia(archivo: File): { url: string; revocable: boolean } {
@@ -73,10 +66,6 @@ export function ImagenConFallo({
   return <img src={src} alt={alt} className={className} onError={() => setFallo(true)} />;
 }
 
-function mensajeErrorApi(causa: unknown, respaldo: string): string {
-  return causa instanceof ErrorApi ? causa.message : respaldo;
-}
-
 export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: FotosNegocioProps) {
   const [inicialesPrevias, setInicialesPrevias] = useState(fotosIniciales);
   const [fotos, setFotos] = useState<FotosNegocio>(() => normalizarFotosNegocio(fotosIniciales));
@@ -86,17 +75,11 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
   }
   const [pendiente, setPendiente] = useState<VistaPreviaPendiente | null>(null);
   const [operacion, setOperacion] = useState<'subiendo' | 'borrando' | null>(null);
-  const [error, setError] = useState('');
-  const [exito, setExito] = useState('');
-  const [fotoPorEliminar, setFotoPorEliminar] = useState<FotoEnEliminacion | null>(null);
 
   const bloqueoRef = useRef(false);
   const montadoRef = useRef(true);
   const inputPortadaRef = useRef<HTMLInputElement>(null);
   const inputGaleriaRef = useRef<HTMLInputElement>(null);
-  const cancelarDialogoRef = useRef<HTMLButtonElement>(null);
-  const tituloDialogoId = useId();
-  const textoDialogoId = useId();
 
   useEffect(() => {
     montadoRef.current = true;
@@ -112,15 +95,6 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
       }
     };
   }, [pendiente]);
-
-  useEffect(() => {
-    if (!fotoPorEliminar) return;
-    const anterior = document.activeElement as HTMLElement | null;
-    cancelarDialogoRef.current?.focus();
-    return () => {
-      anterior?.focus();
-    };
-  }, [fotoPorEliminar]);
 
   const ocupado = operacion !== null;
   const galeriaLlena = fotos.galeria.length >= MAX_FOTOS_GALERIA;
@@ -140,19 +114,17 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
     evento.target.value = '';
     if (!archivo || ocupado) return;
 
-    setExito('');
     const mensajeError = validarArchivoFoto(archivo);
     if (mensajeError) {
-      setError(mensajeError);
+      void aviso(mensajeError);
       return;
     }
 
     if (tipo === 'galeria' && galeriaLlena) {
-      setError(`La galería ya tiene ${MAX_FOTOS_GALERIA} fotos. Elimina una antes de subir otra.`);
+      void aviso(`La galería ya tiene ${MAX_FOTOS_GALERIA} fotos. Elimina una antes de subir otra.`);
       return;
     }
 
-    setError('');
     const previa = crearUrlPrevia(archivo);
     setPendiente({ tipo, archivo, ...previa });
   };
@@ -168,8 +140,6 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
     const { archivo, tipo } = pendiente;
     bloqueoRef.current = true;
     setOperacion('subiendo');
-    setError('');
-    setExito('');
 
     try {
       const fotoSubida = await subirFotoNegocio(archivo, tipo);
@@ -181,25 +151,32 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
       actualizarFotos(nuevas);
       setPendiente(null);
       limpiarInputs();
-      setExito(tipo === 'portada' ? 'Portada actualizada correctamente.' : 'Foto agregada a la galería.');
+      await exito(tipo === 'portada' ? 'Portada actualizada correctamente.' : 'Foto agregada a la galería.');
     } catch (causa: unknown) {
       if (!montadoRef.current) return;
-      setError(mensajeErrorApi(causa, 'No pudimos subir la foto. Intenta de nuevo.'));
+      await alertaDeError(causa, 'No pudimos subir la foto. Intenta de nuevo.');
     } finally {
       bloqueoRef.current = false;
       if (montadoRef.current) setOperacion(null);
     }
   };
 
-  const confirmarEliminacion = async () => {
-    if (!fotoPorEliminar || bloqueoRef.current) return;
-    const { foto, tipo } = fotoPorEliminar;
+  const solicitarEliminacion = async (foto: FotoNegocio, tipo: TipoFotoNegocio, numero: number) => {
+    if (bloqueoRef.current || ocupado) return;
     bloqueoRef.current = true;
-    setOperacion('borrando');
-    setError('');
-    setExito('');
-
     try {
+      const aceptado = await confirmar({
+        titulo: tipo === 'portada' ? '¿Quitar la portada?' : '¿Quitar foto de la galería?',
+        texto: tipo === 'portada'
+          ? 'Se eliminará la portada de tu negocio y dejará de mostrarse a tus clientes.'
+          : `Se eliminará la foto ${numero} de tu galería y dejará de mostrarse a tus clientes.`,
+        confirmar: tipo === 'portada' ? 'Sí, quitar portada' : 'Quitar foto',
+        cancelar: 'Cancelar',
+        peligro: true,
+      });
+      if (!aceptado || !montadoRef.current) return;
+
+      setOperacion('borrando');
       await eliminarFotoNegocio(foto.id);
       if (!montadoRef.current) return;
       const nuevas: FotosNegocio =
@@ -207,12 +184,10 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
           ? { ...fotos, portada: null }
           : { ...fotos, galeria: fotos.galeria.filter((item) => item.id !== foto.id) };
       actualizarFotos(nuevas);
-      setFotoPorEliminar(null);
-      setExito(tipo === 'portada' ? 'Portada eliminada.' : 'Foto eliminada de la galería.');
+      await exito(tipo === 'portada' ? 'Portada eliminada.' : 'Foto eliminada de la galería.');
     } catch (causa: unknown) {
       if (!montadoRef.current) return;
-      setFotoPorEliminar(null);
-      setError(mensajeErrorApi(causa, 'No pudimos eliminar la foto. Intenta de nuevo.'));
+      await alertaDeError(causa, 'No pudimos eliminar la foto. Intenta de nuevo.');
     } finally {
       bloqueoRef.current = false;
       if (montadoRef.current) setOperacion(null);
@@ -220,330 +195,248 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
   };
 
   return (
-    <>
-      <section
-        id="fotos-negocio"
-        className="panel-tarjeta"
-        aria-labelledby="titulo-fotos-negocio"
-        aria-busy={ocupado}
-      >
-        <div className="panel-tarjeta-encabezado panel-tarjeta-encabezado--con-aviso">
-          <div>
-            <h2 id="titulo-fotos-negocio" className="panel-tarjeta-titulo">
-              Fotos
-            </h2>
-            <p className="panel-tarjeta-subtitulo">
-              Sube tu portada y hasta {MAX_FOTOS_GALERIA} fotos de galería para que los clientes conozcan tu negocio.
-              Formatos JPEG, PNG o WebP de hasta 5 MB.
-            </p>
-          </div>
-          <span className="panel-contador">
-            {fotos.galeria.length} / {MAX_FOTOS_GALERIA} en galería
-          </span>
-        </div>
-        <p className="panel-tarjeta-subtitulo panel-fotos-aviso" id="aviso-fotos-aparte">
-          Las fotos se suben aparte y al instante: no necesitas pulsar «Guardar cambios» del perfil.
-        </p>
-
-        {error && (
-          <div className="panel-alerta panel-alerta--error" role="alert">
-            <span className="panel-alerta-icono" aria-hidden="true">
-              <CircleAlert aria-hidden="true" />
-            </span>
-            <div className="panel-alerta-contenido">{error}</div>
-          </div>
-        )}
-
-        {exito && (
-          <div className="panel-alerta panel-alerta--exito" role="status">
-            <span className="panel-alerta-icono" aria-hidden="true">
-              <CheckCircle2 aria-hidden="true" />
-            </span>
-            <div className="panel-alerta-contenido">{exito}</div>
-          </div>
-        )}
-
-        {ocupado && (
-          <p className="panel-cargando-texto" role="status">
-            <span className="spinner-border" aria-hidden="true" />
-            {operacion === 'subiendo' ? 'Subiendo foto...' : 'Eliminando foto...'}
+    <section
+      id="fotos-negocio"
+      className="panel-tarjeta"
+      aria-labelledby="titulo-fotos-negocio"
+      aria-busy={ocupado}
+    >
+      <div className="panel-tarjeta-encabezado panel-tarjeta-encabezado--con-aviso">
+        <div>
+          <h2 id="titulo-fotos-negocio" className="panel-tarjeta-titulo">
+            Fotos
+          </h2>
+          <p className="panel-tarjeta-subtitulo">
+            Sube tu portada y hasta {MAX_FOTOS_GALERIA} fotos de galería para que los clientes conozcan tu negocio.
+            Formatos JPEG, PNG o WebP de hasta 5 MB.
           </p>
-        )}
+        </div>
+        <span className="panel-contador">
+          {fotos.galeria.length} / {MAX_FOTOS_GALERIA} en galería
+        </span>
+      </div>
+      <p className="panel-tarjeta-subtitulo panel-fotos-aviso" id="aviso-fotos-aparte">
+        Las fotos se suben aparte y al instante: no necesitas pulsar «Guardar cambios» del perfil.
+      </p>
 
-        <div className="panel-fotos-bloque">
-          <div className="panel-fotos-cabecera">
-            <div>
-              <h3 className="panel-item-titulo">Portada</h3>
-              <p className="panel-item-texto">Imagen principal que verán tus clientes al abrir tu perfil.</p>
-            </div>
-            <input
-              ref={inputPortadaRef}
-              id="foto-portada-input"
-              type="file"
-              accept={ACCEPT_FOTOS}
-              className="visually-hidden"
-              aria-label="Seleccionar archivo de portada"
-              aria-describedby="aviso-fotos-aparte"
+      {ocupado && (
+        <p className="panel-cargando-texto" role="status">
+          <span className="spinner-border" aria-hidden="true" />
+          {operacion === 'subiendo' ? 'Subiendo foto...' : 'Eliminando foto...'}
+        </p>
+      )}
+
+      <div className="panel-fotos-bloque">
+        <div className="panel-fotos-cabecera">
+          <div>
+            <h3 className="panel-item-titulo">Portada</h3>
+            <p className="panel-item-texto">Imagen principal que verán tus clientes al abrir tu perfil.</p>
+          </div>
+          <input
+            ref={inputPortadaRef}
+            id="foto-portada-input"
+            type="file"
+            accept={ACCEPT_FOTOS}
+            className="visually-hidden"
+            aria-label="Seleccionar archivo de portada"
+            aria-describedby="aviso-fotos-aparte"
+            disabled={ocupado}
+            onChange={seleccionarArchivo('portada')}
+          />
+          <div className="panel-fotos-cabecera-acciones">
+            <BotonPanel
+              variante="secundario"
+              tamano="sm"
               disabled={ocupado}
-              onChange={seleccionarArchivo('portada')}
-            />
-            <div className="panel-fotos-cabecera-acciones">
+              aria-describedby="aviso-fotos-aparte"
+              onClick={() => inputPortadaRef.current?.click()}
+            >
+              <Upload aria-hidden="true" />
+              {fotos.portada ? 'Cambiar portada' : 'Subir portada'}
+            </BotonPanel>
+            {fotos.portada && (
               <BotonPanel
-                variante="secundario"
+                variante="peligro"
                 tamano="sm"
                 disabled={ocupado}
-                aria-describedby="aviso-fotos-aparte"
-                onClick={() => inputPortadaRef.current?.click()}
+                onClick={() => void solicitarEliminacion(fotos.portada!, 'portada', 0)}
               >
-                <Upload aria-hidden="true" />
-                {fotos.portada ? 'Cambiar portada' : 'Subir portada'}
+                <Trash2 aria-hidden="true" />
+                Quitar portada
               </BotonPanel>
-              {fotos.portada && (
+            )}
+          </div>
+        </div>
+
+        {pendiente?.tipo === 'portada' && (
+          <div className="panel-fotos-previa" aria-label="Vista previa de portada">
+            <img
+              src={pendiente.url}
+              alt="Vista previa de la portada"
+              className="panel-fotos-previa-imagen"
+            />
+            <div className="panel-fotos-previa-cuerpo">
+              <p className="panel-item-titulo">Vista previa antes de subir</p>
+              <p className="panel-ayuda panel-fotos-previa-nombre">
+                {pendiente.archivo.name} · {formatearTamanoArchivo(pendiente.archivo.size)}
+              </p>
+              <div className="panel-fotos-previa-acciones">
                 <BotonPanel
-                  variante="peligro"
+                  variante="primario"
                   tamano="sm"
                   disabled={ocupado}
-                  onClick={() => setFotoPorEliminar({ foto: fotos.portada!, tipo: 'portada', numero: 0 })}
+                  onClick={() => void confirmarSubida()}
                 >
-                  <Trash2 aria-hidden="true" />
-                  Quitar portada
+                  {operacion === 'subiendo'
+                    ? 'Subiendo...'
+                    : fotos.portada
+                      ? 'Confirmar cambio'
+                      : 'Guardar portada'}
                 </BotonPanel>
-              )}
-            </div>
-          </div>
-
-          {pendiente?.tipo === 'portada' && (
-            <div className="panel-fotos-previa" aria-label="Vista previa de portada">
-              <img
-                src={pendiente.url}
-                alt="Vista previa de la portada"
-                className="panel-fotos-previa-imagen"
-              />
-              <div className="panel-fotos-previa-cuerpo">
-                <p className="panel-item-titulo">Vista previa antes de subir</p>
-                <p className="panel-ayuda panel-fotos-previa-nombre">
-                  {pendiente.archivo.name} · {formatearTamanoArchivo(pendiente.archivo.size)}
-                </p>
-                <div className="panel-fotos-previa-acciones">
-                  <BotonPanel
-                    variante="primario"
-                    tamano="sm"
-                    disabled={ocupado}
-                    onClick={() => void confirmarSubida()}
-                  >
-                    {operacion === 'subiendo'
-                      ? 'Subiendo...'
-                      : fotos.portada
-                        ? 'Confirmar cambio'
-                        : 'Guardar portada'}
-                  </BotonPanel>
-                  <BotonPanel
-                    variante="secundario"
-                    tamano="sm"
-                    disabled={ocupado}
-                    onClick={cancelarPrevia}
-                  >
-                    Cancelar
-                  </BotonPanel>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {fotos.portada ? (
-            <figure className="panel-fotos-marco-portada">
-              <ImagenConFallo
-                key={fotos.portada.url}
-                src={fotos.portada.url}
-                alt="Portada actual del negocio"
-                className="panel-fotos-imagen-portada"
-                variante="portada"
-              />
-            </figure>
-          ) : (
-            pendiente?.tipo !== 'portada' && (
-              <div className="panel-estado">
-                <IlustracionEstado icono={ImageIcon} />
-                <div className="panel-estado-cuerpo">
-                  <h4 className="panel-estado-titulo">Sin foto de portada</h4>
-                  <p className="panel-estado-texto">
-                    Elige una imagen para destacar tu negocio en el catálogo de Servia.
-                  </p>
-                </div>
-              </div>
-            )
-          )}
-        </div>
-
-        <div className="panel-fotos-bloque">
-          <div className="panel-fotos-cabecera">
-            <div>
-              <h3 className="panel-item-titulo">Galería</h3>
-              <p className="panel-item-texto">
-                Agrega hasta {MAX_FOTOS_GALERIA} fotos de tus servicios o instalaciones.
-              </p>
-            </div>
-            <input
-              ref={inputGaleriaRef}
-              id="foto-galeria-input"
-              type="file"
-              accept={ACCEPT_FOTOS}
-              className="visually-hidden"
-              aria-label="Seleccionar archivo de galería"
-              aria-describedby="aviso-fotos-aparte"
-              disabled={ocupado || galeriaLlena}
-              onChange={seleccionarArchivo('galeria')}
-            />
-            <BotonPanel
-              variante="primario"
-              tamano="sm"
-              disabled={ocupado || galeriaLlena}
-              aria-describedby="aviso-fotos-aparte"
-              onClick={() => inputGaleriaRef.current?.click()}
-            >
-              <Plus aria-hidden="true" />
-              {galeriaLlena ? 'Máximo 5 fotos' : 'Agregar foto'}
-            </BotonPanel>
-          </div>
-
-          {pendiente?.tipo === 'galeria' && (
-            <div className="panel-fotos-previa" aria-label="Vista previa para la galería">
-              <img
-                src={pendiente.url}
-                alt="Vista previa para la galería"
-                className="panel-fotos-previa-imagen"
-              />
-              <div className="panel-fotos-previa-cuerpo">
-                <p className="panel-item-titulo">Vista previa antes de subir</p>
-                <p className="panel-ayuda panel-fotos-previa-nombre">
-                  {pendiente.archivo.name} · {formatearTamanoArchivo(pendiente.archivo.size)}
-                </p>
-                <div className="panel-fotos-previa-acciones">
-                  <BotonPanel
-                    variante="primario"
-                    tamano="sm"
-                    disabled={ocupado}
-                    onClick={() => void confirmarSubida()}
-                  >
-                    {operacion === 'subiendo' ? 'Subiendo...' : 'Subir a la galería'}
-                  </BotonPanel>
-                  <BotonPanel
-                    variante="secundario"
-                    tamano="sm"
-                    disabled={ocupado}
-                    onClick={cancelarPrevia}
-                  >
-                    Cancelar
-                  </BotonPanel>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {fotos.galeria.length === 0 ? (
-            pendiente?.tipo !== 'galeria' && (
-              <div className="panel-estado">
-                <IlustracionEstado icono={Images} />
-                <div className="panel-estado-cuerpo">
-                  <h4 className="panel-estado-titulo">Tu galería está vacía</h4>
-                  <p className="panel-estado-texto">
-                    Agrega fotos de tu espacio o de tu trabajo para generar confianza.
-                  </p>
-                </div>
-              </div>
-            )
-          ) : (
-            <ul className="panel-fotos-cuadricula list-unstyled mb-0">
-              {fotos.galeria.map((foto, indice) => (
-                <li className="panel-fotos-tarjeta" key={foto.id}>
-                  <ImagenConFallo
-                    key={foto.url}
-                    src={foto.url}
-                    alt={`Foto ${indice + 1} de la galería`}
-                    className="panel-fotos-imagen-galeria"
-                    variante="galeria"
-                  />
-                  <div className="panel-fotos-tarjeta-pie">
-                    <span className="panel-ayuda">Foto {indice + 1}</span>
-                    <BotonPanel
-                      variante="peligro"
-                      tamano="sm"
-                      disabled={ocupado}
-                      aria-label={`Quitar foto ${indice + 1}`}
-                      onClick={() => setFotoPorEliminar({ foto, tipo: 'galeria', numero: indice + 1 })}
-                    >
-                      <Trash2 aria-hidden="true" />
-                      Quitar
-                    </BotonPanel>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
-
-      {fotoPorEliminar &&
-        createPortal(
-          <div
-            className="panel-dialogo-fondo"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby={tituloDialogoId}
-            aria-describedby={textoDialogoId}
-            onKeyDown={(evento) => {
-              if (evento.key === 'Escape' && !ocupado) {
-                evento.preventDefault();
-                setFotoPorEliminar(null);
-              }
-              if (evento.key === 'Tab') {
-                const botones = Array.from(
-                  evento.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'),
-                );
-                if (botones.length === 0) return;
-                const indice = botones.indexOf(document.activeElement as HTMLButtonElement);
-                evento.preventDefault();
-                botones[(indice + (evento.shiftKey ? botones.length - 1 : 1)) % botones.length]?.focus();
-              }
-            }}
-          >
-            <div className="panel-dialogo">
-              <div className="panel-dialogo-icono panel-dialogo-icono--peligro" aria-hidden="true">
-                <Trash2 aria-hidden="true" />
-              </div>
-              <h2 id={tituloDialogoId} className="panel-dialogo-titulo">
-                {fotoPorEliminar.tipo === 'portada' ? '¿Quitar la portada?' : '¿Quitar foto de la galería?'}
-              </h2>
-              <p id={textoDialogoId} className="panel-dialogo-texto">
-                {fotoPorEliminar.tipo === 'portada'
-                  ? 'Se eliminará la portada de tu negocio y dejará de mostrarse a tus clientes.'
-                  : `Se eliminará la foto ${fotoPorEliminar.numero} de tu galería y dejará de mostrarse a tus clientes.`}
-              </p>
-              <div className="panel-dialogo-acciones">
                 <BotonPanel
-                  ref={cancelarDialogoRef}
                   variante="secundario"
+                  tamano="sm"
                   disabled={ocupado}
-                  onClick={() => setFotoPorEliminar(null)}
+                  onClick={cancelarPrevia}
                 >
                   Cancelar
                 </BotonPanel>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {fotos.portada ? (
+          <figure className="panel-fotos-marco-portada">
+            <ImagenConFallo
+              key={fotos.portada.url}
+              src={fotos.portada.url}
+              alt="Portada actual del negocio"
+              className="panel-fotos-imagen-portada"
+              variante="portada"
+            />
+          </figure>
+        ) : (
+          pendiente?.tipo !== 'portada' && (
+            <div className="panel-estado">
+              <IlustracionEstado icono={ImageIcon} />
+              <div className="panel-estado-cuerpo">
+                <h4 className="panel-estado-titulo">Sin foto de portada</h4>
+                <p className="panel-estado-texto">
+                  Elige una imagen para destacar tu negocio en el catálogo de Servia.
+                </p>
+              </div>
+            </div>
+          )
+        )}
+      </div>
+
+      <div className="panel-fotos-bloque">
+        <div className="panel-fotos-cabecera">
+          <div>
+            <h3 className="panel-item-titulo">Galería</h3>
+            <p className="panel-item-texto">
+              Agrega hasta {MAX_FOTOS_GALERIA} fotos de tus servicios o instalaciones.
+            </p>
+          </div>
+          <input
+            ref={inputGaleriaRef}
+            id="foto-galeria-input"
+            type="file"
+            accept={ACCEPT_FOTOS}
+            className="visually-hidden"
+            aria-label="Seleccionar archivo de galería"
+            aria-describedby="aviso-fotos-aparte"
+            disabled={ocupado || galeriaLlena}
+            onChange={seleccionarArchivo('galeria')}
+          />
+          <BotonPanel
+            variante="primario"
+            tamano="sm"
+            disabled={ocupado || galeriaLlena}
+            aria-describedby="aviso-fotos-aparte"
+            onClick={() => inputGaleriaRef.current?.click()}
+          >
+            <Plus aria-hidden="true" />
+            {galeriaLlena ? 'Máximo 5 fotos' : 'Agregar foto'}
+          </BotonPanel>
+        </div>
+
+        {pendiente?.tipo === 'galeria' && (
+          <div className="panel-fotos-previa" aria-label="Vista previa para la galería">
+            <img
+              src={pendiente.url}
+              alt="Vista previa para la galería"
+              className="panel-fotos-previa-imagen"
+            />
+            <div className="panel-fotos-previa-cuerpo">
+              <p className="panel-item-titulo">Vista previa antes de subir</p>
+              <p className="panel-ayuda panel-fotos-previa-nombre">
+                {pendiente.archivo.name} · {formatearTamanoArchivo(pendiente.archivo.size)}
+              </p>
+              <div className="panel-fotos-previa-acciones">
                 <BotonPanel
-                  variante="peligro"
+                  variante="primario"
+                  tamano="sm"
                   disabled={ocupado}
-                  onClick={() => void confirmarEliminacion()}
+                  onClick={() => void confirmarSubida()}
                 >
-                  {operacion === 'borrando'
-                    ? 'Eliminando...'
-                    : fotoPorEliminar.tipo === 'portada'
-                      ? 'Sí, quitar portada'
-                      : 'Quitar foto'}
+                  {operacion === 'subiendo' ? 'Subiendo...' : 'Subir a la galería'}
+                </BotonPanel>
+                <BotonPanel
+                  variante="secundario"
+                  tamano="sm"
+                  disabled={ocupado}
+                  onClick={cancelarPrevia}
+                >
+                  Cancelar
                 </BotonPanel>
               </div>
             </div>
-          </div>,
-          document.body,
+          </div>
         )}
-    </>
+
+        {fotos.galeria.length === 0 ? (
+          pendiente?.tipo !== 'galeria' && (
+            <div className="panel-estado">
+              <IlustracionEstado icono={Images} />
+              <div className="panel-estado-cuerpo">
+                <h4 className="panel-estado-titulo">Tu galería está vacía</h4>
+                <p className="panel-estado-texto">
+                  Agrega fotos de tu espacio o de tu trabajo para generar confianza.
+                </p>
+              </div>
+            </div>
+          )
+        ) : (
+          <ul className="panel-fotos-cuadricula list-unstyled mb-0">
+            {fotos.galeria.map((foto, indice) => (
+              <li className="panel-fotos-tarjeta" key={foto.id}>
+                <ImagenConFallo
+                  key={foto.url}
+                  src={foto.url}
+                  alt={`Foto ${indice + 1} de la galería`}
+                  className="panel-fotos-imagen-galeria"
+                  variante="galeria"
+                />
+                <div className="panel-fotos-tarjeta-pie">
+                  <span className="panel-ayuda">Foto {indice + 1}</span>
+                  <BotonPanel
+                    variante="peligro"
+                    tamano="sm"
+                    disabled={ocupado}
+                    aria-label={`Quitar foto ${indice + 1}`}
+                    onClick={() => void solicitarEliminacion(foto, 'galeria', indice + 1)}
+                  >
+                    <Trash2 aria-hidden="true" />
+                    Quitar
+                  </BotonPanel>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }

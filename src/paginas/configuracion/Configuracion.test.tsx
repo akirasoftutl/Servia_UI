@@ -98,7 +98,7 @@ describe('UI109 página Configuración', () => {
       await userEvent.type(within(cuenta).getByLabelText('Contraseña nueva'), 'Nueva12345')
       await userEvent.type(within(cuenta).getByLabelText('Confirma la contraseña nueva'), 'Nueva12345')
       await userEvent.click(within(cuenta).getByRole('button', { name: 'Cambiar contraseña' }))
-      expect(await within(cuenta).findByText(/cambiaste tu contraseña/)).toBeVisible()
+      expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: expect.stringMatching(/cambiaste tu contraseña/) })
       expect(updatePassword).toHaveBeenCalledWith(sesion.usuario, 'Nueva12345')
     })
     it('valida la contraseña nueva antes de llamar a Firebase', async () => {

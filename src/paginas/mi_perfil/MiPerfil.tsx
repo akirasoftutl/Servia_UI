@@ -1,7 +1,16 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import { Check, ShieldAlert, Store } from 'lucide-react'
+import { ShieldAlert, Store } from 'lucide-react';
 import './MiPerfil.css';
 import { api, type FotosNegocio as FotosNegocioDatos } from '../../servicios/api';
+import { alertaDeError, exito } from '../../servicios/alertas';
+import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
+import {
+  atributosErrorCampo,
+  idErrorCampo,
+  notificarErroresFormulario,
+  requerido,
+  validarCorreo,
+} from '../../utilidades/validacion';
 import {
   DIRECCION_VACIA,
   aplicarDetalleADireccion,
@@ -46,7 +55,9 @@ type RespuestaPerfil = Partial<PerfilNegocio> & {
   ubicacion?: Ubicacion | null;
 };
 
-const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ORDEN_PASO_1 = ['nombre', 'telefono', 'correoContacto', 'descripcion'] as const;
+const ORDEN_PASO_2 = ['calle', 'numeroExterior', 'numeroInterior', 'colonia', 'codigoPostal', 'municipio', 'estado'] as const;
+const ORDEN_PASO_3 = ['categoriaId'] as const;
 
 export function MiPerfil() {
 
@@ -66,13 +77,11 @@ export function MiPerfil() {
   const [direccion, setDireccion] = useState<DireccionForm>(DIRECCION_VACIA);
   // Texto de una dirección guardada antes de capturarla por campos.
   const [direccionVieja, setDireccionVieja] = useState('');
-  const [errorApi, setErrorApi] = useState('');
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const [mensajeExito, setMensajeExito] = useState('');
 
   const [fotos, setFotos] = useState<FotosNegocioDatos>(FOTOS_VACIAS);
 
@@ -111,7 +120,7 @@ export function MiPerfil() {
         }
         setUbicacionGuardada(perfil.ubicacion ?? null);
       } catch (error) {
-        console.error('Error al cargar datos:', error);
+        void alertaDeError(error, 'No pudimos cargar la información de tu negocio. Intenta de nuevo.');
       } finally {
         setCargando(false);
       }
@@ -150,15 +159,18 @@ export function MiPerfil() {
   };
 
   // Validación por paso individual
-  const validarPaso = (paso: number): boolean => {
+  const validarPaso = (paso: number, enfocar = true): boolean => {
     const nuevosErrores: Record<string, string> = {};
 
     if (paso === 1) {
-      if (!form.nombre.trim()) nuevosErrores.nombre = 'El nombre es obligatorio';
+      const errNombre = requerido(form.nombre, 'El nombre es obligatorio');
+      if (errNombre) nuevosErrores.nombre = errNombre;
       const errorTelefono = validarTelefono(form.telefono);
       if (errorTelefono) nuevosErrores.telefono = errorTelefono;
-      if (!CORREO_VALIDO.test(form.correoContacto.trim())) nuevosErrores.correoContacto = 'Escribe un correo válido, por ejemplo contacto@negocio.com';
-      if (!form.descripcion.trim()) nuevosErrores.descripcion = 'La descripción es obligatoria';
+      const errCorreo = validarCorreo(form.correoContacto);
+      if (errCorreo) nuevosErrores.correoContacto = errCorreo;
+      const errDescripcion = requerido(form.descripcion, 'La descripción es obligatoria');
+      if (errDescripcion) nuevosErrores.descripcion = errDescripcion;
     }
 
     if (paso === 2) {
@@ -170,7 +182,9 @@ export function MiPerfil() {
     }
 
     setErrores(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
+    if (!enfocar) return Object.keys(nuevosErrores).length === 0;
+    const orden = paso === 1 ? ORDEN_PASO_1 : paso === 2 ? ORDEN_PASO_2 : ORDEN_PASO_3;
+    return notificarErroresFormulario(nuevosErrores, orden, { mostrarAviso: true });
   };
 
   const handleSiguiente = () => {
@@ -187,12 +201,10 @@ export function MiPerfil() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setMensajeExito('');
-    setErrorApi('');
 
     if (pasoActual !== 3) return;
     if (!validarPaso(3)) return;
-    if (!validarPaso(1)) {
+    if (!validarPaso(1, false)) {
       setPasoActual(1);
       return;
     }
@@ -235,11 +247,10 @@ export function MiPerfil() {
       if (respuesta.fotos) {
         setFotos(normalizarFotosNegocio(respuesta.fotos));
       }
-      setMensajeExito('Perfil actualizado correctamente');
-      // El botón de guardar está al final de la página: se sube para que el aviso quede a la vista.
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error: any) {
-      setErrorApi(error.message || 'Error al guardar el perfil');
+      await exito('Perfil actualizado correctamente');
+    } catch (error: unknown) {
+      await alertaDeError(error, 'Error al guardar el perfil');
     } finally {
       setGuardando(false);
     }
@@ -281,17 +292,6 @@ export function MiPerfil() {
               </div>
             </div>
           )}
-
-        {/* Mensaje de éxito */}
-        {mensajeExito && (
-          <div
-            className="panel-alerta panel-alerta--exito"
-            role="status"
-          >
-            <Check aria-hidden="true" />
-            <strong>{mensajeExito}</strong>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} noValidate>
 
@@ -355,13 +355,10 @@ export function MiPerfil() {
                             placeholder="Ej. Barbería El Bigote"
                             autoComplete="organization"
                             required
+                            {...atributosErrorCampo('nombre', errores.nombre)}
                           />
 
-                          {errores.nombre && (
-                            <div className="invalid-feedback">
-                              {errores.nombre}
-                            </div>
-                          )}
+                          <ErrorCampo id={idErrorCampo('nombre')} mensaje={errores.nombre} />
                         </div>
 
                         <div className="col-12 col-md-6">
@@ -383,13 +380,10 @@ export function MiPerfil() {
                             placeholder="477 123 4567"
                             autoComplete="tel"
                             required
+                            {...atributosErrorCampo('telefono', errores.telefono)}
                           />
 
-                          {errores.telefono && (
-                            <div className="invalid-feedback">
-                              {errores.telefono}
-                            </div>
-                          )}
+                          <ErrorCampo id={idErrorCampo('telefono')} mensaje={errores.telefono} />
                         </div>
 
                         <div className="col-12">
@@ -411,15 +405,14 @@ export function MiPerfil() {
                             placeholder="contacto@negocio.com"
                             autoComplete="email"
                             required
+                            {...atributosErrorCampo('correoContacto', errores.correoContacto, !errores.correoContacto ? 'correoContacto-ayuda' : undefined)}
                           />
 
                           {errores.correoContacto ? (
-                            <div className="invalid-feedback">
-                              {errores.correoContacto}
-                            </div>
+                            <ErrorCampo id={idErrorCampo('correoContacto')} mensaje={errores.correoContacto} />
                           ) : (
                             <div className="perfil-campo-pie">
-                              <span className="panel-ayuda">
+                              <span id="correoContacto-ayuda" className="panel-ayuda">
                                 Es el correo que verán tus clientes. No cambia el correo con el que inicias sesión.
                               </span>
                             </div>
@@ -445,13 +438,12 @@ export function MiPerfil() {
                             onChange={handleChange}
                             placeholder="Describe tus servicios, tu experiencia y qué te hace diferente..."
                             required
+                            {...atributosErrorCampo('descripcion', errores.descripcion)}
                           />
 
                           <div className="perfil-campo-pie">
                             {errores.descripcion ? (
-                              <span className="panel-error-campo">
-                                {errores.descripcion}
-                              </span>
+                              <ErrorCampo id={idErrorCampo('descripcion')} mensaje={errores.descripcion} />
                             ) : (
                               <span className="panel-ayuda">
                                 Una buena descripción genera confianza.
@@ -530,11 +522,10 @@ export function MiPerfil() {
                         value={direccion.numeroExterior}
                         onChange={handleDireccionChange}
                         placeholder="Ej. 123"
+                        {...atributosErrorCampo('numeroExterior', errores.numeroExterior)}
                       />
 
-                      {errores.numeroExterior && (
-                        <div className="invalid-feedback">{errores.numeroExterior}</div>
-                      )}
+                      <ErrorCampo id={idErrorCampo('numeroExterior')} mensaje={errores.numeroExterior} />
                     </div>
                     <div className="col-6 col-md-3">
                       <label htmlFor="numeroInterior" className="form-label">
@@ -549,11 +540,10 @@ export function MiPerfil() {
                         value={direccion.numeroInterior}
                         onChange={handleDireccionChange}
                         placeholder="Ej. 4"
+                        {...atributosErrorCampo('numeroInterior', errores.numeroInterior)}
                       />
 
-                      {errores.numeroInterior && (
-                        <div className="invalid-feedback">{errores.numeroInterior}</div>
-                      )}
+                      <ErrorCampo id={idErrorCampo('numeroInterior')} mensaje={errores.numeroInterior} />
                     </div>
                     <div className="col-12 col-md-6">
                       <label htmlFor="colonia" className="form-label">
@@ -568,11 +558,10 @@ export function MiPerfil() {
                         value={direccion.colonia}
                         onChange={handleDireccionChange}
                         placeholder="Ej. Centro"
+                        {...atributosErrorCampo('colonia', errores.colonia)}
                       />
 
-                      {errores.colonia && (
-                        <div className="invalid-feedback">{errores.colonia}</div>
-                      )}
+                      <ErrorCampo id={idErrorCampo('colonia')} mensaje={errores.colonia} />
                     </div>
                     <div className="col-12 col-md-6">
                       <label htmlFor="codigoPostal" className="form-label">
@@ -590,11 +579,10 @@ export function MiPerfil() {
                         onChange={handleDireccionChange}
                         placeholder="Ej. 37000"
                         autoComplete="postal-code"
+                        {...atributosErrorCampo('codigoPostal', errores.codigoPostal)}
                       />
 
-                      {errores.codigoPostal && (
-                        <div className="invalid-feedback">{errores.codigoPostal}</div>
-                      )}
+                      <ErrorCampo id={idErrorCampo('codigoPostal')} mensaje={errores.codigoPostal} />
                     </div>
                     <div className="col-12 col-md-6">
                       <label htmlFor="municipio" className="form-label">
@@ -610,11 +598,10 @@ export function MiPerfil() {
                         onChange={handleDireccionChange}
                         placeholder="Ej. León"
                         autoComplete="address-level2"
+                        {...atributosErrorCampo('municipio', errores.municipio)}
                       />
 
-                      {errores.municipio && (
-                        <div className="invalid-feedback">{errores.municipio}</div>
-                      )}
+                      <ErrorCampo id={idErrorCampo('municipio')} mensaje={errores.municipio} />
                     </div>
                     <div className="col-12 col-md-6">
                       <label htmlFor="estado" className="form-label">
@@ -628,6 +615,7 @@ export function MiPerfil() {
                         value={direccion.estado}
                         onChange={handleDireccionChange}
                         autoComplete="address-level1"
+                        {...atributosErrorCampo('estado', errores.estado)}
                       >
                         <option value="">Selecciona un estado</option>
                         {ESTADOS_MEXICO.map((nombre) => (
@@ -637,9 +625,7 @@ export function MiPerfil() {
                         ))}
                       </select>
 
-                      {errores.estado && (
-                        <div className="invalid-feedback">{errores.estado}</div>
-                      )}
+                      <ErrorCampo id={idErrorCampo('estado')} mensaje={errores.estado} />
                     </div>
 
                     {ubicacionGuardada && (
@@ -671,11 +657,7 @@ export function MiPerfil() {
                     </p>
                   </div>
 
-                  {errores.categoriaId && (
-                    <div className="panel-alerta panel-alerta--error">
-                      {errores.categoriaId}
-                    </div>
-                  )}
+                  <ErrorCampo id={idErrorCampo('categoriaId')} mensaje={errores.categoriaId} />
 
                   {categorias.length === 0 ? (
                     <div className="panel-estado">
@@ -735,12 +717,6 @@ export function MiPerfil() {
                     Puedes seleccionar una sola categoría.
                   </p>
                 </section>
-              )}
-
-              {errorApi && (
-                <div className="panel-alerta panel-alerta--error mt-3 mb-0" role="alert">
-                  <div className="panel-alerta-contenido">{errorApi}</div>
-                </div>
               )}
 
               <div className="perfil-actions">
