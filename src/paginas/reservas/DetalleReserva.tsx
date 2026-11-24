@@ -9,6 +9,7 @@ import { CalendarCheck, Clock } from 'lucide-react';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
 import { EstadoError } from '../../componentes/panel/EstadosPanel';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
+import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado';
 
 const MOTIVO_MIN = 20;
 const MOTIVO_MAX = 500;
@@ -235,7 +236,7 @@ export function DetalleReserva() {
   }
 
   if (!reserva) return null;
-  const estadoConfig = ESTADOS_CONFIG[reserva.estado] || { label: reserva.estado, className: '' };
+  const estadoConfig = ESTADOS_CONFIG[reserva.estado] || { label: reserva.estado, className: '', tono: 'neutro' as const };
 
   const esPendienteVigente = reserva.estado === 'pendiente' && (segundosRestantes === null || segundosRestantes > 0);
   // RN-51/RN-54: solo una Confirmada iniciada se puede cerrar; usar el reloj vivo.
@@ -267,9 +268,11 @@ export function DetalleReserva() {
               <strong>Tiempo para responder</strong>
               <p>Responde antes de que venza la solicitud para no perder el horario.</p>
             </div>
-            <span className="panel-insignia panel-insignia--aviso panel-alerta-accion">
-              {calcularTiempoRestante(segundosRestantes)}
-            </span>
+            <EtiquetaEstado
+              texto={calcularTiempoRestante(segundosRestantes)}
+              tono="aviso"
+              className="panel-alerta-accion"
+            />
           </div>
         )}
 
@@ -279,9 +282,11 @@ export function DetalleReserva() {
           titulo={`Reserva ${reserva.folio}`}
           subtitulo="Revisa la información de la solicitud del cliente."
           acciones={
-            <span className={`reserva-badge ${estadoConfig.className}`}>
-              {estadoConfig.label}
-            </span>
+            <EtiquetaEstado
+              texto={estadoConfig.label}
+              tono={estadoConfig.tono}
+              className={`reserva-badge ${estadoConfig.className}`.trim()}
+            />
           }
         />
 

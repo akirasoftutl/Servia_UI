@@ -158,7 +158,7 @@ describe('DetalleReserva', () => {
     expect(screen.getByText(/Precio:/)).toHaveTextContent('$100.00');
     expect(screen.getByText(formatearFecha(datos.inicio))).toBeInTheDocument();
     expect(screen.getByText(`${formatearHora(datos.inicio)} - ${formatearHora(datos.fin)}`)).toBeInTheDocument();
-    expect(screen.getByText('Pendiente')).toBeInTheDocument();
+    expect(screen.getByText('Pendiente')).toHaveClass('panel-etiqueta', 'panel-etiqueta--aviso', 'reserva-badge', 'pendiente');
   });
 
   it('mantiene el tiempo para responder arriba del encabezado', async () => {
@@ -234,7 +234,7 @@ describe('DetalleReserva', () => {
         await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
       }
       expect(llamadas('/reservas/negocio/r1')).toHaveLength(2);
-      expect(screen.getByText('Pendiente')).toBeInTheDocument();
+      expect(screen.getByText('Pendiente')).toHaveClass('panel-etiqueta', 'panel-etiqueta--aviso', 'reserva-badge', 'pendiente');
     } finally {
       vista.unmount();
       vi.useRealTimers();
@@ -243,7 +243,7 @@ describe('DetalleReserva', () => {
 
   it('usa segundosRestantes de respaldo cuando no hay venceEn', async () => {
     await listo(reserva({ venceEn: null, segundosRestantes: 120 }));
-    expect(screen.getByText('2m restantes')).toBeInTheDocument();
+    expect(screen.getByText('2m restantes')).toHaveClass('panel-etiqueta', 'panel-etiqueta--aviso', 'panel-alerta-accion');
   });
 
   it('confirma una reserva pendiente solo después de confirmar el modal', async () => {

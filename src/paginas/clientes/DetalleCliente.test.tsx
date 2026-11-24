@@ -84,7 +84,7 @@ it('D18 cada reserva del historial lleva el folio como etiqueta y el estado como
   abrir(); const enlace = await screen.findByRole('link', { name: 'Corte clásico · SRV-ABC' });
   expect(enlace.querySelector('.cliente-reserva-folio')).toHaveTextContent('SRV-ABC');
   const item = enlace.closest('article')!;
-  expect(within(item).getByText('Rechazada por vencimiento')).toHaveClass('reserva-badge', 'rechazada_vencimiento');
+  expect(within(item).getByText('Rechazada por vencimiento')).toHaveClass('panel-etiqueta', 'panel-etiqueta--peligro', 'reserva-badge', 'rechazada_vencimiento');
   expect(screen.getByText('1 reserva')).toHaveClass('panel-contador');
 });
 it('D18 sin teléfono ni correo la ficha no muestra botones de contacto', async () => {

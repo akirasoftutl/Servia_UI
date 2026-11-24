@@ -9,6 +9,7 @@ import { EstadoCargando, EstadoError, EstadoVacio } from '../../componentes/pane
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
 import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
+import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado';
 import { ESTADOS_CONFIG } from './estados';
 
 const estados = {
@@ -192,7 +193,11 @@ export function Reservas() {
                   <p className="panel-item-texto">{r.servicio.nombre} · {fecha.format(new Date(r.inicio))} de {hora.format(new Date(r.inicio))} a {hora.format(new Date(r.fin))}</p>
                 </div>
                 <div className="reserva-estado-container">
-                  <span className={`reserva-badge ${r.estado}`}>{estados[r.estado]}</span>
+                  <EtiquetaEstado
+                    texto={estados[r.estado]}
+                    tono={ESTADOS_CONFIG[r.estado]?.tono ?? 'neutro'}
+                    className={`reserva-badge ${r.estado}`}
+                  />
                   {r.estado === 'pendiente' && r.venceEn && Date.parse(r.venceEn) > ahora &&
                     <span className="reserva-tiempo"><Timer aria-hidden="true" /> {tiempoRestante(r.venceEn, ahora)}</span>}
                 </div>

@@ -5,6 +5,7 @@ import { mensajeDeError } from '../../servicios/mensajeDeError'
 import './Horario.css'
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel'
 import { EstadoCargando, EstadoError } from '../../componentes/panel/EstadosPanel'
+import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado'
 
 const DIAS = [
   { clave: 'lunes', nombre: 'Lunes' },
@@ -379,13 +380,10 @@ export function Horario() {
           subtitulo="Define qué días trabaja tu negocio y en qué horario puedes recibir reservas."
         >
           <div className="horario-meta">
-            <span
-              className={`panel-insignia ${
-                configurado ? 'panel-insignia--exito' : 'panel-insignia--aviso'
-              }`}
-            >
-              {configurado ? 'Horario configurado' : 'Horario pendiente'}
-            </span>
+            <EtiquetaEstado
+              texto={configurado ? 'Horario configurado' : 'Horario pendiente'}
+              tono={configurado ? 'exito' : 'aviso'}
+            />
             <span className="horario-meta-texto">
               {diasActivos} de 7 días laborables
             </span>

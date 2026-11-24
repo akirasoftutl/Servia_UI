@@ -12,6 +12,7 @@ import { ArrowLeft, ChevronRight, Users } from 'lucide-react';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
 import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
+import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado';
 
 // La clave reinicia el historial al navegar a otro cliente sin desmontar la ruta.
 export function DetalleCliente() {
@@ -93,7 +94,11 @@ function ItemReserva({ reserva }: { reserva: ReservaCliente }) {
       </div>
     </div>
     <div className="cliente-reserva-estado">
-      <span className={`reserva-badge ${estado?.className ?? ''}`}>{estado?.label ?? reserva.estado}</span>
+      <EtiquetaEstado
+        texto={estado?.label ?? reserva.estado}
+        tono={estado?.tono ?? 'neutro'}
+        className={`reserva-badge ${estado?.className ?? ''}`.trim()}
+      />
       <ChevronRight className="cliente-reserva-chevron" aria-hidden="true" />
     </div>
   </article>;

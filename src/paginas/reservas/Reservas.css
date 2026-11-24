@@ -32,45 +32,6 @@
   gap: var(--sv-esp-2);
 }
 
-.reserva-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sv-esp-1);
-  padding: var(--sv-esp-1) var(--sv-esp-3);
-  border-radius: var(--sv-radio-pill);
-  background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
-  font-size: var(--sv-texto-xs);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.reserva-badge.pendiente {
-  background: var(--sv-aviso-fondo);
-  color: var(--sv-aviso);
-}
-
-.reserva-badge.confirmada {
-  background: var(--sv-exito-fondo);
-  color: var(--sv-exito);
-}
-
-.reserva-badge.completada {
-  background: var(--sv-info-fondo);
-  color: var(--sv-info);
-}
-
-.reserva-badge.cancelada {
-  background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
-}
-
-.reserva-badge.rechazada,
-.reserva-badge.rechazada_vencimiento {
-  background: var(--sv-peligro-fondo);
-  color: var(--sv-peligro-texto);
-}
-
 .reserva-tiempo {
   display: inline-flex;
   align-items: center;
