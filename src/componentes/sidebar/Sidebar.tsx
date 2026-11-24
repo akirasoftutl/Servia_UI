@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router';
 import './Sidebar.css';
 import '../../estilos/panel.css';
 import { api } from '../../servicios/api';
+import { confirmar } from '../../servicios/alertas';
 import { useAuth } from '../../contextos/AuthContext';
 import { useNotificaciones } from '../../contextos/notificacionesContexto';
 
@@ -202,7 +203,22 @@ export const Sidebar: React.FC = () => {
 
             <div className="dropdown-divider"></div>
 
-            <button className="dropdown-item danger" onClick={async () => { setIsUserMenuOpen(false); setAbierta(false); await cerrarSesion(); navigate('/login'); }}>
+            <button
+              className="dropdown-item danger"
+              onClick={async () => {
+                setIsUserMenuOpen(false);
+                const aceptado = await confirmar({
+                  titulo: '¿Cerrar sesión?',
+                  texto: 'Tendrás que iniciar sesión de nuevo para administrar tu negocio.',
+                  confirmar: 'Cerrar sesión',
+                  peligro: true,
+                });
+                if (!aceptado) return;
+                setAbierta(false);
+                await cerrarSesion();
+                navigate('/login');
+              }}
+            >
               <LogOut aria-hidden="true" />
               <span>Cerrar sesión</span>
             </button>

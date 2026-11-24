@@ -4,14 +4,16 @@ import { createMemoryRouter, MemoryRouter, Route, RouterProvider, Routes } from 
 import { NotificacionesContext, type NotificacionesContextValue } from '../../contextos/notificacionesContexto'
 import { readFileSync } from 'node:fs'
 import { Sidebar } from './Sidebar'
+import { mockearConfirmacion, swalFireMock, ultimaAlerta } from '../../pruebas/mockAlertas'
 
-const sesion = vi.hoisted(() => ({ usuario: { uid: 'ana', email: 'ana@ejemplo.com' } }))
-vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => ({ ...sesion, cerrarSesion: vi.fn() }) }))
+const sesion = vi.hoisted(() => ({ usuario: { uid: 'ana', email: 'ana@ejemplo.com' }, cerrarSesion: vi.fn() }))
+vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => sesion }))
 vi.mock('../../servicios/api', () => ({ api: vi.fn() }))
 import { api } from '../../servicios/api'
 const apiMock = vi.mocked(api)
 beforeEach(() => {
   sesion.usuario = { uid: 'ana', email: 'ana@ejemplo.com' }
+  sesion.cerrarSesion = vi.fn().mockResolvedValue(undefined)
   apiMock.mockReset().mockResolvedValue({ nombre: 'Estética Ana' })
 })
 const barra = () => <MemoryRouter><Sidebar /></MemoryRouter>
@@ -448,5 +450,43 @@ describe('UI109 menú en tres zonas', () => {
   })
   it('el código de la barra ya no contiene console.log', () => {
     expect(readFileSync('src/componentes/sidebar/Sidebar.tsx', 'utf8')).not.toContain('console.log')
+  })
+})
+
+describe('cerrar sesión con confirmación (SweetAlert2)', () => {
+  beforeEach(() => pantalla(false))
+
+  it('pide confirmación y no cierra sesión si el usuario cancela', async () => {
+    mockearConfirmacion(false)
+    const router = createMemoryRouter([
+      { path: '/resumen', element: <Sidebar /> },
+      { path: '/login', element: <h1>Iniciar sesión</h1> },
+    ], { initialEntries: ['/resumen'] })
+    render(<RouterProvider router={router} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Menú de la cuenta' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+
+    expect(swalFireMock).toHaveBeenCalledTimes(1)
+    expect(ultimaAlerta()).toMatchObject({ title: '¿Cerrar sesión?', showCancelButton: true })
+    expect(sesion.cerrarSesion).not.toHaveBeenCalled()
+    expect(router.state.location.pathname).toBe('/resumen')
+  })
+
+  it('cierra sesión y navega a /login al aceptar la confirmación', async () => {
+    mockearConfirmacion(true)
+    const router = createMemoryRouter([
+      { path: '/resumen', element: <Sidebar /> },
+      { path: '/login', element: <h1>Iniciar sesión</h1> },
+    ], { initialEntries: ['/resumen'] })
+    render(<RouterProvider router={router} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Menú de la cuenta' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+
+    expect(swalFireMock).toHaveBeenCalledTimes(1)
+    expect(sesion.cerrarSesion).toHaveBeenCalledTimes(1)
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeVisible()
+    expect(router.state.location.pathname).toBe('/login')
   })
 })

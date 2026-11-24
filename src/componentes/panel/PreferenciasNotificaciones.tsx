@@ -1,26 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, CircleAlert } from 'lucide-react';
-import { api, ErrorApi } from '../../servicios/api';
+import { CircleAlert } from 'lucide-react';
+import { api } from '../../servicios/api';
+import { alertaDeError, exito } from '../../servicios/alertas';
+import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EsqueletoLista, IlustracionEstado } from './EstadosPanel';
 import { BotonPanel } from './BotonPanel';
 import '../../estilos/panel.css';
 
-// 1. Agregamos recordatorioCita a la interfaz
-interface PreferenciasPush { 
-  nuevaSolicitud: boolean; 
-  reservaCancelada: boolean; 
-  recordatorioCita: boolean; 
+interface PreferenciasPush {
+  nuevaSolicitud: boolean;
+  reservaCancelada: boolean;
+  recordatorioCita: boolean;
 }
 
-// 2. Agregamos el tercer tipo
 const tipos = [
   { campo: 'nuevaSolicitud', titulo: 'Nueva solicitud', descripcion: 'Cuando un cliente solicita una reserva.' },
   { campo: 'reservaCancelada', titulo: 'Reserva cancelada por el cliente', descripcion: 'Cuando un cliente cancela su reserva.' },
   { campo: 'recordatorioCita', titulo: 'Recordatorio de cita', descripcion: 'Poco antes de una cita confirmada.' },
 ] as const;
 
-const mensajeError = (causa: unknown) => causa instanceof ErrorApi
-  ? causa.message : 'No se pudo conectar. Inténtalo de nuevo.';
+const MENSAJE_RED = 'No se pudo conectar. Inténtalo de nuevo.';
 
 interface Props { titulo?: string; ancla?: string }
 
@@ -29,8 +28,7 @@ export function PreferenciasNotificaciones({ titulo = 'Avisos push', ancla }: Pr
   const [datos, setDatos] = useState<PreferenciasPush | null>(null);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState('');
-  const [exito, setExito] = useState('');
+  const [errorCarga, setErrorCarga] = useState('');
   const [revision, setRevision] = useState(0);
   const vigente = useRef(false);
 
@@ -39,7 +37,7 @@ export function PreferenciasNotificaciones({ titulo = 'Avisos push', ancla }: Pr
     let actual = true;
     api<PreferenciasPush>('/notificaciones/preferencias').then(
       respuesta => { if (actual) setDatos(respuesta); },
-      causa => { if (actual) setError(mensajeError(causa)); },
+      causa => { if (actual) setErrorCarga(mensajeDeError(causa, MENSAJE_RED)); },
     ).finally(() => { if (actual) setCargando(false); });
     return () => { actual = false; vigente.current = false; };
   }, [revision]);
@@ -50,14 +48,19 @@ export function PreferenciasNotificaciones({ titulo = 'Avisos push', ancla }: Pr
     const nuevas = { ...datos, [campo]: !datos[campo] };
     setDatos(nuevas);
     setGuardando(true);
-    setError(''); setExito('');
     try {
       const respuesta = await api<PreferenciasPush>('/notificaciones/preferencias', {
         method: 'PUT', body: JSON.stringify(nuevas),
       });
-      if (vigente.current) { setDatos(respuesta); setExito('Preferencias guardadas.'); }
+      if (vigente.current) {
+        setDatos(respuesta);
+        await exito('Preferencias guardadas.');
+      }
     } catch (causa) {
-      if (vigente.current) { setDatos(anterior); setError(mensajeError(causa)); }
+      if (vigente.current) {
+        setDatos(anterior);
+        await alertaDeError(causa, MENSAJE_RED);
+      }
     } finally {
       if (vigente.current) setGuardando(false);
     }
@@ -73,13 +76,11 @@ export function PreferenciasNotificaciones({ titulo = 'Avisos push', ancla }: Pr
         <div className="panel-estado panel-estado--error">
           <IlustracionEstado icono={CircleAlert} error />
           <div className="panel-estado-cuerpo"><h2 className="panel-estado-titulo">No pudimos cargar las preferencias</h2>
-            <p className="panel-estado-texto" role="alert">{error}</p></div>
+            <p className="panel-estado-texto" role="alert">{errorCarga}</p></div>
           <div className="panel-estado-acciones"><BotonPanel variante="primario" onClick={() => {
-            setError(''); setCargando(true); setRevision(r => r + 1);
+            setErrorCarga(''); setCargando(true); setRevision(r => r + 1);
           }}>Reintentar</BotonPanel></div>
         </div> : <>
-          {error && <div className="panel-alerta panel-alerta--error" role="alert"><span className="panel-alerta-icono"><CircleAlert aria-hidden="true" /></span><div className="panel-alerta-contenido">{error}</div></div>}
-          {exito && <div className="panel-alerta panel-alerta--exito" role="status"><span className="panel-alerta-icono"><Bell aria-hidden="true" /></span><div className="panel-alerta-contenido">{exito}</div></div>}
           {guardando && <p className="panel-ayuda" role="status">Guardando preferencias...</p>}
           <div className="panel-lista">{tipos.map(({ campo, titulo, descripcion }) =>
             <article className="panel-item" key={campo}>

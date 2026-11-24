@@ -10,9 +10,19 @@ import { CircleAlert, PackagePlus, ShieldAlert } from 'lucide-react';
 import { EsqueletoEncabezado, EsqueletoLista, EstadoError } from '../../componentes/panel/EstadosPanel';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
+import { useNavigate, useParams } from 'react-router';
 import { api, ErrorApi, subirImagenServicio, type ImagenServicio } from '../../servicios/api';
+import { alertaDeError, aviso as alertaAviso, exito as alertaExito } from '../../servicios/alertas';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
+import {
+  atributosErrorCampo,
+  idErrorCampo,
+  notificarErroresFormulario,
+  requerido,
+  validarDuracion,
+  validarPrecio,
+} from '../../utilidades/validacion';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
 import { ImagenesServicio } from './ImagenesServicio';
@@ -39,7 +49,6 @@ export function NuevoServicio() {
 function FormularioServicio() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { state } = useLocation();
   const esEdicion = Boolean(id);
 
   const [form, setForm] = useState({
@@ -50,8 +59,6 @@ function FormularioServicio() {
   });
 
   const [activo, setActivo] = useState(true);
-  const [aviso, setAviso] = useState<string>(state?.aviso ?? '');
-  const [errorGuardar, setErrorGuardar] = useState('');
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [cargando, setCargando] = useState(true);
   const [publicando, setPublicando] = useState(false);
@@ -121,24 +128,29 @@ function FormularioServicio() {
 
   const validar = (): boolean => {
     const nuevosErrores: Record<string, string> = {};
-    if (!form.nombre.trim()) nuevosErrores.nombre = 'Escribe el nombre del servicio.';
-    if (!form.descripcion.trim()) nuevosErrores.descripcion = 'Escribe una descripción.';
-    
-    const precioNum = Number(form.precio);
-    if (form.precio === '' || !Number.isFinite(precioNum) || precioNum < 0) {
-      nuevosErrores.precio = 'El precio debe ser 0 o más.';
-    }
-
-    const duracionNum = Number(form.duracion);
-    if (form.duracion === '' || !Number.isFinite(duracionNum) || duracionNum < 1 || !Number.isInteger(duracionNum)) {
-      nuevosErrores.duracion = 'La duración debe ser de al menos 1 minuto.';
-    }
+    const errNombre = requerido(form.nombre, 'Escribe el nombre del servicio.');
+    if (errNombre) nuevosErrores.nombre = errNombre;
+    const errDescripcion = requerido(form.descripcion, 'Escribe una descripción.');
+    if (errDescripcion) nuevosErrores.descripcion = errDescripcion;
+    const errPrecio = validarPrecio(form.precio);
+    if (errPrecio) nuevosErrores.precio = errPrecio;
+    const errDuracion = validarDuracion(form.duracion);
+    if (errDuracion) nuevosErrores.duracion = errDuracion;
 
     const errorCategoria = catalogo.estado === 'listo' ? errorDeCategoria(categoria) : '';
     if (errorCategoria) nuevosErrores.categoria = errorCategoria;
 
     setErrores(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
+    return notificarErroresFormulario(
+      nuevosErrores,
+      ['nombre', 'descripcion', 'precio', 'duracion', 'categoria'],
+      {
+        mapaIds: {
+          categoria: categoria.modo === 'otra' ? 'categoria-personalizada' : 'categoria-servicio',
+        },
+        mostrarAviso: true,
+      },
+    );
   };
 
   // Sube una por una las imágenes elegidas al crear. Devuelve false si alguna falla.
@@ -161,7 +173,6 @@ function FormularioServicio() {
     if (!validar()) return;
 
     setPublicando(true);
-    setErrorGuardar('');
     let payloadEnviado: object = {};
     try {
       const payload = {
@@ -176,13 +187,17 @@ function FormularioServicio() {
       payloadEnviado = payload;
       if (esEdicion) {
         await api(`/negocios/mio/servicios/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
-        navigate('/servicios', { state: { mensaje: 'Cambios guardados.' } });
+        setPublicando(false);
+        await alertaExito('Cambios guardados.');
+        navigate('/servicios');
         return;
       } else {
         const creado = await api<{ id: string }>('/negocios/mio/servicios', { method: 'POST', body: JSON.stringify(payload) });
         if (pendientes.length > 0 && !(await subirPendientes(creado.id))) {
           // El servicio ya existe: se edita ahí para agregar las imágenes que faltan.
-          navigate(`/servicios/${creado.id}`, { replace: true, state: { aviso: AVISO_IMAGENES_FALLIDAS } });
+          setPublicando(false);
+          await alertaAviso(AVISO_IMAGENES_FALLIDAS);
+          navigate(`/servicios/${creado.id}`, { replace: true });
           return;
         }
         setMensajeExito('Servicio publicado.');
@@ -197,9 +212,10 @@ function FormularioServicio() {
         // 400 de validación con categoría de por medio: se muestra junto al campo.
         setErrores(prev => ({ ...prev, categoria: error.message }));
       } else {
-        setErrorGuardar(mensajeDeError(error, esEdicion
+        setPublicando(false);
+        await alertaDeError(error, esEdicion
           ? 'No pudimos guardar los cambios. Intenta de nuevo.'
-          : 'No pudimos guardar el servicio. Intenta de nuevo.'));
+          : 'No pudimos guardar el servicio. Intenta de nuevo.');
       }
     } finally {
       setPublicando(false);
@@ -284,13 +300,11 @@ function FormularioServicio() {
             </EncabezadoPanel>
 
           <div className="panel-tarjeta">
-            {aviso && <p role="status" className="panel-alerta panel-alerta--info">{aviso}</p>}
-            {errorGuardar && <p role="alert" className="panel-alerta panel-alerta--error">{errorGuardar}</p>}
             {esEdicion && <section aria-label="Estado del servicio" className="servicio-estado-edicion">
               <p className={`servicio-estado ${activo ? 'activo' : 'inactivo'}`}>Estado: {activo ? 'Activo' : 'Inactivo'}</p>
               <AccionesServicio key={id} id={id!} nombre={form.nombre} activo={activo}
-                alCambiarEstado={setActivo} alMensaje={setAviso}
-                alEliminar={mensaje => navigate('/servicios', { state: { mensaje } })} />
+                alCambiarEstado={setActivo}
+                alEliminar={() => navigate('/servicios')} />
             </section>}
             <form onSubmit={handleSubmit} noValidate>
               <fieldset disabled={(!perfilCompleto && !esEdicion) || publicando}>
@@ -300,15 +314,15 @@ function FormularioServicio() {
 
                   <div className="mb-4">
                     <label htmlFor="nombre" className="form-label">Nombre del servicio *</label>
-                    <input id="nombre" type="text" name="nombre" className={`form-control ${errores.nombre ? 'is-invalid' : ''}`} value={form.nombre} onChange={handleChange} placeholder="Ej. Corte de cabello" required />
-                    {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
+                    <input id="nombre" type="text" name="nombre" className={`form-control ${errores.nombre ? 'is-invalid' : ''}`} value={form.nombre} onChange={handleChange} placeholder="Ej. Corte de cabello" required {...atributosErrorCampo('nombre', errores.nombre)} />
+                    <ErrorCampo id={idErrorCampo('nombre')} mensaje={errores.nombre} />
                   </div>
 
                   <div className="mb-4">
                     <label htmlFor="descripcion" className="form-label">Descripción del servicio *</label>
-                    <textarea id="descripcion" name="descripcion" rows={4} maxLength={500} className={`form-control ${errores.descripcion ? 'is-invalid' : ''}`} value={form.descripcion} onChange={handleChange} placeholder="Describe en qué consiste el servicio..." required />
+                    <textarea id="descripcion" name="descripcion" rows={4} maxLength={500} className={`form-control ${errores.descripcion ? 'is-invalid' : ''}`} value={form.descripcion} onChange={handleChange} placeholder="Describe en qué consiste el servicio..." required {...atributosErrorCampo('descripcion', errores.descripcion)} />
                     <div className="servicio-campo-pie">
-                      {errores.descripcion ? <span className="panel-error-campo">{errores.descripcion}</span> : <span className="panel-ayuda">Describe brevemente lo que ofreces.</span>}
+                      {errores.descripcion ? <ErrorCampo id={idErrorCampo('descripcion')} mensaje={errores.descripcion} /> : <span className="panel-ayuda">Describe brevemente lo que ofreces.</span>}
                       <span className="panel-ayuda">{form.descripcion.length}/500</span>
                     </div>
                   </div>
@@ -322,19 +336,19 @@ function FormularioServicio() {
                       <label htmlFor="precio" className="form-label">Precio del servicio *</label>
                       <div className="input-group">
                         <span className="input-group-text">$</span>
-                        <input id="precio" type="number" name="precio" className={`form-control ${errores.precio ? 'is-invalid' : ''}`} value={form.precio} onChange={handleChange} placeholder="0.00" min="0" step="0.01" required />
+                        <input id="precio" type="number" name="precio" className={`form-control ${errores.precio ? 'is-invalid' : ''}`} value={form.precio} onChange={handleChange} placeholder="0.00" min="0" step="0.01" required {...atributosErrorCampo('precio', errores.precio)} />
                       </div>
-                      {errores.precio && <div className="panel-error-campo">{errores.precio}</div>}
+                      <ErrorCampo id={idErrorCampo('precio')} mensaje={errores.precio} />
                       <small className="panel-ayuda mt-2 d-block">Precio en pesos mexicanos (MXN).</small>
                     </div>
 
                     <div className="col-12 col-md-6">
                       <label htmlFor="duracion" className="form-label">Duración del servicio *</label>
                       <div className="input-group">
-                        <input id="duracion" type="number" name="duracion" className={`form-control ${errores.duracion ? 'is-invalid' : ''}`} value={form.duracion} onChange={handleChange} placeholder="30" min="1" step="1" required />
+                        <input id="duracion" type="number" name="duracion" className={`form-control ${errores.duracion ? 'is-invalid' : ''}`} value={form.duracion} onChange={handleChange} placeholder="30" min="1" step="1" required {...atributosErrorCampo('duracion', errores.duracion)} />
                         <span className="input-group-text">Minutos</span>
                       </div>
-                      {errores.duracion && <div className="panel-error-campo">{errores.duracion}</div>}
+                      <ErrorCampo id={idErrorCampo('duracion')} mensaje={errores.duracion} />
                       <small className="panel-ayuda mt-2 d-block">Tiempo aproximado para realizar el servicio.</small>
                     </div>
                   </div>

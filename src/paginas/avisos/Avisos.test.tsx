@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { createMemoryRouter, RouterProvider } from 'react-router'
@@ -7,6 +7,7 @@ import { ErrorApi } from '../../servicios/api'
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import type { Aviso, EstadoPermisoPush } from '../../servicios/notificaciones'
 import { Avisos } from './Avisos'
+import { ultimaAlerta } from '../../pruebas/mockAlertas'
 
 const notifMocks = vi.hoisted(() => ({
   listarAvisos: vi.fn(),
@@ -188,7 +189,7 @@ it('muestra el recuadro de permiso por defecto y activa las notificaciones al ha
   await userEvent.click(screen.getByRole('button', { name: 'Activar notificaciones' }))
 
   expect(notifMocks.activarNotificacionesPush).toHaveBeenCalledTimes(1)
-  expect(await screen.findByText('Notificaciones activadas.')).toBeVisible()
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Notificaciones activadas.' }))
   expect(screen.queryByRole('button', { name: 'Activar notificaciones' })).not.toBeInTheDocument()
 })
 
@@ -260,7 +261,7 @@ it.each([
   await screen.findByText('Nueva solicitud')
   notifMocks.listarAvisos.mockRejectedValueOnce(error)
   await userEvent.click(screen.getByRole('button', { name: 'Cargar más' }))
-  expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: esperado }))
 })
 
 it.each([
@@ -271,7 +272,7 @@ it.each([
   notifMocks.activarNotificacionesPush.mockRejectedValueOnce(error)
   montarAvisos()
   await userEvent.click(await screen.findByRole('button', { name: 'Activar notificaciones' }))
-  expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: esperado }))
 })
 
 it('muestra el recordatorio de cita (RECORDATORIO_CITA_NEGOCIO) y al tocarlo abre el detalle de su reserva', async () => {

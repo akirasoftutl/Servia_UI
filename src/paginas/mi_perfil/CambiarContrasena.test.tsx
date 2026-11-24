@@ -1,10 +1,11 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth'
 import { CambiarContrasena } from './CambiarContrasena'
 import { Configuracion } from '../configuracion/Configuracion'
+import { ultimaAlerta } from '../../pruebas/mockAlertas'
 
 const sesion = vi.hoisted(() => ({ usuario: null as unknown }))
 vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => ({ usuario: sesion.usuario }) }))
@@ -58,7 +59,10 @@ describe('MVP-04 cambiar la contraseña con la sesión iniciada', () => {
     expect(reautenticar).toHaveBeenCalledWith(usuarioConContrasena, { correo: 'barberia@ejemplo.com', clave: 'vieja-1234' })
     expect(actualizar).toHaveBeenCalledWith(usuarioConContrasena, 'nueva-5678')
     expect(reautenticar.mock.invocationCallOrder[0]).toBeLessThan(actualizar.mock.invocationCallOrder[0])
-    expect(await screen.findByRole('status')).toHaveTextContent('cambiaste tu contraseña')
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'success',
+      text: 'Listo: cambiaste tu contraseña. Úsala la próxima vez que inicies sesión.',
+    }))
     expect(screen.getByLabelText('Contraseña actual')).toHaveValue('')
   })
 
@@ -71,13 +75,12 @@ describe('MVP-04 cambiar la contraseña con la sesión iniciada', () => {
       expect(campo).toHaveAccessibleDescription('La contraseña actual no es correcta.')
       expect(campo).toHaveFocus()
       expect(actualizar).not.toHaveBeenCalled()
-      expect(screen.queryByRole('status')).not.toBeInTheDocument()
     })
 
   it('borde: demasiados intentos da su propio aviso y no cambia nada', async () => {
     reautenticar.mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/too-many-requests' }))
     await llenar('vieja-1234', 'nueva-5678')
-    expect(await screen.findByRole('alert')).toHaveTextContent('Demasiados intentos. Inténtalo más tarde.')
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: 'Demasiados intentos. Inténtalo más tarde.' }))
     expect(actualizar).not.toHaveBeenCalled()
   })
 
@@ -85,8 +88,7 @@ describe('MVP-04 cambiar la contraseña con la sesión iniciada', () => {
     reautenticar.mockResolvedValue({} as never)
     actualizar.mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/network-request-failed' }))
     await llenar('vieja-1234', 'nueva-5678')
-    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cambiar la contraseña. Inténtalo de nuevo.')
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: 'No pudimos cambiar la contraseña. Inténtalo de nuevo.' }))
   })
 
   it.each([

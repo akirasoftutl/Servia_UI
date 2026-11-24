@@ -6,6 +6,7 @@ import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 
 import { api, ErrorApi } from '../../servicios/api'
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import { Configuracion } from './Configuracion'
+import { mockearConfirmacion, swalFireMock, ultimaAlerta } from '../../pruebas/mockAlertas'
 
 const sesion = vi.hoisted(() => ({ usuario: null as unknown, cerrarSesion: vi.fn() }))
 vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => sesion }))
@@ -97,7 +98,7 @@ describe('UI109 página Configuración', () => {
       await userEvent.type(within(cuenta).getByLabelText('Contraseña nueva'), 'Nueva12345')
       await userEvent.type(within(cuenta).getByLabelText('Confirma la contraseña nueva'), 'Nueva12345')
       await userEvent.click(within(cuenta).getByRole('button', { name: 'Cambiar contraseña' }))
-      expect(await within(cuenta).findByText(/cambiaste tu contraseña/)).toBeVisible()
+      expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: expect.stringMatching(/cambiaste tu contraseña/) })
       expect(updatePassword).toHaveBeenCalledWith(sesion.usuario, 'Nueva12345')
     })
     it('valida la contraseña nueva antes de llamar a Firebase', async () => {
@@ -109,9 +110,20 @@ describe('UI109 página Configuración', () => {
       expect(await within(cuenta).findByRole('alert')).toHaveTextContent(/al menos 8 caracteres/)
       expect(updatePassword).not.toHaveBeenCalled()
     })
-    it('cierra la sesión y lleva al login', async () => {
+    it('pide confirmación antes de cerrar sesión y no cierra si se cancela', async () => {
+      mockearConfirmacion(false)
       const router = pagina()
       await userEvent.click(within(tarjeta('Cuenta')).getByRole('button', { name: 'Cerrar sesión' }))
+      expect(swalFireMock).toHaveBeenCalledTimes(1)
+      expect(ultimaAlerta()).toMatchObject({ title: '¿Cerrar sesión?', showCancelButton: true })
+      expect(sesion.cerrarSesion).not.toHaveBeenCalled()
+      expect(router.state.location.pathname).toBe('/configuracion')
+    })
+    it('cierra la sesión y lleva al login al aceptar la confirmación', async () => {
+      mockearConfirmacion(true)
+      const router = pagina()
+      await userEvent.click(within(tarjeta('Cuenta')).getByRole('button', { name: 'Cerrar sesión' }))
+      expect(swalFireMock).toHaveBeenCalledTimes(1)
       expect(sesion.cerrarSesion).toHaveBeenCalledTimes(1)
       expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeVisible()
       expect(router.state.location.pathname).toBe('/login')
@@ -120,13 +132,14 @@ describe('UI109 página Configuración', () => {
 
   describe('tarjeta Recepción de reservas', () => {
     it('reutiliza el componente compartido: carga el estado del negocio y pide confirmar la pausa', async () => {
+      mockearConfirmacion(false)
       pagina()
       const recepcion = tarjeta('Recepción de reservas')
       expect(recepcion).toHaveAttribute('id', 'recepcion-reservas')
       expect(apiMock).toHaveBeenCalledWith('/negocios/mio')
       const interruptor = await within(recepcion).findByRole('switch')
       await userEvent.click(interruptor)
-      expect(await screen.findByRole('dialog')).toHaveTextContent('¿Pausar las reservas?')
+      expect(ultimaAlerta()).toMatchObject({ title: '¿Pausar las reservas?', showCancelButton: true })
     })
   })
 
@@ -141,7 +154,7 @@ describe('UI109 página Configuración', () => {
       apiMock.mockImplementationOnce(async () => ({ nuevaSolicitud: false, reservaCancelada: false, recordatorioCita: true }))
       await userEvent.click(solicitud)
       expect(apiMock).toHaveBeenCalledWith('/notificaciones/preferencias', { method: 'PUT', body: JSON.stringify({ nuevaSolicitud: false, reservaCancelada: false, recordatorioCita: true }) })
-      expect(await within(notificaciones).findByText('Preferencias guardadas.')).toBeVisible()
+      expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Preferencias guardadas.' })
     })
     it('si las preferencias no cargan, ofrece reintentar sin afectar las demás tarjetas', async () => {
       apiMock.mockImplementation(async (ruta: string) => {

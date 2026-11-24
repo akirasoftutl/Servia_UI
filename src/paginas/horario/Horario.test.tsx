@@ -1,8 +1,9 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { api, ErrorApi } from '../../servicios/api'
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import { Horario } from './Horario'
+import { swalFireMock, ultimaAlerta } from '../../pruebas/mockAlertas'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../servicios/api')>()
@@ -94,7 +95,7 @@ describe('Horario', () => {
     apiMock.mockResolvedValueOnce({ configurado: true, dias: null })
     await userEvent.click(screen.getByRole('switch', { name: 'Martes laborable' }))
     await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar de todos modos' }))
-    await screen.findByText('Horario guardado.')
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', title: 'Horario guardado.' }))
     expect(apiMock.mock.calls[2][0]).toBe('/negocios/mio/horario?confirmar=true')
     expect(apiMock.mock.calls[2][1]?.body).toBe(payloadInicial)
     expect(JSON.parse(String(payloadInicial)).martes).toEqual({ abre: '09:00', cierra: '18:00' })
@@ -192,6 +193,8 @@ describe('Horario', () => {
         'La hora de cierre debe ser posterior a la de apertura.',
       ),
     ).toBeInTheDocument()
+    expect(within(filaLunes).getByLabelText('Cierra')).toHaveFocus()
+    expect(ultimaAlerta()).toMatchObject({ icon: 'warning' })
     expect(apiMock).toHaveBeenCalledTimes(1)
   })
 
@@ -262,12 +265,11 @@ describe('Horario', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Guardar horario' }))
 
-    expect(await screen.findByText('Horario guardado.')).toBeInTheDocument()
-    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'success',
+      title: 'Horario guardado.',
+    }))
     expect(screen.queryByText(MENSAJE_SIN_HORARIO)).not.toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Aceptar' }))
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
 
     expect(apiMock).toHaveBeenCalledTimes(2)
     const [ruta, opciones] = apiMock.mock.calls[1]
@@ -326,7 +328,10 @@ describe('Horario', () => {
       within(dialogo).getByRole('button', { name: 'Guardar de todos modos' }),
     )
 
-    expect(await screen.findByText('Horario guardado.')).toBeInTheDocument()
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'success',
+      title: 'Horario guardado.',
+    }))
     expect(
       screen.queryByText('Estas reservas quedan fuera del nuevo horario'),
     ).not.toBeInTheDocument()
@@ -388,7 +393,7 @@ describe('Horario', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Guardar horario' }))
 
-    expect(await screen.findByText(esperado)).toBeInTheDocument()
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: esperado }))
   })
   it.each([
     [new ErrorApi(429, 'Demasiadas consultas.'), 'Demasiadas consultas.'],
@@ -406,4 +411,48 @@ describe('Horario', () => {
     expect(insignia).toHaveClass('panel-etiqueta--exito')
     expect(insignia.querySelector('span')).toBeNull()
   })
+
+  it.each(['éxito', 'error'] as const)(
+    'muestra Guardando... durante el PUT y restablece el botón con la alerta de %s abierta',
+    async (resultado) => {
+      let resolverPut!: (valor: unknown) => void
+      let rechazarPut!: (error: Error) => void
+      let cerrarAlerta!: () => void
+
+      apiMock.mockResolvedValueOnce({ configurado: true, dias: diasConfigurados })
+      apiMock.mockImplementationOnce(
+        () => new Promise((resolve, reject) => {
+          resolverPut = resolve
+          rechazarPut = reject
+        }),
+      )
+      swalFireMock.mockImplementationOnce(
+        () => new Promise((resolve) => {
+          cerrarAlerta = () => resolve({ isConfirmed: true, isDenied: false, isDismissed: false, value: true })
+        }),
+      )
+
+      renderizarHorario()
+      const boton = await screen.findByRole('button', { name: 'Guardar horario' })
+      await userEvent.click(boton)
+
+      // Control negativo: mientras la petición está en curso, el botón sí muestra Guardando...
+      expect(screen.getByRole('button', { name: 'Guardando...' })).toBeDisabled()
+
+      await act(async () => {
+        if (resultado === 'éxito') {
+          resolverPut({ configurado: true, dias: diasConfigurados })
+        } else {
+          rechazarPut(new ErrorApi(500, 'Fallo'))
+        }
+      })
+
+      await waitFor(() => expect(swalFireMock).toHaveBeenCalledTimes(1))
+      // Con la alerta todavía abierta, el botón de fondo ya no debe quedarse en Guardando...
+      expect(screen.queryByRole('button', { name: 'Guardando...' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Guardar horario' })).toBeEnabled()
+
+      await act(async () => cerrarAlerta())
+    },
+  )
 })

@@ -1,8 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { rutas } from '../../router';
 import { api, ErrorApi } from '../../servicios/api';
+import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
+import { ultimaAlerta } from '../../pruebas/mockAlertas';
 
 const sesion = vi.hoisted(() => ({ usuario: null as { uid: string; email: string; providerData: unknown[] } | null, cargando: false, cerrarSesion: vi.fn() }));
 vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => sesion }));
@@ -72,7 +74,7 @@ it('UI132 muestra el interruptor de recordatorio de cita, lo cambia y guarda', a
 
   await userEvent.click(switchRecordatorio);
   
-  expect(await screen.findByText('Preferencias guardadas.')).toBeVisible();
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Preferencias guardadas.' }));
   expect(mockApi).toHaveBeenCalledWith('/notificaciones/preferencias', {
     method: 'PUT',
     body: JSON.stringify({ ...preferencias, recordatorioCita: false })
@@ -91,6 +93,6 @@ it('UI132 si falla al guardar el recordatorio, revierte y muestra error', async 
 
   await userEvent.click(switchRecordatorio);
   
-  expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron guardar las preferencias.');
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: MENSAJE_ERROR_SERVIDOR }));
   expect(screen.getByRole('switch', { name: 'Recordatorio de cita' })).toHaveAttribute('aria-checked', 'true');
 });

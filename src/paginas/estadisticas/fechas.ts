@@ -1,3 +1,5 @@
+import { validarRangoFechas } from '../../utilidades/validacion';
+
 export interface Periodo { desde: string; hasta: string }
 
 export function periodoPredefinido(dias: number, ahora = new Date()): Periodo {
@@ -12,12 +14,5 @@ export function periodoPredefinido(dias: number, ahora = new Date()): Periodo {
 }
 
 export function validarPeriodo({ desde, hasta }: Periodo): string {
-  if (!desde || !hasta) return 'Ingresa la fecha inicial y la fecha final.';
-  const calendario = (valor: string) => /^\d{4}-\d{2}-\d{2}$/.test(valor) &&
-    Number.isFinite(Date.parse(`${valor}T00:00:00Z`)) &&
-    new Date(`${valor}T00:00:00Z`).toISOString().slice(0, 10) === valor;
-  if (!calendario(desde) || !calendario(hasta)) return 'Ingresa fechas válidas con formato AAAA-MM-DD.';
-  if (desde > hasta) return 'La fecha inicial no puede ser posterior a la fecha final.';
-  if ((Date.parse(hasta) - Date.parse(desde)) / 86400000 + 1 > 366) return 'El periodo no puede pasar de 366 días.';
-  return '';
+  return validarRangoFechas(desde, hasta, { maxDias: 366 });
 }

@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
-import { createPortal } from 'react-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../servicios/firebase';
 import { useLocation, useNavigate } from 'react-router';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../../servicios/api';
+import { alertaDeError, confirmar, exito } from '../../servicios/alertas';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { BotonPanel } from './BotonPanel';
 import '../../estilos/panel.css';
@@ -30,18 +29,13 @@ export function RecepcionReservas() {
     const desplazamiento = window.setTimeout(() => document.getElementById('recepcion-reservas')?.scrollIntoView?.(), 0);
     return () => window.clearTimeout(desplazamiento);
   }, [hash]);
-  // Recepción de reservas (antes vivía en el Layout).
+
   const [aceptaReservas, setAceptaReservas] = useState<boolean | null>(null);
   const [cargandoRecepcion, setCargandoRecepcion] = useState(false);
   const [errorCargaRecepcion, setErrorCargaRecepcion] = useState('');
   const [reintentoRecepcion, setReintentoRecepcion] = useState(0);
-  const [mensajeReservas, setMensajeReservas] = useState('');
-  const [errorCambio, setErrorCambio] = useState(false);
-  const [mostrarModalPausa, setMostrarModalPausa] = useState(false);
   const solicitudRecepcion = useRef({ version: 0 });
-  const interruptor = useRef<HTMLButtonElement>(null);
-  const dialogo = useRef<HTMLDivElement>(null);
-  const cancelar = useRef<HTMLButtonElement>(null);
+  const enProceso = useRef(false);
 
   useEffect(() => {
     const solicitudes = solicitudRecepcion.current;
@@ -65,25 +59,10 @@ export function RecepcionReservas() {
     return () => { solicitudes.version++; };
   }, [reintentoRecepcion, navigate]);
 
-  useEffect(() => {
-    if (!mostrarModalPausa) return;
-    const origen = interruptor.current;
-    const fondo = interruptor.current?.closest('.layout') ?? interruptor.current?.closest('.panel-pagina');
-    fondo?.setAttribute('inert', '');
-    cancelar.current?.focus();
-    return () => { fondo?.removeAttribute('inert'); origen?.focus(); };
-  }, [mostrarModalPausa]);
-
-  useEffect(() => {
-    if (mostrarModalPausa && cargandoRecepcion) dialogo.current?.focus();
-  }, [mostrarModalPausa, cargandoRecepcion]);
-
   const cambiarRecepcion = async (nuevoEstado: boolean) => {
     if (aceptaReservas === null || cargandoRecepcion) return;
     const actual = ++solicitudRecepcion.current.version;
     setCargandoRecepcion(true);
-    setMensajeReservas('');
-    setErrorCambio(false);
     try {
       await api('/negocios/mio/recepcion-reservas', {
         method: 'PATCH',
@@ -91,8 +70,7 @@ export function RecepcionReservas() {
       });
       if (actual !== solicitudRecepcion.current.version) return;
       setAceptaReservas(nuevoEstado);
-      setMensajeReservas(nuevoEstado ? 'Reservas reanudadas.' : 'Reservas pausadas.');
-      setMostrarModalPausa(false);
+      await exito(nuevoEstado ? 'Reservas reanudadas.' : 'Reservas pausadas.');
     } catch (error: unknown) {
       if (actual !== solicitudRecepcion.current.version) return;
       if (esNoAutorizado(error)) {
@@ -100,22 +78,35 @@ export function RecepcionReservas() {
         navigate('/login', { replace: true });
         return;
       }
-      setErrorCambio(true);
-      setMensajeReservas(mensajeDeError(error, 'No pudimos cambiar la recepción de reservas. Intenta de nuevo.'));
+      await alertaDeError(error, 'No pudimos cambiar la recepción de reservas. Intenta de nuevo.');
     } finally {
       if (actual === solicitudRecepcion.current.version) setCargandoRecepcion(false);
     }
   };
 
-  const handleToggleReservas = () => {
-    if (aceptaReservas === null || cargandoRecepcion) return;
-    setMensajeReservas('');
-    setErrorCambio(false);
-    setMostrarModalPausa(true);
+  const handleToggleReservas = async () => {
+    if (aceptaReservas === null || cargandoRecepcion || enProceso.current) return;
+    enProceso.current = true;
+    try {
+      const pausar = aceptaReservas === true;
+      const aceptado = await confirmar({
+        titulo: pausar ? '¿Pausar las reservas?' : '¿Reanudar las reservas?',
+        texto: pausar
+          ? 'Tu perfil seguirá visible. Los clientes verán «No acepta reservas por ahora» y no podrán pedir reservas nuevas. Nota: Las reservas que ya tienes no cambiarán.'
+          : 'Tu perfil seguirá visible y los clientes podrán solicitar nuevas reservas. Nota: Las reservas que ya tienes no cambiarán.',
+        confirmar: pausar ? 'Pausar' : 'Reanudar',
+        cancelar: 'Cancelar',
+        peligro: pausar,
+      });
+      if (!aceptado) return;
+      await cambiarRecepcion(!pausar);
+    } finally {
+      enProceso.current = false;
+    }
   };
 
-  return (<>
-    <section id="recepcion-reservas" className="panel-tarjeta" inert={mostrarModalPausa} aria-labelledby="titulo-recepcion">
+  return (
+    <section id="recepcion-reservas" className="panel-tarjeta" aria-labelledby="titulo-recepcion">
       <div className="panel-tarjeta-encabezado">
         <div>
           <h2 id="titulo-recepcion" className="panel-tarjeta-titulo">Recepción de reservas</h2>
@@ -130,30 +121,19 @@ export function RecepcionReservas() {
       <div className="panel-recepcion-cuerpo">
         <div className="panel-recepcion-acciones">
           <BotonPanel
-            ref={interruptor}
             variante="secundario"
             role="switch"
             aria-label="Recibir reservas"
             aria-checked={aceptaReservas === true}
             aria-describedby="estadoRecepcion"
-            onClick={handleToggleReservas}
+            onClick={() => void handleToggleReservas()}
             disabled={cargandoRecepcion || aceptaReservas === null}
           >
-            {aceptaReservas === false ? 'Reanudar recepción' : 'Pausar recepción'}
+            {cargandoRecepcion
+              ? (aceptaReservas ? 'Pausando...' : 'Reanudando...')
+              : (aceptaReservas === false ? 'Reanudar recepción' : 'Pausar recepción')}
           </BotonPanel>
         </div>
-
-        {mensajeReservas && !mostrarModalPausa && (
-          <div
-            role={errorCambio ? 'alert' : 'status'}
-            className={`panel-alerta panel-alerta--${errorCambio ? 'error' : 'exito'} panel-recepcion-estado`}
-          >
-            <span className="panel-alerta-icono" aria-hidden="true">
-              {errorCambio ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
-            </span>
-            <p className="panel-alerta-contenido">{mensajeReservas}</p>
-          </div>
-        )}
 
         {errorCargaRecepcion && (
           <div role="alert" className="panel-alerta panel-alerta--error">
@@ -187,7 +167,7 @@ export function RecepcionReservas() {
               variante="secundario"
               tamano="sm"
               className="panel-alerta-accion"
-              onClick={() => handleToggleReservas()}
+              onClick={() => void handleToggleReservas()}
               disabled={cargandoRecepcion || aceptaReservas === null}
             >
               Reanudar
@@ -196,72 +176,5 @@ export function RecepcionReservas() {
         )}
       </div>
     </section>
-
-    {mostrarModalPausa && createPortal(
-      <div className="panel-dialogo-fondo">
-        <div
-          ref={dialogo}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="tituloPausa"
-          aria-describedby="descripcionPausa notaPausa"
-          tabIndex={-1}
-          onKeyDown={(evento) => {
-            if (evento.key === 'Escape' && !cargandoRecepcion) {
-              evento.preventDefault();
-              setMostrarModalPausa(false);
-            }
-            if (evento.key === 'Tab') {
-              const botones = Array.from(dialogo.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
-              const primero = botones[0];
-              const ultimo = botones[botones.length - 1];
-              if (!primero || !botones.includes(document.activeElement as HTMLButtonElement)) {
-                evento.preventDefault();
-                (evento.shiftKey ? ultimo : primero)?.focus();
-              } else if (evento.shiftKey && document.activeElement === primero) {
-                evento.preventDefault();
-                ultimo.focus();
-              } else if (!evento.shiftKey && document.activeElement === ultimo) {
-                evento.preventDefault();
-                primero.focus();
-              }
-            }
-          }}
-          className="panel-dialogo"
-        >
-          <div className="panel-dialogo-icono panel-dialogo-icono--aviso" aria-hidden="true"><Pause /></div>
-          <h2 id="tituloPausa" className="panel-dialogo-titulo">{aceptaReservas ? '¿Pausar las reservas?' : '¿Reanudar las reservas?'}</h2>
-          <p id="descripcionPausa" className="panel-dialogo-texto">
-            {aceptaReservas
-              ? 'Tu perfil seguirá visible. Los clientes no podrán solicitar nuevas reservas; verán «No acepta reservas por ahora» y no podrán pedir reservas nuevas.'
-              : 'Tu perfil seguirá visible y los clientes podrán solicitar nuevas reservas.'}
-          </p>
-          <div className="panel-alerta panel-alerta--aviso">
-            <span className="panel-alerta-icono" aria-hidden="true">!</span>
-            <div id="notaPausa" className="panel-alerta-contenido">
-              <strong>Nota:</strong> Las reservas que ya tienes no cambiarán.
-            </div>
-          </div>
-          {errorCambio && mensajeReservas && <p role="alert" className="panel-error-campo">{mensajeReservas}</p>}
-          <div className="panel-dialogo-acciones">
-            <BotonPanel
-              ref={cancelar}
-              variante="secundario"
-              onClick={() => setMostrarModalPausa(false)}
-              disabled={cargandoRecepcion || aceptaReservas === null}
-            >
-              Cancelar
-            </BotonPanel>
-            <BotonPanel
-              variante="primario"
-              onClick={() => cambiarRecepcion(!aceptaReservas)}
-              disabled={cargandoRecepcion || aceptaReservas === null}
-            >
-              {cargandoRecepcion ? (aceptaReservas ? 'Pausando...' : 'Reanudando...') : (aceptaReservas ? 'Pausar' : 'Reanudar')}
-            </BotonPanel>
-          </div>
-        </div>
-      </div>
-      , document.body)}
-  </>);
+  );
 }

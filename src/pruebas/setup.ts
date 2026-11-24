@@ -1,6 +1,18 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
+import { reiniciarMockAlertas, swalFireMock, swalIsVisibleMock } from './mockAlertas'
+
+vi.mock('sweetalert2', () => ({
+  default: {
+    fire: (...args: Parameters<typeof swalFireMock>) => swalFireMock(...args),
+    isVisible: () => swalIsVisibleMock(),
+  },
+}))
+
+beforeEach(() => {
+  reiniciarMockAlertas()
+})
 
 afterEach(() => {
   cleanup()

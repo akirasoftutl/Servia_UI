@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { ShieldAlert, Clock } from 'lucide-react'
 import { api } from '../../servicios/api'
+import { alertaDeError, exito } from '../../servicios/alertas'
 import { mensajeDeError } from '../../servicios/mensajeDeError'
+import { ErrorCampo } from '../../componentes/panel/ErrorCampo'
+import { notificarErroresFormulario, validarRangoHoras } from '../../utilidades/validacion'
 import './Horario.css'
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel'
 import { EstadoCargando, EstadoError } from '../../componentes/panel/EstadosPanel'
@@ -79,17 +82,6 @@ function crearFormulario(dias: DiasHorario | null): FormularioHorario {
   }
 
   return formulario
-}
-
-function horaAMinutos(hora: string): number | null {
-  const coincidencia = /^(\d{2}):(\d{2})$/.exec(hora)
-  if (!coincidencia) return null
-
-  const horas = Number(coincidencia[1])
-  const minutos = Number(coincidencia[2])
-
-  if (horas > 23 || minutos > 59) return null
-  return horas * 60 + minutos
 }
 
 function aDiasHorario(formulario: FormularioHorario): DiasHorario {
@@ -172,8 +164,6 @@ export function Horario() {
   const [errorCarga, setErrorCarga] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [errores, setErrores] = useState<ErroresHorario>({})
-  const [mostrarModalExito, setMostrarModalExito] = useState(false)
-  const [errorGuardado, setErrorGuardado] = useState('')
   const [reservasConflicto, setReservasConflicto] = useState<
     ReservaEnConflicto[]
   >([])
@@ -260,33 +250,32 @@ export function Horario() {
       [clave]: { ...previo[clave], ...cambios },
     }))
     setErrores((previos) => ({ ...previos, [clave]: undefined }))
-    setErrorGuardado('')
   }
 
   const validar = (): boolean => {
     const nuevosErrores: ErroresHorario = {}
+    const mapaIds: Partial<Record<ClaveDia, string>> = {}
 
     for (const { clave } of DIAS) {
       const dia = formulario[clave]
       if (!dia.laborable) continue
 
-      if (!dia.abre || !dia.cierra) {
-        nuevosErrores[clave] = MENSAJE_HORAS_FALTANTES
-        continue
-      }
-
-      const abre = horaAMinutos(dia.abre)
-      const cierra = horaAMinutos(dia.cierra)
-
-      if (abre === null || cierra === null) {
-        nuevosErrores[clave] = MENSAJE_HORAS_FALTANTES
-      } else if (cierra <= abre) {
-        nuevosErrores[clave] = MENSAJE_CIERRE_INVALIDO
+      const errorDia = validarRangoHoras(dia.abre, dia.cierra, {
+        faltantes: MENSAJE_HORAS_FALTANTES,
+        orden: MENSAJE_CIERRE_INVALIDO,
+      })
+      if (errorDia) {
+        nuevosErrores[clave] = errorDia
+        mapaIds[clave] = !dia.abre ? `${clave}-abre` : `${clave}-cierra`
       }
     }
 
     setErrores(nuevosErrores)
-    return Object.keys(nuevosErrores).length === 0
+    return notificarErroresFormulario(
+      nuevosErrores,
+      DIAS.map((d) => d.clave),
+      { mapaIds, mostrarAviso: true },
+    )
   }
 
   const guardar = async (confirmar = false) => {
@@ -301,7 +290,6 @@ export function Horario() {
     const revision = revisionFormulario.current
 
     setGuardando(true)
-    setErrorGuardado('')
 
     try {
       const respuesta = await api<RespuestaHorario>(
@@ -315,11 +303,19 @@ export function Horario() {
       // Un guardado exitoso siempre deja el horario configurado, aunque el
       // servidor no repita el campo en la respuesta.
       setConfigurado(true)
+      const siguienteFormulario = respuesta.dias ? crearFormulario(respuesta.dias) : formulario
       if (respuesta.dias) {
-        setFormulario(crearFormulario(respuesta.dias))
+        setFormulario(siguienteFormulario)
       }
       cerrarConflicto()
-      setMostrarModalExito(true)
+      setGuardando(false)
+      const activosGuardados = DIAS.filter(({ clave }) => siguienteFormulario[clave].laborable).length
+      await exito(
+        activosGuardados > 0
+          ? 'Tu horario de atención quedó actualizado. Los clientes podrán reservar dentro de los días y horas que configuraste.'
+          : 'Tu horario se guardó, pero no hay días laborables. Los clientes no podrán reservar hasta que actives uno.',
+        'Horario guardado.',
+      )
     } catch (error) {
       if (revision !== revisionFormulario.current) return
       if (esConflicto(error)) {
@@ -328,7 +324,8 @@ export function Horario() {
         setDialogoAbierto(true)
       } else {
         cerrarConflicto()
-        setErrorGuardado(mensajeDeError(error, MENSAJE_ERROR_GUARDADO))
+        setGuardando(false)
+        await alertaDeError(error, MENSAJE_ERROR_GUARDADO)
       }
     } finally {
       setGuardando(false)
@@ -399,17 +396,6 @@ export function Horario() {
             <div className="panel-alerta-contenido">
               <strong>{MENSAJE_SIN_HORARIO}</strong>
               <p>Mientras no guardes tu horario, no podrás recibir reservas.</p>
-            </div>
-          </div>
-        )}
-
-        {errorGuardado && (
-          <div className="panel-alerta panel-alerta--error" role="alert">
-            <div className="panel-alerta-icono" aria-hidden="true">
-              !
-            </div>
-            <div className="panel-alerta-contenido">
-              <strong>{errorGuardado}</strong>
             </div>
           </div>
         )}
@@ -538,15 +524,7 @@ export function Horario() {
                       </label>
                     </div>
 
-                    {error && (
-                      <p
-                        id={`${clave}-error`}
-                        className="horario-error"
-                        role="alert"
-                      >
-                        {error}
-                      </p>
-                    )}
+                    <ErrorCampo id={`${clave}-error`} mensaje={error} className="horario-error" />
                   </div>
                 )
               })}
@@ -696,53 +674,6 @@ export function Horario() {
                 disabled={guardando}
               >
                 Volver
-              </BotonPanel>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {mostrarModalExito && (
-        <div
-          className="panel-dialogo-fondo"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="horario-exito-titulo"
-          aria-describedby="horario-exito-texto"
-        >
-          <div className="panel-dialogo">
-            <div className="panel-dialogo-icono" aria-hidden="true">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-            </div>
-
-            <h2
-              id="horario-exito-titulo"
-              className="panel-dialogo-titulo"
-            >
-              Horario guardado.
-            </h2>
-
-            <p id="horario-exito-texto" className="panel-dialogo-texto">
-              {diasActivos > 0
-                ? 'Tu horario de atención quedó actualizado. Los clientes podrán reservar dentro de los días y horas que configuraste.'
-                : 'Tu horario se guardó, pero no hay días laborables. Los clientes no podrán reservar hasta que actives uno.'}
-            </p>
-
-            <div className="panel-dialogo-acciones panel-dialogo-acciones--columna">
-              <BotonPanel
-                variante="primario"
-                onClick={() => setMostrarModalExito(false)}
-              >
-                Aceptar
               </BotonPanel>
             </div>
           </div>

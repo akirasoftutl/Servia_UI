@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
+import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
 import {
   MAX_CATEGORIA_PERSONALIZADA, VALOR_OTRA,
   type CatalogoCategorias, type CategoriaElegida,
@@ -59,7 +60,7 @@ export function CategoriaServicio({ valor, alCambiar, catalogo, error, actual }:
         <option value={VALOR_OTRA}>Otra (escribir la mía)</option>
       </select>
       {hayErrorSelect
-        ? <div id="categoria-servicio-error" className="panel-error-campo">{error}</div>
+        ? <ErrorCampo id="categoria-servicio-error" mensaje={error} />
         : <small id="categoria-servicio-ayuda" className="panel-ayuda mt-2 d-block">{ayuda}</small>}
 
       {valor.modo === 'otra' && (
@@ -69,10 +70,10 @@ export function CategoriaServicio({ valor, alCambiar, catalogo, error, actual }:
             className={`form-control ${error ? 'is-invalid' : ''}`} value={valor.texto}
             placeholder="Ej. Novias"
             aria-invalid={Boolean(error) || undefined}
-            aria-describedby="categoria-personalizada-pie"
+            aria-describedby={error ? 'categoria-personalizada-error categoria-personalizada-pie' : 'categoria-personalizada-pie'}
             onChange={e => alCambiar({ modo: 'otra', id: '', texto: e.target.value })} />
           <div id="categoria-personalizada-pie" className="servicio-campo-pie">
-            {error ? <span className="panel-error-campo">{error}</span> : <span className="panel-ayuda">Hasta {MAX_CATEGORIA_PERSONALIZADA} caracteres.</span>}
+            {error ? <ErrorCampo id="categoria-personalizada-error" mensaje={error} /> : <span className="panel-ayuda">Hasta {MAX_CATEGORIA_PERSONALIZADA} caracteres.</span>}
             <span className="panel-ayuda">{valor.texto.length}/{MAX_CATEGORIA_PERSONALIZADA}</span>
           </div>
         </div>

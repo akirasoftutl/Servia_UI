@@ -1,0 +1,155 @@
+/*
+ * Estilos de SweetAlert2 para el panel del negocio.
+ * Usa únicamente variables CSS definidas en src/estilos/panel.css para mantenerse
+ * alineado con el sistema visual sin editar panel.css ni hojas de cada página.
+ */
+
+.servia-swal-contenedor {
+  font-family: var(--sv-fuente);
+}
+
+.servia-swal-popup {
+  width: min(100%, var(--sv-ancho-dialogo));
+  padding: var(--sv-esp-6) var(--sv-esp-5) var(--sv-esp-5);
+  border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-lg);
+  background: var(--sv-superficie);
+  color: var(--sv-texto);
+  font-family: var(--sv-fuente);
+  box-shadow: var(--sv-sombra-dialogo);
+}
+
+.servia-swal-popup--exito {
+  border-top: 4px solid var(--sv-exito);
+}
+
+.servia-swal-popup--error,
+.servia-swal-popup--peligro {
+  border-top: 4px solid var(--sv-peligro);
+}
+
+.servia-swal-popup--aviso {
+  border-top: 4px solid var(--sv-aviso);
+}
+
+.servia-swal-popup--confirmar {
+  border-top: 4px solid var(--sv-primario);
+}
+
+.servia-swal-titulo {
+  margin: 0;
+  color: var(--sv-titulo);
+  font-family: var(--sv-fuente-titulos);
+  font-size: var(--sv-titulo-seccion);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.servia-swal-texto {
+  margin: var(--sv-esp-3) 0 0;
+  color: var(--sv-texto-suave);
+  font-size: var(--sv-texto-md);
+  line-height: 1.5;
+}
+
+.servia-swal-icono.swal2-icon.swal2-success {
+  border-color: var(--sv-exito-borde);
+  color: var(--sv-exito);
+}
+
+.servia-swal-icono.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: var(--sv-exito);
+}
+
+.servia-swal-icono.swal2-icon.swal2-success .swal2-success-ring {
+  border-color: var(--sv-exito-borde);
+}
+
+.servia-swal-icono.swal2-icon.swal2-error {
+  border-color: var(--sv-peligro-borde);
+  color: var(--sv-peligro);
+}
+
+.servia-swal-icono.swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: var(--sv-peligro);
+}
+
+.servia-swal-icono.swal2-icon.swal2-warning {
+  border-color: var(--sv-aviso-borde);
+  color: var(--sv-aviso);
+}
+
+.servia-swal-icono.swal2-icon.swal2-question {
+  border-color: var(--sv-primario);
+  color: var(--sv-primario);
+}
+
+.servia-swal-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sv-esp-3);
+  margin-top: var(--sv-esp-5);
+}
+
+.servia-swal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--sv-objetivo-tactil);
+  padding: var(--sv-esp-2) var(--sv-esp-5);
+  border-radius: var(--sv-radio-pill);
+  font-family: var(--sv-fuente);
+  font-size: var(--sv-texto-md);
+  font-weight: 650;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background-color var(--sv-rapido) var(--sv-curva),
+    border-color var(--sv-rapido) var(--sv-curva),
+    color var(--sv-rapido) var(--sv-curva),
+    box-shadow var(--sv-rapido) var(--sv-curva),
+    transform var(--sv-rapido) var(--sv-curva);
+}
+
+.servia-swal-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
+}
+
+.servia-swal-btn--primario {
+  border: 1px solid var(--sv-primario);
+  background: var(--sv-primario);
+  color: var(--sv-en-primario);
+  box-shadow: var(--sv-sombra-panel);
+}
+
+.servia-swal-btn--primario:hover {
+  border-color: var(--sv-primario-hover);
+  background: var(--sv-primario-hover);
+  transform: translateY(-1px);
+}
+
+.servia-swal-btn--secundario {
+  border: 1px solid var(--sv-borde-campo);
+  background: var(--sv-superficie);
+  color: var(--sv-texto);
+}
+
+.servia-swal-btn--secundario:hover {
+  border-color: var(--sv-borde-fuerte);
+  background: var(--sv-superficie-suave);
+  color: var(--sv-titulo);
+}
+
+.servia-swal-btn--peligro {
+  border: 1px solid var(--sv-peligro);
+  background: var(--sv-peligro);
+  color: var(--sv-en-primario);
+}
+
+.servia-swal-btn--peligro:hover {
+  border-color: var(--sv-peligro-hover);
+  background: var(--sv-peligro-hover);
+  transform: translateY(-1px);
+}

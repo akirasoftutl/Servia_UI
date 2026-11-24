@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { api, ErrorApi } from '../../servicios/api'
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import { Bloqueos } from './Bloqueos'
+import { mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../servicios/api')>()
@@ -39,7 +40,7 @@ it.each([
   if (tipo === 'horas') { fecha('horaInicio', '14:00'); fecha('horaFin', '15:00') }
   llamada.mockResolvedValueOnce(bloqueo).mockResolvedValueOnce([bloqueo])
   enviar()
-  expect(await screen.findByRole('status')).toHaveTextContent('Bloqueo creado.')
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Bloqueo creado.' }))
   expect(llamada.mock.calls[1][0]).toBe(ruta)
   expect(llamada.mock.calls[1][1]?.method).toBe('POST')
   expect(JSON.parse(String(llamada.mock.calls[1][1]?.body))).toEqual(esperado)
@@ -47,10 +48,12 @@ it.each([
   expect(document.getElementById('fechaInicio')).toHaveValue('')
 })
 
-it.each(['dia', 'rango'])('B02 pide la fecha de %s junto al campo', async (tipo) => {
+it.each(['dia', 'rango'])('B02 pide la fecha de %s junto al campo y enfoca el primer error', async (tipo) => {
   await abrir(); fecha('tipo', tipo); enviar()
   expect(document.getElementById('fechaInicio')).toHaveAccessibleDescription('Elige la fecha.')
   expect(document.getElementById('fechaInicio')).toHaveAttribute('aria-invalid', 'true')
+  expect(document.activeElement).toBe(document.getElementById('fechaInicio'))
+  expect(ultimaAlerta()).toMatchObject({ icon: 'warning' })
   if (tipo === 'rango') expect(document.getElementById('fechaFin')).toHaveAccessibleDescription('Elige la fecha.')
   expect(llamada).toHaveBeenCalledTimes(1)
 })
@@ -95,12 +98,11 @@ it.each([
   [new ErrorApi(429, 'Demasiados bloqueos; inténtalo más tarde.'), 'Demasiados bloqueos; inténtalo más tarde.'],
   [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
   [new TypeError('Failed to fetch'), 'No pudimos guardar el bloqueo. Intenta de nuevo.'],
-])('B09 distingue 4xx, 500 y red al crear bloqueo sin alert', async (error, esperado) => {
+])('B09 distingue 4xx, 500 y red al crear bloqueo con alerta estándar', async (error, esperado) => {
   const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {})
   await abrir(); preparar(); llamada.mockRejectedValueOnce(error); enviar()
-  expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: esperado }))
   expect(alerta).not.toHaveBeenCalled()
-  expect(screen.queryByText('Bloqueo creado.')).not.toBeInTheDocument()
 })
 it.each([
   [new ErrorApi(429, 'Demasiadas consultas.'), 'Demasiadas consultas.'],
@@ -117,9 +119,9 @@ it.each([
 ])('distingue 429 y 500 al quitar un bloqueo', async (error, esperado) => {
   llamada.mockResolvedValueOnce([bloqueo]); await abrir()
   llamada.mockRejectedValueOnce(error)
+  mockearConfirmacion(true)
   await userEvent.click(screen.getByRole('button', { name: 'Quitar' }))
-  await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Quitar' }))
-  expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: esperado }))
 })
 it('B10 presenta reservas Pendientes y Confirmadas desde ErrorApi.datos', async () => {
   await abrir(); preparar()
@@ -184,26 +186,30 @@ it('B15 mantiene fechas y horas de México con navegador en Tokio', async () => 
 })
 it('B16 confirma Quitar, cancela sin DELETE y luego elimina y actualiza', async () => {
   llamada.mockResolvedValueOnce([bloqueo]); await abrir()
-  const quitar = screen.getByRole('button', { name: 'Quitar' }); await userEvent.click(quitar)
-  let dialogo = screen.getByRole('alertdialog')
-  expect(dialogo).toHaveAccessibleDescription('¿Quitar este bloqueo? Los clientes podrán volver a reservar en ese periodo.')
-  const cancelar = within(dialogo).getByRole('button', { name: 'Cancelar' })
-  await waitFor(() => expect(cancelar).toHaveFocus())
-  await userEvent.tab({ shift: true }); expect(within(dialogo).getByRole('button', { name: 'Quitar' })).toHaveFocus()
-  await userEvent.tab(); expect(cancelar).toHaveFocus()
-  await userEvent.click(cancelar); await waitFor(() => expect(quitar).toHaveFocus()); expect(llamada).toHaveBeenCalledTimes(1)
-  await userEvent.click(quitar); dialogo = screen.getByRole('alertdialog')
-  await userEvent.click(within(dialogo).getByRole('button', { name: 'Quitar' }))
-  expect(await screen.findByRole('status')).toHaveTextContent('Bloqueo quitado.')
+  const quitar = screen.getByRole('button', { name: 'Quitar' })
+  mockearConfirmacion(false)
+  await userEvent.click(quitar)
+  expect(ultimaAlerta()).toMatchObject({
+    title: 'Quitar bloqueo',
+    text: '¿Quitar este bloqueo? Los clientes podrán volver a reservar en ese periodo.',
+    showCancelButton: true,
+  })
+  expect(llamada).toHaveBeenCalledTimes(1)
+
+  mockearConfirmacion(true)
+  await userEvent.click(quitar)
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Bloqueo quitado.' }))
   expect(llamada).toHaveBeenNthCalledWith(2, `${ruta}/b1`, { method: 'DELETE' })
   expect(await screen.findByText('Cuando necesites cerrar una fecha u hora, crea un bloqueo en el formulario.')).toBeInTheDocument()
-  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
 })
-it('B17 comunica fallo al quitar y conserva el bloqueo', async () => {
+it('B17 comunica fallo al quitar con alerta de error y conserva el bloqueo', async () => {
   llamada.mockResolvedValueOnce([bloqueo]); await abrir()
   llamada.mockRejectedValueOnce(new Error('Red'))
+  mockearConfirmacion(true)
   await userEvent.click(screen.getByRole('button', { name: 'Quitar' }))
-  await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Quitar' }))
-  expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos quitar el bloqueo. Intenta de nuevo.')
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+    icon: 'error',
+    text: 'No pudimos quitar el bloqueo. Intenta de nuevo.',
+  }))
   expect(screen.getByRole('button', { name: 'Quitar' })).toBeInTheDocument()
 })

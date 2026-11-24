@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router'
 import { api, descargarMapaNegocio, ErrorApi } from '../../servicios/api'
 import { MiPerfil } from './MiPerfil'
 import { AVISO_REVISAR, AVISO_SUGERENCIA } from './CampoCalle'
+import { ultimaAlerta } from '../../pruebas/mockAlertas'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../servicios/api')>()
@@ -133,7 +134,7 @@ describe('Mi perfil: dirección por campos', () => {
     await llenarDireccion()
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
-    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Perfil actualizado correctamente' }))
     const put = apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')!
     expect(put[0]).toBe('/negocios/mio')
     const cuerpo = JSON.parse(String(put[1]!.body))
@@ -149,7 +150,7 @@ describe('Mi perfil: dirección por campos', () => {
     expect(cuerpo.categoriaId).toBe('cabello-barba')
   })
 
-  it('muestra el error 400 de la API', async () => {
+  it('muestra el error 400 de la API con alerta de error', async () => {
     apiMock.mockImplementation(async (ruta: string, opciones?: RequestInit) => {
       if (ruta === '/categorias') return [{ id: 'cabello-barba', nombre: 'Cabello y barba' }]
       if (opciones?.method === 'PUT') throw new ErrorApi(400, 'El estado debe ser una de las 32 entidades federativas de México.')
@@ -159,8 +160,10 @@ describe('Mi perfil: dirección por campos', () => {
     await llenarDireccion()
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
-    const alerta = await screen.findByRole('alert')
-    expect(alerta).toHaveTextContent('El estado debe ser una de las 32 entidades federativas de México.')
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'error',
+      text: 'El estado debe ser una de las 32 entidades federativas de México.',
+    }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled())
   })
 })
@@ -194,7 +197,7 @@ describe('Mi perfil: sugerencias de domicilio (#40)', () => {
   async function guardar() {
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
-    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Perfil actualizado correctamente' }))
     const put = apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')!
     return JSON.parse(String(put[1]!.body))
   }
@@ -286,7 +289,7 @@ describe('Mi perfil: domicilio por campos al elegir una sugerencia (#93)', () =>
   async function guardar() {
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
-    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Perfil actualizado correctamente' }))
     const put = apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')!
     return JSON.parse(String(put[1]!.body))
   }
@@ -435,7 +438,7 @@ describe('Mi perfil: correo de contacto (#122)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
-    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Perfil actualizado correctamente' }))
 
     expect(JSON.parse(String(put()![1]!.body)).correoContacto).toBe('nuevo@negocio.com')
     expect(JSON.parse(String(put()![1]!.body)).nombre).toBe('Barbería Norte')
@@ -470,7 +473,7 @@ describe('Mi perfil: teléfono (#122)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
-    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Perfil actualizado correctamente' }))
     expect(JSON.parse(String(put()![1]!.body)).telefono).toBe('4771234567')
   })
 
@@ -494,7 +497,7 @@ describe('Mi perfil: después de guardar (#122)', () => {
     window.scrollTo = vi.fn()
   })
 
-  it('C2: sube al inicio y deja el aviso de éxito visible, sin modal que atrape', async () => {
+  it('C2: sube al inicio y muestra alerta de éxito estándar tras guardar', async () => {
     responder({ ...perfilBase, direccion: direccionGuardada })
     render(<MemoryRouter><MiPerfil /></MemoryRouter>)
     await screen.findByLabelText(/Correo de contacto/)
@@ -505,16 +508,12 @@ describe('Mi perfil: después de guardar (#122)', () => {
 
     await userEvent.click(guardar)
 
-    const aviso = await screen.findByRole('status')
-    expect(aviso).toHaveTextContent('Perfil actualizado correctamente')
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Perfil actualizado correctamente' }))
     expect(window.scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }))
-    expect(screen.queryByText('¡Éxito!')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Aceptar' })).not.toBeInTheDocument()
-    // Sigue en Mi perfil y se puede seguir editando sin cerrar nada.
     expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled()
   })
 
-  it('C2: si la API falla no sube ni muestra el aviso de éxito', async () => {
+  it('C2: si la API falla no sube y muestra alerta de error con el mensaje de la API', async () => {
     apiMock.mockImplementation(async (ruta: string, opciones?: RequestInit) => {
       if (ruta === '/categorias') return [{ id: 'cabello-barba', nombre: 'Cabello y barba' }]
       if (opciones?.method === 'PUT') throw new ErrorApi(400, 'Datos inválidos')
@@ -527,8 +526,7 @@ describe('Mi perfil: después de guardar (#122)', () => {
     const guardar = await screen.findByRole('button', { name: 'Guardar cambios' })
     vi.mocked(window.scrollTo).mockClear()
     await userEvent.click(guardar)
-    await screen.findByRole('alert')
-    expect(screen.queryByText('Perfil actualizado correctamente')).not.toBeInTheDocument()
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: 'Datos inválidos' }))
     expect(window.scrollTo).not.toHaveBeenCalled()
   })
 })
@@ -561,7 +559,7 @@ describe('Mi perfil: limpieza (#116)', () => {
     expect(document.querySelector('textarea[name="referencias"]')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
-    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Perfil actualizado correctamente' }))
     const put = apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')!
     expect(JSON.parse(String(put[1]!.body))).not.toHaveProperty('referencias')
   })
@@ -596,7 +594,7 @@ describe('Mi perfil: mapa de la ubicación (UI#139, HU-N103)', () => {
   async function guardarYLeerPut() {
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
-    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Perfil actualizado correctamente' }))
     return JSON.parse(String(apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')![1]!.body))
   }
 

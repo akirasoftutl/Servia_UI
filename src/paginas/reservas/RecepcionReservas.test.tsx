@@ -1,10 +1,11 @@
 import { StrictMode } from 'react';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { vi } from 'vitest';
 import { api } from '../../servicios/api';
 import { Reservas } from './Reservas';
+import { llamadasAlertas, mockearConfirmacion, swalFireMock, ultimaAlerta } from '../../pruebas/mockAlertas';
 
 vi.mock('../../servicios/api', () => ({ api: vi.fn() }));
 
@@ -59,13 +60,6 @@ async function listo(aceptaReservas = true) {
   return vista;
 }
 
-async function abrir() {
-  const usuario = userEvent.setup();
-  await listo();
-  await usuario.click(screen.getByRole('switch'));
-  return usuario;
-}
-
 describe('Recepción de reservas (MVP-12)', () => {
   it('bloquea el estado desconocido durante la carga sin anunciar activo ni pausado', async () => {
     const carga = pendiente<{ aceptaReservas: boolean }>();
@@ -102,137 +96,172 @@ describe('Recepción de reservas (MVP-12)', () => {
   it('usa el nombre estable Recibir reservas en ambos estados', async () => {
     await listo(false);
     expect(screen.getByRole('switch', { name: 'Recibir reservas' })).not.toBeChecked();
+    mockearConfirmacion(true);
     await userEvent.click(screen.getByRole('switch', { name: 'Recibir reservas' }));
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
     await waitFor(() => expect(screen.getByRole('switch', { name: 'Recibir reservas' })).toBeChecked());
   });
 
-  it('C1 pausa con PATCH false solo después de confirmar y anuncia el resultado', async () => {
-    const usuario = await abrir();
-    expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
-    await usuario.click(screen.getByRole('button', { name: /^Pausar( reservas)?$/ }));
+  it('C1 pausa con PATCH false solo después de confirmar y anuncia el resultado con alerta de éxito', async () => {
+    await listo(true);
+    mockearConfirmacion(true);
+    await userEvent.click(screen.getByRole('switch'));
     await waitFor(() => expect(screen.getByRole('switch')).not.toBeChecked());
     expect(llamada).toHaveBeenLastCalledWith('/negocios/mio/recepcion-reservas', {
       method: 'PATCH', body: JSON.stringify({ aceptaReservas: false }),
     });
-    expect(screen.getByText('Reservas pausadas.')).toBeVisible();
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Reservas pausadas.' });
   });
 
-  it('C2 explica la visibilidad y el bloqueo de reservas nuevas antes de pausar', async () => {
-    await abrir();
-    expect(screen.getByText(/Tu perfil seguirá visible/)).toHaveTextContent('«No acepta reservas por ahora» y no podrán pedir reservas nuevas.');
+  it('C2/C4 explica la visibilidad, bloqueo y que las reservas existentes no cambian en la confirmación sin redundancia', async () => {
+    await listo(true);
+    mockearConfirmacion(false);
+    await userEvent.click(screen.getByRole('switch'));
+    const alerta = ultimaAlerta();
+    expect(alerta?.title).toBe('¿Pausar las reservas?');
+    expect(alerta?.text).toBe(
+      'Tu perfil seguirá visible. Los clientes verán «No acepta reservas por ahora» y no podrán pedir reservas nuevas. Nota: Las reservas que ya tienes no cambiarán.',
+    );
+    expect(String(alerta?.text)).not.toContain('no podrán solicitar nuevas reservas');
     expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
   });
 
-  it('C4 aclara que las reservas existentes no cambian', async () => {
-    await abrir();
-    expect(screen.getByText(/Las reservas que ya tienes no cambiarán/)).toBeVisible();
+  it('cancelar conserva el estado activo y no envía PATCH', async () => {
+    await listo(true);
+    mockearConfirmacion(false);
+    await userEvent.click(screen.getByRole('switch'));
+    expect(screen.getByRole('switch')).toBeChecked();
+    expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
   });
 
-  it('cancelar conserva el estado activo y no envía PATCH', async () => {
-    const usuario = await abrir();
-    await usuario.click(screen.getByRole('button', { name: 'Cancelar' }));
-    expect(screen.queryByText('¿Pausar las reservas?')).not.toBeInTheDocument();
+  it('configura la confirmación de pausa con foco inicial en Cancelar, Esc, retorno de foco y sin cierre externo', async () => {
+    await listo(true);
+    mockearConfirmacion(false, 'esc');
+    await userEvent.click(screen.getByRole('switch'));
+    expect(ultimaAlerta()).toMatchObject({
+      icon: 'warning',
+      title: '¿Pausar las reservas?',
+      confirmButtonText: 'Pausar',
+      cancelButtonText: 'Cancelar',
+      showCancelButton: true,
+      focusCancel: true,
+      allowEscapeKey: true,
+      returnFocus: true,
+      allowOutsideClick: false,
+      customClass: expect.objectContaining({
+        popup: 'servia-swal-popup servia-swal-popup--peligro',
+      }),
+    });
     expect(screen.getByRole('switch')).toBeChecked();
+    expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
+  });
+
+  it('pide confirmación con textos correctos al reanudar y cancelar no llama a la API', async () => {
+    await listo(false);
+    mockearConfirmacion(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Reanudar' }));
+    expect(ultimaAlerta()).toMatchObject({
+      icon: 'question',
+      title: '¿Reanudar las reservas?',
+      text: 'Tu perfil seguirá visible y los clientes podrán solicitar nuevas reservas. Nota: Las reservas que ya tienes no cambiarán.',
+      confirmButtonText: 'Reanudar',
+      cancelButtonText: 'Cancelar',
+      showCancelButton: true,
+      focusCancel: false,
+      allowEscapeKey: true,
+      returnFocus: true,
+      allowOutsideClick: false,
+    });
+    expect(screen.getByRole('switch')).not.toBeChecked();
+    expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
+  });
+
+  it('el error al pausar conserva el estado activo, muestra alerta de error y permite reintentar', async () => {
+    await listo(true);
+    responderPatch(new Error('Sin conexión'));
+    mockearConfirmacion(true);
+    await userEvent.click(screen.getByRole('switch'));
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: errorCambio }));
+    expect(screen.getByRole('switch')).toBeChecked();
+
+    responderPatch(null);
+    mockearConfirmacion(true);
+    await userEvent.click(screen.getByRole('switch'));
+    await waitFor(() => expect(screen.getByRole('switch')).not.toBeChecked());
+    expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Reservas pausadas.' });
+  });
+
+  it('evita abrir una segunda confirmación mientras la primera sigue abierta', async () => {
+    await listo(true);
+    const dialogo = pendiente<{ isConfirmed: boolean; isDenied: boolean; isDismissed: boolean }>();
+    swalFireMock.mockReturnValueOnce(dialogo.promesa);
+    const interruptor = screen.getByRole('switch');
+    await userEvent.click(interruptor);
+    await userEvent.click(interruptor);
+    expect(swalFireMock).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      dialogo.resolver({ isConfirmed: false, isDenied: false, isDismissed: true });
+    });
+    expect(interruptor).toBeChecked();
     expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
   });
 
   it('C3 recupera la pausa al recargar y permite reanudar desde el aviso con PATCH true', async () => {
     const vista = mostrar();
     await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
+    mockearConfirmacion(true);
     await userEvent.click(screen.getByRole('switch'));
-    await userEvent.click(screen.getByRole('button', { name: 'Pausar' }));
-    await screen.findByText('Reservas pausadas.');
+    await waitFor(() => expect(screen.getByRole('switch')).not.toBeChecked());
     vista.unmount();
     mostrar();
     await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
     expect(screen.getByRole('switch')).not.toBeChecked();
     expect(screen.getByText(/Pausaste las reservas/)).toBeVisible();
+    mockearConfirmacion(true);
     await userEvent.click(screen.getByRole('button', { name: 'Reanudar' }));
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
     await waitFor(() => expect(screen.getByRole('switch')).toBeChecked());
     expect(llamada).toHaveBeenLastCalledWith('/negocios/mio/recepcion-reservas', {
       method: 'PATCH', body: JSON.stringify({ aceptaReservas: true }),
     });
-    expect(screen.getByText('Reservas reanudadas.')).toBeVisible();
+    expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Reservas reanudadas.' });
     expect(screen.queryByText(/Pausaste las reservas/)).not.toBeInTheDocument();
   });
 
-  it('el error al reanudar conserva la pausa y permite repetir', async () => {
+  it('el error al reanudar conserva la pausa, muestra alerta de error y permite repetir', async () => {
     await listo(false);
     responderPatch(new Error('Sin conexión'));
+    mockearConfirmacion(true);
     await userEvent.click(screen.getByRole('button', { name: 'Reanudar' }));
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(errorCambio);
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: errorCambio }));
     expect(screen.getByRole('switch')).not.toBeChecked();
-    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' })).toBeEnabled();
     responderPatch(null);
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
+    mockearConfirmacion(true);
+    await userEvent.click(screen.getByRole('button', { name: 'Reanudar' }));
     await waitFor(() => expect(screen.getByRole('switch')).toBeChecked());
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Reservas reanudadas.' });
   });
 
-  it('el error de pausa se anuncia dentro del diálogo y permite reintentar', async () => {
-    const usuario = await abrir();
-    responderPatch(new Error('Sin conexión'));
-    await usuario.click(screen.getByRole('button', { name: /^Pausar( reservas)?$/ }));
-    const modal = screen.getByRole('dialog', { name: '¿Pausar las reservas?' });
-    expect(await within(modal).findByRole('alert')).toHaveTextContent(errorCambio);
-    expect(screen.getByRole('switch', { hidden: true })).toBeChecked();
-    responderPatch(null);
-    await usuario.click(within(modal).getByRole('button', { name: 'Pausar' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(screen.getByRole('switch')).not.toBeChecked();
-  });
-
-  it('el diálogo tiene nombre, descripción, foco inicial, fondo inerte y restaura foco con Escape', async () => {
-    const usuario = await abrir();
-    const modal = screen.getByRole('dialog', { name: '¿Pausar las reservas?' });
-    expect(modal).toHaveAttribute('aria-modal', 'true');
-    expect(modal).toHaveAccessibleDescription(/Tu perfil seguirá visible.*Las reservas que ya tienes no cambiarán/);
-    expect(within(modal).getByRole('button', { name: 'Cancelar' })).toHaveFocus();
-    expect(screen.getByRole('switch', { hidden: true }).closest('[inert]')).not.toBeNull();
-    await usuario.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByRole('switch')).toHaveFocus();
-    expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
-  });
-
-  it('confina Tab y Shift+Tab al diálogo', async () => {
-    const usuario = await abrir();
-    const cancelar = screen.getByRole('button', { name: 'Cancelar' });
-    const pausar = screen.getByRole('button', { name: /^Pausar( reservas)?$/ });
-    await usuario.tab({ shift: true });
-    expect(pausar).toHaveFocus();
-    await usuario.tab();
-    expect(cancelar).toHaveFocus();
-    await usuario.tab();
-    expect(pausar).toHaveFocus();
-  });
-
-  it('bloquea acciones duplicadas y mantiene el foco en el diálogo durante PATCH', async () => {
-    const usuario = await abrir();
+  it('bloquea acciones duplicadas durante PATCH', async () => {
+    await listo(true);
     const cambio = pendiente<object>();
     responderPatch(cambio.promesa);
-    await usuario.click(screen.getByRole('button', { name: /^Pausar( reservas)?$/ }));
-    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Pausando...' })).toBeDisabled();
-    await usuario.keyboard('{Escape}{Tab}');
-    expect(screen.getByRole('dialog')).toHaveFocus();
+    mockearConfirmacion(true);
+    await userEvent.click(screen.getByRole('switch'));
+    await waitFor(() => expect(screen.getByRole('switch')).toBeDisabled());
+    expect(screen.getByRole('switch')).toHaveTextContent('Pausando...');
     expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(1);
     await act(async () => cambio.resolver({}));
-    expect(screen.getByRole('switch')).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
+    expect(llamadasAlertas().at(-1)).toMatchObject({ icon: 'success', text: 'Reservas pausadas.' });
   });
 
   it.each(['éxito', 'error'])('descarta un GET antiguo (%s) que llega después de PATCH', async (resultado) => {
     const antiguo = pendiente<{ aceptaReservas: boolean }>();
     responderPerfil(antiguo.promesa);
-    mostrar(true); // StrictMode deja un GET anterior pendiente tras limpiar el primer efecto.
+    mostrar(true);
     await waitFor(() => expect(screen.getByRole('switch')).toBeEnabled());
+    mockearConfirmacion(true);
     await userEvent.click(screen.getByRole('switch'));
-    await userEvent.click(screen.getByRole('button', { name: /^Pausar( reservas)?$/ }));
-    await screen.findByText('Reservas pausadas.');
+    await waitFor(() => expect(screen.getByRole('switch')).not.toBeChecked());
     await act(async () => {
       if (resultado === 'éxito') antiguo.resolver({ aceptaReservas: true });
       else antiguo.rechazar(new Error('Respuesta tardía'));

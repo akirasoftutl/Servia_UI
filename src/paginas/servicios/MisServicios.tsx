@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EsqueletoLista, EstadoError, EstadoVacio } from '../../componentes/panel/EstadosPanel';
@@ -9,7 +9,7 @@ import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
 import { nombreDeCategoria, type CategoriaDeServicio } from './categorias';
-import { CircleAlert, Clock, Info, Plus, Tags, X } from 'lucide-react';
+import { CircleAlert, Clock, Plus, Tags } from 'lucide-react';
 
 function iniciales(nombre: string) {
   const palabras = nombre.trim().split(/\s+/);
@@ -32,8 +32,6 @@ export function MisServicios() {
   const [filtro, setFiltro] = useState<'todos' | 'activos' | 'inactivos'>('todos');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
-  const { state } = useLocation();
-  const [alerta, setAlerta] = useState<string>(state?.mensaje ?? '');
 
   const [revision, setRevision] = useState(0);
   // Resumen del catálogo completo para el encabezado; solo se actualiza con la vista «Todos».
@@ -64,25 +62,6 @@ export function MisServicios() {
   return (
     <div className="panel-pagina">
       <div className="panel-contenedor">
-
-        {alerta && (
-          <div role="status" className="panel-alerta panel-alerta--info panel-servicio-alerta">
-            <span className="panel-alerta-icono" aria-hidden="true">
-              <Info />
-            </span>
-            <div className="panel-alerta-contenido">
-              <p>{alerta}</p>
-            </div>
-            <button
-              type="button"
-              className="panel-servicio-alerta-cerrar"
-              aria-label="Cerrar aviso"
-              onClick={() => setAlerta('')}
-            >
-              <X aria-hidden="true" />
-            </button>
-          </div>
-        )}
 
         <EncabezadoPanel
           grupo="negocio"
@@ -174,12 +153,11 @@ export function MisServicios() {
                   <div className="servicio-acciones">
                     <BotonPanel variante="secundario" tamano="sm" onClick={() => navigate(`/servicios/${srv.id}`)}>Editar</BotonPanel>
                     <AccionesServicio id={srv.id} nombre={srv.nombre} activo={srv.activo}
-                      alMensaje={setAlerta}
                       alCambiarEstado={activo => {
                         setServicios(prev => prev.map(servicio => servicio.id === srv.id ? { ...servicio, activo } : servicio));
                         void cargarServicios();
                       }}
-                      alEliminar={mensaje => { setAlerta(mensaje); void cargarServicios(); }} />
+                      alEliminar={() => { void cargarServicios(); }} />
                   </div>
 
                 </article>

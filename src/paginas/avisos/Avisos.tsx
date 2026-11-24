@@ -13,6 +13,7 @@ import {
   type Aviso,
   type EstadoPermisoPush,
 } from '../../servicios/notificaciones'
+import { alertaDeError, exito } from '../../servicios/alertas'
 import { mensajeDeError } from '../../servicios/mensajeDeError'
 import '../../estilos/panel.css'
 
@@ -35,12 +36,9 @@ export function Avisos() {
   const [cargando, setCargando] = useState(true)
   const [cargandoMas, setCargandoMas] = useState(false)
   const [error, setError] = useState('')
-  const [errorMas, setErrorMas] = useState('')
   const [revision, setRevision] = useState(0)
   const [estadoPermiso, setEstadoPermiso] = useState<EstadoPermisoPush>('cargando')
   const [activandoPush, setActivandoPush] = useState(false)
-  const [pushActivadoAhora, setPushActivadoAhora] = useState(false)
-  const [errorPush, setErrorPush] = useState('')
   const abriendoRef = useRef<string | null>(null)
   const cargaInicialCompleta = useRef(false)
 
@@ -95,7 +93,6 @@ export function Avisos() {
   async function cargarMas() {
     if (!siguiente || cargandoMas) return
     setCargandoMas(true)
-    setErrorMas('')
     try {
       const datos = await listarAvisos(siguiente)
       setItems((actuales) => {
@@ -105,7 +102,7 @@ export function Avisos() {
       setSiguiente(datos.siguiente)
       actualizarNoLeidas(datos.noLeidas)
     } catch (causa: unknown) {
-      setErrorMas(mensajeDeError(causa, 'No se pudieron cargar más avisos. Inténtalo de nuevo.'))
+      await alertaDeError(causa, 'No se pudieron cargar más avisos. Inténtalo de nuevo.')
     } finally {
       setCargandoMas(false)
     }
@@ -114,16 +111,14 @@ export function Avisos() {
   async function activarPush() {
     if (activandoPush) return
     setActivandoPush(true)
-    setErrorPush('')
-    setPushActivadoAhora(false)
     try {
       const resultado = await activarNotificacionesPush()
       setEstadoPermiso(resultado)
       if (resultado === 'granted') {
-        setPushActivadoAhora(true)
+        await exito('Notificaciones activadas.')
       }
     } catch (causa: unknown) {
-      setErrorPush(mensajeDeError(causa, 'No se pudieron activar las notificaciones. Inténtalo de nuevo.'))
+      await alertaDeError(causa, 'No se pudieron activar las notificaciones. Inténtalo de nuevo.')
     } finally {
       setActivandoPush(false)
     }
@@ -197,24 +192,6 @@ export function Avisos() {
           </div>
         )}
 
-        {pushActivadoAhora && (
-          <div className="panel-alerta panel-alerta--exito" role="status">
-            <span className="panel-alerta-icono" aria-hidden="true">
-              <Bell aria-hidden="true" />
-            </span>
-            <div className="panel-alerta-contenido">Notificaciones activadas.</div>
-          </div>
-        )}
-
-        {errorPush && (
-          <div className="panel-alerta panel-alerta--error" role="alert">
-            <span className="panel-alerta-icono" aria-hidden="true">
-              <CircleAlert aria-hidden="true" />
-            </span>
-            <div className="panel-alerta-contenido">{errorPush}</div>
-          </div>
-        )}
-
         <TarjetaPanel
           titulo="Bandeja de avisos"
           tituloId="avisos-lista-titulo"
@@ -265,15 +242,6 @@ export function Avisos() {
                   </li>
                 ))}
               </ul>
-
-              {errorMas && (
-                <div className="panel-alerta panel-alerta--error" role="alert">
-                  <span className="panel-alerta-icono" aria-hidden="true">
-                    <CircleAlert aria-hidden="true" />
-                  </span>
-                  <div className="panel-alerta-contenido">{errorMas}</div>
-                </div>
-              )}
 
               {siguiente && (
                 <div className="panel-paginacion">
