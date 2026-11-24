@@ -4,12 +4,26 @@ import { useAuth } from '../../contextos/AuthContext';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import { error as alertaError, exito as alertaExito } from '../../servicios/alertas';
 import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
-import { atributosErrorCampo, idErrorCampo } from '../../utilidades/validacion';
+import {
+  LONGITUD_MINIMA_CONTRASENA,
+  atributosErrorCampo,
+  enfocarPrimerError,
+  idErrorCampo,
+  tieneErrores,
+  validarCambioContrasena,
+  type ErroresFormulario,
+  type ValoresCambioContrasena,
+} from '../../utilidades/validacion';
 
-type Campo = 'actual' | 'nueva' | 'confirmacion';
-type Errores = Partial<Record<Campo, string>>;
+type Campo = keyof ValoresCambioContrasena;
+type Errores = ErroresFormulario<Campo>;
 
-const MINIMO = 8;
+const ORDEN_CAMPOS: readonly Campo[] = ['actual', 'nueva', 'confirmacion'];
+const MAPA_IDS: Record<Campo, string> = {
+  actual: 'contrasena-actual',
+  nueva: 'contrasena-nueva',
+  confirmacion: 'contrasena-confirmacion',
+};
 const ACTUAL_INCORRECTA = 'La contraseña actual no es correcta.';
 
 const etiquetas: Record<Campo, string> = {
@@ -21,23 +35,18 @@ const etiquetas: Record<Campo, string> = {
 // MVP-04: con la sesión iniciada, el negocio cambia su contraseña con Firebase Authentication (D9).
 export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean }) {
   const { usuario } = useAuth();
-  const [valores, setValores] = useState<Record<Campo, string>>({ actual: '', nueva: '', confirmacion: '' });
+  const [valores, setValores] = useState<ValoresCambioContrasena>({ actual: '', nueva: '', confirmacion: '' });
   const [errores, setErrores] = useState<Errores>({});
   const [guardando, setGuardando] = useState(false);
-  const campos = {
-    actual: useRef<HTMLInputElement>(null),
-    nueva: useRef<HTMLInputElement>(null),
-    confirmacion: useRef<HTMLInputElement>(null),
-  };
-  const campoPorEnfocar = useRef<Campo | null>(null);
+  const pendienteEnfocar = useRef(false);
 
   // El foco va al primer campo con error, ya habilitado (mientras se guarda los campos están deshabilitados).
   useEffect(() => {
-    if (!guardando && campoPorEnfocar.current) {
-      campos[campoPorEnfocar.current].current?.focus();
-      campoPorEnfocar.current = null;
+    if (!guardando && pendienteEnfocar.current) {
+      enfocarPrimerError(errores, ORDEN_CAMPOS, MAPA_IDS);
+      pendienteEnfocar.current = false;
     }
-  });
+  }, [guardando, errores]);
 
   if (!usuario) return null;
 
@@ -47,30 +56,15 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
 
   const entraConContrasena = usuario.providerData.some((p) => p.providerId === 'password');
 
-  const validar = (): Errores => {
-    const nuevos: Errores = {};
-    if (!valores.actual) nuevos.actual = 'Escribe tu contraseña actual.';
-    if (valores.nueva.length < MINIMO) {
-      nuevos.nueva = `La contraseña nueva debe tener al menos ${MINIMO} caracteres.`;
-    } else if (valores.nueva === valores.actual) {
-      nuevos.nueva = 'La contraseña nueva debe ser distinta de la actual.';
-    }
-    if (!nuevos.nueva && valores.confirmacion !== valores.nueva) {
-      nuevos.confirmacion = 'Las contraseñas no coinciden.';
-    }
-    return nuevos;
-  };
-
   const mostrarErrores = (nuevos: Errores) => {
+    pendienteEnfocar.current = true;
     setErrores(nuevos);
-    const primero = (['actual', 'nueva', 'confirmacion'] as Campo[]).find((c) => nuevos[c]);
-    campoPorEnfocar.current = primero ?? null;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const nuevos = validar();
-    if (Object.keys(nuevos).length > 0) {
+    const nuevos = validarCambioContrasena(valores);
+    if (tieneErrores(nuevos)) {
       mostrarErrores(nuevos);
       return;
     }
@@ -108,7 +102,7 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
           </Titulo>
           <p className="panel-tarjeta-subtitulo">
             {entraConContrasena
-              ? `Escribe tu contraseña actual y la nueva. La nueva debe tener al menos ${MINIMO} caracteres.`
+              ? `Escribe tu contraseña actual y la nueva. La nueva debe tener al menos ${LONGITUD_MINIMA_CONTRASENA} caracteres.`
               : 'Tu cuenta entra con Google; la contraseña se administra en tu cuenta de Google.'}
           </p>
         </div>
@@ -117,14 +111,13 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
       {entraConContrasena && (
         <form onSubmit={handleSubmit} noValidate>
           <div className="row g-3">
-            {(['actual', 'nueva', 'confirmacion'] as Campo[]).map((campo) => {
-              const id = `contrasena-${campo}`;
+            {ORDEN_CAMPOS.map((campo) => {
+              const id = MAPA_IDS[campo];
               const error = errores[campo];
               return (
                 <div className="col-12 col-md-4" key={campo}>
                   <label htmlFor={id} className="form-label">{etiquetas[campo]}</label>
                   <input
-                    ref={campos[campo]}
                     id={id}
                     type="password"
                     autoComplete={campo === 'actual' ? 'current-password' : 'new-password'}

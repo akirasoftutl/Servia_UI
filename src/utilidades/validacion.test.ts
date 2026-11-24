@@ -19,6 +19,7 @@ import {
   primerCampoConError,
   requerido,
   tieneErrores,
+  validarCambioContrasena,
   validarCodigoPostal,
   validarCorreo,
   validarDuracion,
@@ -108,6 +109,23 @@ describe('utilidades de validación única', () => {
     expect(validarMotivo('muy corto', 'del rechazo')).toBe('El motivo debe tener al menos 20 caracteres.')
     expect(validarMotivo('a'.repeat(501), 'de la cancelación')).toBe('El motivo no puede exceder 500 caracteres.')
     expect(validarMotivo('Motivo válido con suficiente detalle para el cliente.', 'del rechazo')).toBe('')
+  })
+
+  it('valida el cambio de contraseña conservando reglas y textos sin recortar espacios', () => {
+    expect(validarCambioContrasena({ actual: '', nueva: 'nueva-5678', confirmacion: 'nueva-5678' })).toEqual({
+      actual: 'Escribe tu contraseña actual.',
+    })
+    expect(validarCambioContrasena({ actual: 'vieja-1234', nueva: 'corta12', confirmacion: 'corta12' })).toEqual({
+      nueva: 'La contraseña nueva debe tener al menos 8 caracteres.',
+    })
+    expect(validarCambioContrasena({ actual: 'misma-1234', nueva: 'misma-1234', confirmacion: 'misma-1234' })).toEqual({
+      nueva: 'La contraseña nueva debe ser distinta de la actual.',
+    })
+    expect(validarCambioContrasena({ actual: 'vieja-1234', nueva: 'nueva-5678', confirmacion: 'nueva-0000' })).toEqual({
+      confirmacion: 'Las contraseñas no coinciden.',
+    })
+    expect(validarCambioContrasena({ actual: 'vieja-1234', nueva: 'ocho-888', confirmacion: 'ocho-888' })).toEqual({})
+    expect(validarCambioContrasena({ actual: '   ', nueva: '   12345', confirmacion: '   12345' })).toEqual({})
   })
 
   it('genera atributos accesibles, enfoca el primer campo con error y puede mostrar resumen de aviso', () => {

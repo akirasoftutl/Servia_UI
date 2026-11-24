@@ -17,6 +17,32 @@ export const MENSAJE_CODIGO_POSTAL_INVALIDO =
 export const MENSAJE_PRECIO_INVALIDO = 'El precio debe ser 0 o más.'
 export const MENSAJE_DURACION_INVALIDA = 'La duración debe ser de al menos 1 minuto.'
 export const MENSAJE_RESUMEN_VALIDACION = 'Revisa los campos marcados antes de continuar.'
+export const LONGITUD_MINIMA_CONTRASENA = 8
+
+export interface ValoresCambioContrasena {
+  actual: string
+  nueva: string
+  confirmacion: string
+}
+
+export function validarCambioContrasena(
+  valores: ValoresCambioContrasena,
+  minimo = LONGITUD_MINIMA_CONTRASENA,
+): ErroresFormulario<'actual' | 'nueva' | 'confirmacion'> {
+  const errores: ErroresFormulario<'actual' | 'nueva' | 'confirmacion'> = {}
+  if (!valores.actual) {
+    errores.actual = 'Escribe tu contraseña actual.'
+  }
+  if (valores.nueva.length < minimo) {
+    errores.nueva = `La contraseña nueva debe tener al menos ${minimo} caracteres.`
+  } else if (valores.nueva === valores.actual) {
+    errores.nueva = 'La contraseña nueva debe ser distinta de la actual.'
+  }
+  if (!errores.nueva && valores.confirmacion !== valores.nueva) {
+    errores.confirmacion = 'Las contraseñas no coinciden.'
+  }
+  return errores
+}
 
 export function contarCaracteres(texto: string, contarCodigoPuntos = false): number {
   const limpio = texto.trim()
