@@ -29,6 +29,12 @@ export interface FotosNegocio {
   galeria: FotoNegocio[]
 }
 
+// Imagen de un servicio tal como la devuelve la API (HU-N27, RN-15).
+export interface ImagenServicio {
+  id: string
+  url: string
+}
+
 // Llama a la API de Servia. Si hay sesión, agrega el token de Firebase.
 // Ejemplo: `const perfil = await api<Perfil>('/negocios/mio')`.
 export async function api<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
@@ -67,4 +73,22 @@ export function subirFotoNegocio(archivo: File, tipo: TipoFotoNegocio): Promise<
 // Elimina una foto del negocio autenticado por su identificador.
 export function eliminarFotoNegocio(fotoId: string): Promise<void> {
   return api<void>(`/negocios/mio/fotos/${encodeURIComponent(fotoId)}`, { method: 'DELETE' })
+}
+
+// Sube una imagen a un servicio del negocio autenticado (multipart/form-data, campo `archivo`).
+export function subirImagenServicio(servicioId: string, archivo: File): Promise<ImagenServicio> {
+  const cuerpo = new FormData()
+  cuerpo.append('archivo', archivo)
+  return api<ImagenServicio>(`/negocios/mio/servicios/${encodeURIComponent(servicioId)}/imagenes`, {
+    method: 'POST',
+    body: cuerpo,
+  })
+}
+
+// Quita una imagen de un servicio del negocio autenticado.
+export function eliminarImagenServicio(servicioId: string, imagenId: string): Promise<void> {
+  return api<void>(
+    `/negocios/mio/servicios/${encodeURIComponent(servicioId)}/imagenes/${encodeURIComponent(imagenId)}`,
+    { method: 'DELETE' },
+  )
 }
