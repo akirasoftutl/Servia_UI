@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Minus, Plus, CircleHelp } from 'lucide-react';
 import '../../estilos/panel.css';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 
 const grupos = [
   { titulo: 'Reservas', preguntas: [
@@ -28,18 +30,18 @@ export function Ayuda() {
     .filter(grupo => grupo.preguntas.length);
 
   return <div className="panel-pagina"><div className="panel-contenedor">
-    <header className="panel-encabezado"><div className="panel-encabezado-textos">
-      <EyebrowPanel grupo="configuracion" icono={CircleHelp} />
-      <h1 className="panel-titulo">Ayuda</h1>
-      <p className="panel-subtitulo">Encuentra respuestas sobre cómo usar Servia.</p>
-    </div></header>
-    <section className="panel-tarjeta" aria-label="Buscar preguntas frecuentes">
+    <EncabezadoPanel
+      grupo="configuracion"
+      icono={CircleHelp}
+      titulo="Ayuda"
+      subtitulo="Encuentra respuestas sobre cómo usar Servia."
+    />
+    <TarjetaPanel ariaLabel="Buscar preguntas frecuentes">
       <label htmlFor="ayuda-busqueda" className="form-label">Buscar preguntas</label>
       <input id="ayuda-busqueda" type="search" className="form-control" value={busqueda} onChange={e => setBusqueda(e.target.value)} aria-describedby="ayuda-indicacion" />
       <p id="ayuda-indicacion" className="panel-ayuda">Busca en las preguntas y sus respuestas.</p>
-    </section>
-    {filtrados.map(grupo => <section className="panel-tarjeta" aria-labelledby={`grupo-${normalizar(grupo.titulo).replaceAll(' ', '-')}`} key={grupo.titulo}>
-      <div className="panel-tarjeta-encabezado"><h2 id={`grupo-${normalizar(grupo.titulo).replaceAll(' ', '-')}`} className="panel-tarjeta-titulo">{grupo.titulo}</h2></div>
+    </TarjetaPanel>
+    {filtrados.map(grupo => <TarjetaPanel titulo={grupo.titulo} tituloId={`grupo-${normalizar(grupo.titulo).replaceAll(' ', '-')}`} key={grupo.titulo}>
       <div className="panel-lista">{grupo.preguntas.map(p => {
         const abierta = abiertas.includes(p.id);
         return <div className="panel-acordeon" key={p.id}>
@@ -49,11 +51,11 @@ export function Ayuda() {
           <div id={`respuesta-${p.id}`} role="region" aria-labelledby={`pregunta-${p.id}`} hidden={!abierta}><p className="panel-item-texto">{p.respuesta}</p></div>
         </div>;
       })}</div>
-    </section>)}
-    {!filtrados.length && <section className="panel-tarjeta"><div className="panel-estado" role="status">
+    </TarjetaPanel>)}
+    {!filtrados.length && <TarjetaPanel><div className="panel-estado" role="status">
       <h2 className="panel-estado-titulo">No encontramos preguntas</h2>
       <p className="panel-estado-texto">Prueba con otras palabras o limpia la búsqueda.</p>
-      <button className="btn-servia-secondary" onClick={() => setBusqueda('')}>Limpiar búsqueda</button>
-    </div></section>}
+      <BotonPanel variante="secundario" onClick={() => setBusqueda('')}>Limpiar búsqueda</BotonPanel>
+    </div></TarjetaPanel>}
   </div></div>;
 }

@@ -36,7 +36,7 @@ it.each([[5,20],[100,1000]])('C1/C2 envía límites %i/%i recortados, sin uid, m
   expect(apiMock).toHaveBeenLastCalledWith('/soporte/reportes', { method: 'POST', body: JSON.stringify({ asunto, descripcion }) });
   const item = screen.getByRole('article');
   expect(within(item).getByRole('heading')).toHaveTextContent(asunto);
-  expect(within(item).getByText('Abierto')).toHaveClass('panel-insignia--aviso');
+  expect(within(item).getByText('Abierto')).toHaveClass('panel-etiqueta', 'panel-etiqueta--aviso');
   expect(item.querySelector('time')).toHaveAttribute('datetime', reporte.creadaEn);
   expect(item.querySelector('time')).toHaveTextContent(/19 nov 2026/);
   expect(screen.getByLabelText('Asunto')).toHaveValue('');
