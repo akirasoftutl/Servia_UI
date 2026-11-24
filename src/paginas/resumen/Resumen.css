@@ -21,20 +21,10 @@
   gap: var(--sv-esp-4);
   padding: var(--sv-esp-5);
   overflow: hidden;
-  border: calc(var(--sv-esp-1) / 4) solid var(--sv-acento-borde);
+  border: calc(var(--sv-esp-1) / 4) solid var(--sv-primario-borde);
   border-radius: var(--sv-radio-lg);
   background: var(--sv-superficie);
   box-shadow: var(--sv-sombra-panel);
-}
-
-.resumen-hero::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: var(--sv-esp-1);
-  background: var(--sv-degradado);
-  content: '';
 }
 
 .resumen-hero-cabecera {
