@@ -3,7 +3,8 @@ import { ShieldAlert, Clock } from 'lucide-react'
 import { api } from '../../servicios/api'
 import { mensajeDeError } from '../../servicios/mensajeDeError'
 import './Horario.css'
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel'
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel'
+import { EstadoCargando, EstadoError } from '../../componentes/panel/EstadosPanel'
 
 const DIAS = [
   { clave: 'lunes', nombre: 'Lunes' },
@@ -347,14 +348,7 @@ export function Horario() {
   if (cargando) {
     return (
       <div className="panel-pagina panel-pagina--centrada">
-        <div className="panel-estado">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-          <p className="panel-estado-texto">
-            Cargando tu horario...
-          </p>
-        </div>
+        <EstadoCargando mensaje="Cargando tu horario..." />
       </div>
     )
   }
@@ -363,18 +357,13 @@ export function Horario() {
     return (
       <div className="panel-pagina">
         <div className="panel-contenedor horario-container">
-          <div className="panel-tarjeta panel-estado" role="alert">
-            <div className="panel-estado-icono panel-estado-icono--error">!</div>
-            <h1 className="panel-estado-titulo">Algo salió mal</h1>
-            <p className="panel-estado-texto">{errorCarga}</p>
-            <button
-              type="button"
-              className="btn-servia-primary"
-              onClick={reintentarCarga}
-            >
-              Intentar de nuevo
-            </button>
-          </div>
+          <EstadoError
+            titulo="Algo salió mal"
+            mensaje={errorCarga}
+            textoReintentar="Intentar de nuevo"
+            onReintentar={reintentarCarga}
+            encabezado="h1"
+          />
         </div>
       </div>
     )
@@ -383,29 +372,25 @@ export function Horario() {
   return (
     <div className="panel-pagina">
       <div className="panel-contenedor horario-container" inert={dialogoAbierto}>
-        <header className="panel-encabezado">
-          <div>
-            <EyebrowPanel grupo="negocio" icono={Clock} />
-            <h1 className="panel-titulo">Horario de atención</h1>
-            <p className="panel-subtitulo">
-              Define qué días trabaja tu negocio y en qué horario puedes recibir
-              reservas.
-            </p>
-
-            <div className="horario-meta">
-              <span
-                className={`panel-insignia ${
-                  configurado ? 'panel-insignia--exito' : 'panel-insignia--aviso'
-                }`}
-              >
-                {configurado ? 'Horario configurado' : 'Horario pendiente'}
-              </span>
-              <span className="horario-meta-texto">
-                {diasActivos} de 7 días laborables
-              </span>
-            </div>
+        <EncabezadoPanel
+          grupo="negocio"
+          icono={Clock}
+          titulo="Horario de atención"
+          subtitulo="Define qué días trabaja tu negocio y en qué horario puedes recibir reservas."
+        >
+          <div className="horario-meta">
+            <span
+              className={`panel-insignia ${
+                configurado ? 'panel-insignia--exito' : 'panel-insignia--aviso'
+              }`}
+            >
+              {configurado ? 'Horario configurado' : 'Horario pendiente'}
+            </span>
+            <span className="horario-meta-texto">
+              {diasActivos} de 7 días laborables
+            </span>
           </div>
-        </header>
+        </EncabezadoPanel>
 
         {!configurado && (
           <div className="panel-alerta panel-alerta--aviso" role="status">

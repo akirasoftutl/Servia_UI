@@ -2,9 +2,10 @@ import { useState, useEffect, useRef, type ReactNode, type FormEvent } from 'rea
 import { CalendarOff } from 'lucide-react';
 import { api, ErrorApi } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
-import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import { EstadoCargando, EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
 import './Bloqueos.css';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 interface Bloqueo {
   id: string;
@@ -208,18 +209,17 @@ export function Bloqueos() {
     <div className="panel-pagina">
       <div className="panel-contenedor bloqueos-container" inert={mostrarConflicto || quitarId !== null}>
 
-        <header className="panel-encabezado">
-          <div>
-            <EyebrowPanel grupo="negocio" icono={CalendarOff} />
-            <h1 className="panel-titulo">Bloqueos de horario</h1>
-            <p className="panel-subtitulo">Administra los días u horas en los que no atenderás.</p>
-          </div>
-        </header>
+        <EncabezadoPanel
+          grupo="negocio"
+          icono={CalendarOff}
+          titulo="Bloqueos de horario"
+          subtitulo="Administra los días u horas en los que no atenderás."
+        />
 
         {alerta && <div role="status" className="panel-alerta panel-alerta--exito">{alerta}</div>}
         {error && <div role="alert" className="panel-alerta panel-alerta--error bloqueos-alerta-error">{error} <button className="btn-servia-secondary btn-servia-sm" onClick={() => void cargarBloqueos()}>Reintentar</button></div>}
 
-        <div className="panel-tarjeta">
+        <TarjetaPanel>
           <div className="bloqueos-grid">
             
             {/* FORMULARIO */}
@@ -281,10 +281,7 @@ export function Bloqueos() {
             <div className="bloqueos-list">
               <h2 className="panel-tarjeta-titulo bloqueos-columna-titulo">Tus bloqueos</h2>
 
-              {cargando && <div className="panel-estado">
-                <div className="spinner-border" aria-hidden="true" />
-                <p className="panel-estado-texto">Cargando...</p>
-              </div>}
+              {cargando && <EstadoCargando mensaje="Cargando..." />}
               {!cargando && !error && bloqueos.length === 0 && <EstadoVacio
                 icono={CalendarOff}
                 titulo="Tu agenda no tiene bloqueos"
@@ -320,7 +317,7 @@ export function Bloqueos() {
               )}
             </div>
           </div>
-        </div>
+        </TarjetaPanel>
 
       </div>
         {/* MODAL DE CONFLICTO 409 */}

@@ -17,7 +17,7 @@
 .horario-meta-texto {
   color: var(--sv-texto-suave);
   font-size: var(--sv-texto-sm);
-  font-weight: 650;
+  font-weight: 600;
 }
 
 /* ---------- Tarjeta semanal ---------- */
@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sv-esp-5);
-  padding: 28px 30px 24px;
+  padding: var(--sv-esp-5);
   border-bottom: 1px solid var(--sv-borde);
 }
 
@@ -43,23 +43,24 @@
   align-items: center;
   justify-content: center;
   min-width: 88px;
-  padding: 10px 14px;
+  padding: var(--sv-esp-2) var(--sv-esp-4);
   border-radius: var(--sv-radio-md);
-  background: var(--sv-acento-suave);
-  color: var(--sv-acento);
+  background: var(--sv-primario-suave);
+  color: var(--sv-en-primario-suave);
 }
 
 .horario-card-resumen strong {
   font-family: var(--sv-fuente-titulos);
-  font-size: 24px;
-  font-weight: 800;
+  font-size: var(--sv-titulo-pagina);
+  font-weight: 700;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .horario-card-resumen span {
-  margin-top: 4px;
-  font-size: 11px;
-  font-weight: 700;
+  margin-top: var(--sv-esp-1);
+  font-size: var(--sv-texto-xs);
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -80,15 +81,15 @@
 .horario-fila {
   display: grid;
   grid-template-columns: minmax(190px, 0.72fr) minmax(370px, 1.28fr);
-  gap: 10px 28px;
+  gap: var(--sv-esp-3) var(--sv-esp-5);
   align-items: center;
-  padding: 16px 30px;
-  border-bottom: 1px solid #f2eff7;
-  transition: background 0.2s ease;
+  padding: var(--sv-esp-4) var(--sv-esp-5);
+  border-bottom: 1px solid var(--sv-borde);
+  transition: background var(--sv-rapido) ease;
 }
 
 .horario-fila:hover {
-  background: #fdfcff;
+  background: var(--sv-superficie-suave);
 }
 
 .horario-fila--descanso,
@@ -99,7 +100,7 @@
 .horario-dia {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: var(--sv-esp-3);
   min-width: 0;
 }
 
@@ -109,16 +110,16 @@
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 12px;
-  background: var(--sv-acento-suave);
-  color: var(--sv-acento);
+  border-radius: var(--sv-radio-md);
+  background: var(--sv-primario-suave);
+  color: var(--sv-en-primario-suave);
   font-size: var(--sv-texto-md);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .horario-fila--descanso .horario-dia-badge {
-  background: #f0eef3;
-  color: var(--sv-texto-tenue);
+  background: var(--sv-superficie-hundida);
+  color: var(--sv-texto-suave);
 }
 
 .horario-dia-info {
@@ -129,16 +130,17 @@
 }
 
 .horario-dia-nombre {
-  color: var(--sv-texto);
-  font-size: 15px;
-  font-weight: 750;
+  color: var(--sv-titulo);
+  font-size: var(--sv-texto-lg);
+  font-weight: 600;
   line-height: 1.3;
 }
 
 .horario-dia-detalle {
-  color: var(--sv-texto-tenue);
+  color: var(--sv-texto-suave);
   font-size: var(--sv-texto-xs);
-  font-weight: 600;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .horario-dia-detalle--activo {
@@ -149,7 +151,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 20px;
+  gap: var(--sv-esp-5);
   min-width: 0;
 }
 
@@ -162,56 +164,58 @@
 .horario-campo {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--sv-esp-1);
   min-width: 112px;
 }
 
 .horario-campo label {
   margin: 0;
-  color: #4d4862;
-  font-size: 11px;
-  font-weight: 700;
+  color: var(--sv-texto-suave);
+  font-size: var(--sv-texto-xs);
+  font-weight: 600;
 }
 
 .horario-campo input {
   width: 100%;
-  min-height: 42px;
-  padding: 7px 10px;
+  min-height: 44px;
+  padding: var(--sv-esp-2) var(--sv-esp-3);
   border: 1px solid var(--sv-borde-campo);
-  border-radius: var(--sv-radio-sm);
-  background: #fff;
+  border-radius: var(--sv-radio-md);
+  background: var(--sv-superficie);
   color: var(--sv-titulo);
   font-family: inherit;
   font-size: var(--sv-texto-md);
-  font-weight: 650;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--sv-rapido), box-shadow var(--sv-rapido);
 }
 
 .horario-campo input:hover {
-  border-color: #c4bdd6;
+  border-color: var(--sv-secundario);
 }
 
 .horario-campo input:focus {
-  border-color: #a855f7;
+  border-color: var(--sv-primario);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.14);
+  box-shadow: var(--sv-foco-campo);
 }
 
 .horario-campo input[aria-invalid='true'] {
-  border-color: #dc3545;
+  border-color: var(--sv-peligro);
   background: var(--sv-peligro-fondo);
 }
 
 .horario-campo input:disabled {
-  background: #f4f3f7;
+  border-color: var(--sv-borde);
+  background: var(--sv-superficie-hundida);
   cursor: not-allowed;
 }
 
 .horario-horas-separador {
-  padding-bottom: 12px;
-  color: var(--sv-texto-tenue);
+  padding-bottom: var(--sv-esp-3);
+  color: var(--sv-texto-suave);
   font-size: var(--sv-texto-xs);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* ---------- Interruptor laborable / descanso ---------- */
@@ -224,7 +228,7 @@
   margin: 0;
   color: var(--sv-texto-suave);
   font-size: var(--sv-texto-xs);
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   user-select: none;
 }
@@ -243,31 +247,31 @@
   position: relative;
   flex: 0 0 38px;
   width: 38px;
-  height: 21px;
+  height: 22px;
   border-radius: var(--sv-radio-pill);
-  background: #d9d6e2;
-  transition: background 0.2s ease;
+  background: var(--sv-borde-fuerte);
+  transition: background var(--sv-rapido) ease;
 }
 
 .horario-switch-slider::after {
   position: absolute;
   top: 3px;
   left: 3px;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(34, 25, 53, 0.25);
+  width: 16px;
+  height: 16px;
+  border-radius: var(--sv-radio-pill);
+  background: var(--sv-superficie);
+  box-shadow: var(--sv-sombra-panel);
   content: '';
-  transition: transform 0.2s ease;
+  transition: transform var(--sv-rapido) ease;
 }
 
 .horario-switch input:checked + .horario-switch-slider {
-  background: var(--sv-degradado);
+  background: var(--sv-primario);
 }
 
 .horario-switch input:checked + .horario-switch-slider::after {
-  transform: translateX(17px);
+  transform: translateX(16px);
 }
 
 .horario-switch input:focus-visible + .horario-switch-slider {
@@ -275,7 +279,7 @@
 }
 
 .horario-switch input:disabled + .horario-switch-slider {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -286,24 +290,24 @@
 .horario-error {
   grid-column: 1 / -1;
   margin: 0;
-  padding-left: 51px;
+  padding-left: calc(var(--sv-esp-7) + var(--sv-esp-1));
   color: var(--sv-peligro);
   font-size: var(--sv-texto-xs);
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .horario-aviso-sin-dias {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 18px 30px 0;
-  padding: 13px 15px;
+  gap: var(--sv-esp-3);
+  margin: var(--sv-esp-4) var(--sv-esp-5) 0;
+  padding: var(--sv-esp-3) var(--sv-esp-4);
   border: 1px solid var(--sv-aviso-borde);
   border-radius: var(--sv-radio-md);
   background: var(--sv-aviso-fondo);
   color: var(--sv-aviso);
   font-size: var(--sv-texto-sm);
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.45;
 }
 
@@ -313,11 +317,11 @@
   place-items: center;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
-  background: #f5d78f;
-  color: #74510b;
+  border-radius: var(--sv-radio-pill);
+  background: var(--sv-aviso-borde);
+  color: var(--sv-aviso);
   font-size: var(--sv-texto-xs);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* ---------- Pie con el resumen y el botón de guardar ---------- */
@@ -327,7 +331,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sv-esp-5);
-  padding: 22px 30px 26px;
+  padding: var(--sv-esp-5);
   border-top: 1px solid var(--sv-borde);
   background: var(--sv-superficie-suave);
 }
@@ -345,9 +349,9 @@
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 12px;
-  background: var(--sv-acento-suave);
-  color: var(--sv-acento);
+  border-radius: var(--sv-radio-md);
+  background: var(--sv-primario-suave);
+  color: var(--sv-en-primario-suave);
 }
 
 .horario-footer-icono svg {
@@ -357,9 +361,9 @@
 
 .horario-footer-info strong {
   display: block;
-  color: var(--sv-texto);
+  color: var(--sv-titulo);
   font-size: var(--sv-texto-sm);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .horario-footer-info span {
@@ -380,17 +384,17 @@
 .horario-dialogo-encabezado {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
+  gap: var(--sv-esp-3);
   margin-bottom: var(--sv-esp-4);
 }
 
 .horario-dialogo-encabezado .panel-dialogo-icono {
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
+  flex: 0 0 var(--sv-objetivo-tactil);
+  width: var(--sv-objetivo-tactil);
+  height: var(--sv-objetivo-tactil);
   margin: 0;
   border-radius: var(--sv-radio-md);
-  font-size: 19px;
+  font-size: var(--sv-titulo-seccion);
 }
 
 .horario-dialogo-encabezado .panel-dialogo-texto {
@@ -402,8 +406,8 @@
 @media (max-width: 820px) {
   .horario-fila {
     grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 16px 24px;
+    gap: var(--sv-esp-3);
+    padding: var(--sv-esp-4) var(--sv-esp-5);
   }
 
   .horario-controles {
@@ -419,12 +423,12 @@
 
   .horario-card-header {
     align-items: flex-start;
-    padding: 20px 16px;
+    padding: var(--sv-esp-4);
   }
 
   .horario-card-resumen {
     min-width: 74px;
-    padding: 9px 10px;
+    padding: var(--sv-esp-2) var(--sv-esp-3);
   }
 
   .horario-card-resumen strong {
@@ -432,7 +436,7 @@
   }
 
   .horario-fila {
-    padding: 16px;
+    padding: var(--sv-esp-4);
   }
 
   .horario-error {
@@ -440,14 +444,14 @@
   }
 
   .horario-aviso-sin-dias {
-    margin-right: 16px;
-    margin-left: 16px;
+    margin-right: var(--sv-esp-4);
+    margin-left: var(--sv-esp-4);
   }
 
   .horario-footer {
     flex-direction: column;
     align-items: stretch;
-    padding: 20px 16px 22px;
+    padding: var(--sv-esp-4);
   }
 
   .horario-btn-guardar {
