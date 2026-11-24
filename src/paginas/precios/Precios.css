@@ -1,9 +1,9 @@
 .pricing-container {
-  font-family: var(--sv-fuente);
-  background-color: var(--sv-fondo);
-  color: var(--sv-texto);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif;
+  background-color: #ffffff;
+  color: #111111;
   min-height: 100vh;
-  padding: var(--sv-esp-7) var(--sv-esp-6);
+  padding: 48px 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -13,59 +13,55 @@
 .pricing-header {
   text-align: center;
   max-width: 720px;
-  margin-bottom: var(--sv-esp-6);
+  margin-bottom: 40px;
 }
 
 .pricing-title {
-  font-family: var(--sv-fuente-titulos);
-  font-size: 3rem;
-  font-weight: 700;
+  font-size: 4rem;
+  font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.025em;
-  color: var(--sv-titulo);
-  margin: 0 0 var(--sv-esp-3) 0;
-}
-
-.pricing-title .hero__title-highlight {
-  background: none;
-  color: var(--sv-primario);
-  -webkit-text-fill-color: currentColor;
+  color: #0d0d0d;
+  margin: 0 0 14px 0;
 }
 
 .pricing-subtitle {
-  font-size: var(--sv-texto-lg);
+  font-size: 1rem;
   line-height: 1.5;
-  color: var(--sv-texto-suave);
+  color: #333333;
   margin: 0;
 }
 
+/* Contenedor general de las filas */
 .pricing-cards {
   display: flex;
   flex-direction: column;
-  gap: var(--sv-esp-6);
+  gap: 32px;
   width: 100%;
-  max-width: var(--sv-ancho-contenedor);
+  max-width: 1360px;
 }
 
+/* Estructura en fila de cada pareja (imagen + tarjeta) */
 .pricing-card-wrapper {
   display: flex;
   align-items: stretch;
-  gap: var(--sv-esp-5);
+  gap: 32px;
   width: 100%;
 }
 
+/* Invertir el orden para la segunda fila (imagen a la derecha) */
 .pricing-card-wrapper.image-right {
   flex-direction: row-reverse;
 }
 
+/* Caja de la imagen lateral (aprox. 60% del ancho) - Altura reducida */
 .card-image-box {
-  flex: 1.4;
-  min-width: 50%;
-  min-height: 400px;
-  height: 400px;
-  background-color: var(--sv-superficie-hundida);
-  border: 1px solid var(--sv-borde);
-  border-radius: var(--sv-radio-lg);
+  flex: 1.55;
+  min-width: 55%;
+  min-height: 440px;
+  height: 440px;
+  background-color: #f0f0f0;
+  border-radius: 24px;
   overflow: hidden;
 }
 
@@ -76,15 +72,14 @@
   display: block;
 }
 
+/* Tarjeta individual (aprox. 40% del ancho) - Padding y altura ajustados */
 .pricing-card {
   flex: 1;
-  min-width: 340px;
-  min-height: 400px;
-  background-color: var(--sv-superficie);
-  border: 1px solid var(--sv-borde);
-  border-radius: var(--sv-radio-lg);
-  padding: var(--sv-esp-6);
-  box-shadow: var(--sv-sombra-panel);
+  min-width: 400px;
+  min-height: 440px;
+  background-color: #f4f4f4;
+  border-radius: 24px;
+  padding: 36px 38px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -93,54 +88,53 @@
 
 .card-title-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sv-esp-3);
-  margin-bottom: var(--sv-esp-4);
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .card-title {
-  font-family: var(--sv-fuente-titulos);
-  font-size: var(--sv-titulo-pagina);
+  font-size: 1.5rem;
   font-weight: 700;
-  color: var(--sv-titulo);
+  color: #111111;
   margin: 0;
 }
 
+/* Píldora "7 días de prueba" */
 .trial-badge {
-  font-size: var(--sv-texto-xs);
-  font-weight: 600;
-  color: var(--sv-en-primario-suave);
-  background-color: var(--sv-primario-suave);
-  border: 1px solid var(--sv-primario-borde);
-  border-radius: var(--sv-radio-pill);
-  padding: var(--sv-esp-1) var(--sv-esp-3);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #5b50d6;
+  background-color: #efeffe;
+  border: 1px solid #d5d2fa;
+  border-radius: 999px;
+  padding: 5px 14px;
   white-space: nowrap;
 }
 
+/* Precio y periodo */
 .card-price {
-  font-family: var(--sv-fuente-titulos);
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.25rem;
+  font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--sv-titulo);
-  font-variant-numeric: tabular-nums;
-  margin-bottom: var(--sv-esp-1);
+  color: #0d0d0d;
+  margin-bottom: 6px;
 }
 
 .card-period {
-  font-size: var(--sv-texto-md);
+  font-size: 0.95rem;
   font-weight: 500;
-  color: var(--sv-texto-suave);
-  margin: 0 0 var(--sv-esp-5) 0;
+  color: #222222;
+  margin: 0 0 24px 0;
 }
 
+/* Lista de características */
 .features-heading {
-  font-size: var(--sv-texto-md);
+  font-size: 0.9rem;
   font-weight: 700;
-  color: var(--sv-titulo);
-  margin: 0 0 var(--sv-esp-3) 0;
+  color: #111111;
+  margin: 0 0 12px 0;
 }
 
 .features-list {
@@ -149,46 +143,45 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sv-esp-2);
+  gap: 10px;
 }
 
 .features-list li {
-  font-size: var(--sv-texto-md);
-  line-height: 1.45;
-  color: var(--sv-texto-suave);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #6b6b6b;
 }
 
+/* Botón inferior */
 .card-footer {
-  margin-top: var(--sv-esp-5);
+  margin-top: 24px;
 }
 
 .cta-button {
-  background-color: var(--sv-primario);
-  color: var(--sv-en-primario);
-  font-family: inherit;
-  font-size: var(--sv-texto-md);
+  background-color: #111111;
+  color: #ffffff;
+  font-size: 0.9rem;
   font-weight: 600;
-  border: 1px solid transparent;
-  border-radius: var(--sv-radio-md);
-  min-height: var(--sv-esp-7);
-  padding: var(--sv-esp-3) var(--sv-esp-5);
+  border: none;
+  border-radius: 999px;
+  padding: 14px 28px;
   cursor: pointer;
   width: 100%;
-  transition: background-color var(--sv-rapido) ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .cta-button:hover {
-  background-color: var(--sv-primario-hover);
+  background-color: #2b2b2b;
 }
 
-.cta-button:focus-visible {
-  outline: none;
-  box-shadow: var(--sv-foco);
+.cta-button:active {
+  transform: scale(0.98);
 }
 
+/* Responsividad para pantallas medianas y móviles */
 @media (max-width: 1024px) {
   .pricing-container {
-    padding: var(--sv-esp-6) var(--sv-esp-4);
+    padding: 36px 20px;
   }
 
   .pricing-card-wrapper,
@@ -198,20 +191,20 @@
 
   .card-image-box {
     min-width: 100%;
-    height: 280px;
-    min-height: 280px;
+    height: 320px;
+    min-height: 320px;
   }
 
   .pricing-card {
     min-width: 100%;
     min-height: auto;
-    padding: var(--sv-esp-5);
+    padding: 32px 24px;
   }
 }
 
 @media (max-width: 640px) {
   .pricing-title {
-    font-size: var(--sv-titulo-pagina);
+    font-size: 2rem;
   }
 
   .pricing-title br,
@@ -220,16 +213,18 @@
   }
 
   .card-image-box {
-    height: 220px;
-    min-height: 220px;
+    height: 240px;
+    min-height: 240px;
   }
 }
 
+
 .cta-banner-container {
-  font-family: var(--sv-fuente);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif;
   width: 100%;
-  background: var(--sv-inverso);
-  padding: var(--sv-esp-7) var(--sv-esp-5);
+  background: linear-gradient(135deg, #cc00ff 0%, #8811ff 50%, #5b00e5 100%);
+  padding: 96px 24px;
+  
   display: flex;
   justify-content: center;
   align-items: center;
@@ -238,61 +233,87 @@
 
 .cta-banner-content {
   text-align: center;
-  color: var(--sv-en-inverso);
+  color: #ffffff;
   max-width: 700px;
+
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .cta-banner-title {
-  font-family: var(--sv-fuente-titulos);
-  font-size: 2.25rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin: 0 0 var(--sv-esp-3) 0;
-  line-height: 1.2;
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin: 0 0 16px 0;
+  line-height: 1.15;
 }
 
 .cta-banner-subtitle {
-  font-size: var(--sv-texto-lg);
+  font-size: 1.15rem;
   font-weight: 400;
-  margin: 0 0 var(--sv-esp-5) 0;
-  opacity: 0.9;
-  line-height: 1.45;
+  margin: 0 0 36px 0;
+  opacity: 0.95;
+  line-height: 1.4;
 }
 
 .cta-banner-button {
-  background-color: var(--sv-marca);
-  color: var(--sv-en-primario);
-  font-family: inherit;
-  font-size: var(--sv-texto-md);
+  background-color: #ffffff;
+  color: #111111;
+  font-size: 0.95rem;
   font-weight: 600;
-  border: 1px solid transparent;
-  border-radius: var(--sv-radio-md);
-  min-height: var(--sv-esp-7);
-  padding: var(--sv-esp-3) var(--sv-esp-6);
+  border: none;
+  border-radius: 999px;
+  padding: 16px 32px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: var(--sv-esp-2);
-  transition: background-color var(--sv-rapido) ease;
+  gap: 10px;
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .cta-banner-button:hover {
-  background-color: var(--sv-primario);
+  background-color: #f4f4f4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 }
 
-.cta-banner-button:focus-visible {
-  outline: none;
-  box-shadow: var(--sv-foco);
+.cta-banner-button:active {
+  transform: translateY(0);
+}
+
+.arrow-icon {
+  font-size: 1.1rem;
+  font-weight: 400;
+  transition: transform 0.2s ease;
+}
+
+.cta-banner-button:hover .arrow-icon {
+  transform: translateX(4px);
+}
+
+/* Responsividad para móviles */
+@media (max-width: 768px) {
+  .cta-banner-container {
+    padding: 64px 20px;
+  }
+
+  .cta-banner-title {
+    font-size: 2.2rem;
+  }
+
+  .cta-banner-subtitle {
+    font-size: 1rem;
+    margin-bottom: 28px;
+  }
 }
 
 .compare-container {
-  font-family: var(--sv-fuente);
-  background-color: var(--sv-fondo);
-  color: var(--sv-texto);
-  padding: var(--sv-esp-6) var(--sv-esp-4) var(--sv-esp-7);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif;
+  background-color: #ffffff;
+  color: #111111;
+  padding: 40px 24px 80px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -300,25 +321,24 @@
 }
 
 .compare-main-title {
-  font-family: var(--sv-fuente-titulos);
-  font-size: var(--sv-titulo-pagina);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--sv-titulo);
-  margin: 0 0 var(--sv-esp-5) 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #0d0d0d;
+  margin: 0 0 48px 0;
   text-align: center;
 }
 
 .compare-table-wrapper {
   width: 100%;
   max-width: 900px;
-  border: 1px solid var(--sv-borde);
-  border-radius: var(--sv-radio-lg);
-  overflow-x: auto;
-  background-color: var(--sv-superficie);
-  box-shadow: var(--sv-sombra-panel);
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  overflow: hidden; /* Asegura que los bordes respeten el border-radius */
+  background-color: #ffffff;
 }
 
+/* Estructura de la tabla */
 .compare-table {
   width: 100%;
   border-collapse: collapse;
@@ -327,17 +347,19 @@
 
 .compare-table th,
 .compare-table td {
-  padding: var(--sv-esp-4) var(--sv-esp-5);
-  border-bottom: 1px solid var(--sv-borde);
+  padding: 24px;
+  border-bottom: 1px solid #e5e5e5;
   vertical-align: middle;
 }
 
+/* Quitar la línea inferior de la última fila */
 .compare-table tr:last-child td {
   border-bottom: none;
 }
 
+/* Cabecera de la tabla */
 .compare-table th {
-  background-color: var(--sv-superficie-suave);
+  background-color: #ffffff;
 }
 
 .col-feature-header {
@@ -351,71 +373,73 @@
 
 .plan-name {
   display: block;
-  font-family: var(--sv-fuente-titulos);
-  font-size: var(--sv-titulo-seccion);
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--sv-titulo);
-  margin-bottom: var(--sv-esp-1);
+  color: #111111;
+  margin-bottom: 4px;
 }
 
 .plan-desc {
   display: block;
-  font-size: var(--sv-texto-xs);
+  font-size: 0.82rem;
   font-weight: 400;
-  color: var(--sv-texto-suave);
+  color: #666666;
 }
 
+/* Celdas del cuerpo */
 .row-label {
-  font-size: var(--sv-texto-md);
+  font-size: 0.92rem;
   font-weight: 600;
-  color: var(--sv-titulo);
+  color: #111111;
 }
 
 .row-value {
-  font-size: var(--sv-texto-md);
-  color: var(--sv-texto);
+  font-size: 0.92rem;
+  color: #222222;
   text-align: center;
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
 }
 
+/* Texto secundario debajo del precio en Equipo */
 .sub-text {
   display: block;
-  font-size: var(--sv-texto-xs);
-  color: var(--sv-texto-suave);
+  font-size: 0.75rem;
+  color: #666666;
   font-weight: 400;
-  margin-top: var(--sv-esp-1);
+  margin-top: 4px;
 }
 
 .info-icon {
-  font-size: var(--sv-texto-xs);
-  color: var(--sv-texto-suave);
+  font-size: 0.8rem;
+  color: #666666;
   cursor: pointer;
-  margin-left: var(--sv-esp-1);
+  margin-left: 2px;
 }
 
+/* Símbolos de verificación (palomitas) */
 .check-mark {
-  font-size: var(--sv-titulo-seccion);
-  font-weight: 700;
-  color: var(--sv-exito);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #111111;
 }
 
+/* Adaptabilidad a dispositivos móviles */
 @media (max-width: 768px) {
-  .cta-banner-container {
-    padding: var(--sv-esp-6) var(--sv-esp-4);
-  }
-
-  .cta-banner-title {
-    font-size: var(--sv-titulo-pagina);
+  .compare-main-title {
+    font-size: 2rem;
   }
 
   .compare-table th,
   .compare-table td {
-    padding: var(--sv-esp-3);
-    font-size: var(--sv-texto-sm);
+    padding: 16px 12px;
+    font-size: 0.85rem;
   }
 
   .plan-name {
-    font-size: var(--sv-texto-lg);
+    font-size: 1.05rem;
+  }
+
+  .plan-desc {
+    font-size: 0.75rem;
   }
 }
