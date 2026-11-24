@@ -6,6 +6,7 @@ import { api, ErrorApi } from '../../servicios/api';
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { DetalleReserva } from './DetalleReserva';
 import { calcularTiempoRestante, formatearFecha, formatearHora } from './estados';
+import { mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas';
 
 vi.mock('../../servicios/api', () => ({
   api: vi.fn(),
@@ -103,10 +104,9 @@ describe('DetalleReserva', () => {
   it('MVP-27 completa tras confirmar y usa el detalle devuelto sin otro GET', async () => {
     await listo(reserva({ estado: 'confirmada', inicio: '2020-01-01T12:00:00Z', segundosRestantes: null }));
     responderPatch(reserva({ estado: 'completada', segundosRestantes: null }));
+    mockearConfirmacion(true);
     fireEvent.click(screen.getByRole('button', { name: 'Marcar como completada' }));
-    expect(llamadas('/reservas/negocio/r1/completar')).toHaveLength(0);
-    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Reserva marcada como completada.');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Reserva marcada como completada.' }));
     expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/completar', { method: 'PATCH' });
     expect(screen.getByText('Completada')).toBeInTheDocument();
     expect(screen.queryAllByRole('button')).toHaveLength(0);
@@ -246,33 +246,37 @@ describe('DetalleReserva', () => {
     expect(screen.getByText('2m restantes')).toHaveClass('panel-etiqueta', 'panel-etiqueta--aviso', 'panel-alerta-accion');
   });
 
-  it('confirma una reserva pendiente solo después de confirmar el modal', async () => {
+  it('confirma una reserva pendiente solo después de confirmar en alerta estándar', async () => {
     const usuario = userEvent.setup();
     await listo();
+    mockearConfirmacion(false);
     await usuario.click(screen.getByRole('button', { name: 'Aceptar Reserva' }));
-    const modal = screen.getByRole('alertdialog');
-    expect(modal).toHaveTextContent('Ana López');
-    await usuario.click(within(modal).getByRole('button', { name: 'Cancelar' }));
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(ultimaAlerta()).toMatchObject({
+      title: '¿Confirmar la reserva?',
+      text: expect.stringContaining('Ana López'),
+      showCancelButton: true,
+    });
     expect(llamadas('/reservas/negocio/r1/aceptar')).toHaveLength(0);
 
+    mockearConfirmacion(true);
     await usuario.click(screen.getByRole('button', { name: 'Aceptar Reserva' }));
-    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' }));
     await waitFor(() => expect(llamadas('/reservas/negocio/r1/aceptar')).toHaveLength(1));
     expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/aceptar', { method: 'PATCH' });
-    expect(await screen.findByText('Reserva confirmada.')).toBeInTheDocument();
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Reserva confirmada.' }));
     expect(await screen.findByText('Confirmada')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aceptar Reserva' })).not.toBeInTheDocument();
   });
 
-  it('avisa si no se puede guardar la aceptación y mantiene el modal', async () => {
+  it('avisa con alerta de error si no se puede guardar la aceptación', async () => {
     responderPatch(new Error('Sin conexión'));
     const usuario = userEvent.setup();
     await listo();
+    mockearConfirmacion(true);
     await usuario.click(screen.getByRole('button', { name: 'Aceptar Reserva' }));
-    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' }));
-    expect(await within(screen.getByRole('alertdialog')).findByRole('alert')).toHaveTextContent('No pudimos guardar tu respuesta. Intenta de nuevo.');
-    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'error',
+      text: 'No pudimos guardar tu respuesta. Intenta de nuevo.',
+    }));
   });
 
   it('rechaza requiriendo un motivo y enviándolo en el PATCH', async () => {
@@ -282,6 +286,7 @@ describe('DetalleReserva', () => {
     const modal = screen.getByRole('alertdialog');
     await usuario.click(within(modal).getByRole('button', { name: 'Rechazar solicitud' }));
     expect(await within(modal).findByText('Escribe el motivo del rechazo.')).toBeInTheDocument();
+    expect(within(modal).getByRole('textbox')).toHaveFocus();
     expect(llamadas('/reservas/negocio/r1/rechazar')).toHaveLength(0);
 
     await usuario.type(within(modal).getByRole('textbox'), 'Horario ocupado por mantenimiento');
@@ -290,7 +295,10 @@ describe('DetalleReserva', () => {
     expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/rechazar', {
       method: 'PATCH', body: JSON.stringify({ motivo: 'Horario ocupado por mantenimiento' }),
     });
-    expect(await screen.findByText('Solicitud rechazada. El horario quedó libre.')).toBeInTheDocument();
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'success',
+      text: 'Solicitud rechazada. El horario quedó libre.',
+    }));
     expect(await screen.findByText('Rechazada')).toBeInTheDocument();
     expect(screen.getByText('Horario ocupado por mantenimiento')).toBeInTheDocument();
   });
@@ -305,7 +313,7 @@ describe('DetalleReserva', () => {
     expect(screen.queryByRole('button', { name: 'Cancelar reserva' })).not.toBeInTheDocument();
   });
 
-  it('cancela una reserva confirmada con motivo y muestra el aviso de éxito', async () => {
+  it('cancela una reserva confirmada con motivo y muestra la alerta de éxito', async () => {
     const usuario = userEvent.setup();
     await listo(reserva({ estado: 'confirmada', segundosRestantes: null }));
     await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
@@ -313,6 +321,7 @@ describe('DetalleReserva', () => {
     expect(modal).toHaveTextContent('El cliente verá este motivo');
     await usuario.click(within(modal).getByRole('button', { name: 'Cancelar reserva' }));
     expect(await within(modal).findByText('Escribe el motivo de la cancelación.')).toBeInTheDocument();
+    expect(within(modal).getByRole('textbox')).toHaveFocus();
     expect(llamadas('/reservas/negocio/r1/cancelar')).toHaveLength(0);
 
     await usuario.type(within(modal).getByRole('textbox'), 'No hay cupo por mantenimiento');
@@ -321,24 +330,26 @@ describe('DetalleReserva', () => {
     expect(apiMock).toHaveBeenCalledWith('/reservas/negocio/r1/cancelar', {
       method: 'PATCH', body: JSON.stringify({ motivo: 'No hay cupo por mantenimiento' }),
     });
-    expect(await screen.findByText('Reserva cancelada. El horario quedó libre.')).toBeInTheDocument();
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'success',
+      text: 'Reserva cancelada. El horario quedó libre.',
+    }));
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(screen.getByText('Cancelada')).toBeInTheDocument();
     expect(screen.getByText('No hay cupo por mantenimiento')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cancelar reserva' })).not.toBeInTheDocument();
   });
 
-  it('mantiene abierto el modal si el servidor rechaza la cancelación', async () => {
+  it('mantiene abierto el modal si el servidor rechaza la cancelación y muestra alerta de error', async () => {
     responderPatch(new ErrorApi(400, 'No se puede cancelar'));
     const usuario = userEvent.setup();
     await listo(reserva({ estado: 'confirmada', segundosRestantes: null }));
     await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
     await usuario.type(within(screen.getByRole('alertdialog')).getByRole('textbox'), 'Cierre por mantenimiento');
     await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar reserva' }));
-    expect(await within(screen.getByRole('alertdialog')).findByRole('alert')).toHaveTextContent('No se puede cancelar');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: 'No se puede cancelar' }));
     await waitFor(() => expect(llamadas('/reservas/negocio/r1')).toHaveLength(2));
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
-    expect(screen.queryByText('Reserva cancelada. El horario quedó libre.')).not.toBeInTheDocument();
   });
 
   it('cierra el modal y recarga el detalle ante un conflicto al cancelar', async () => {
@@ -348,18 +359,14 @@ describe('DetalleReserva', () => {
     await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
     await usuario.type(within(screen.getByRole('alertdialog')).getByRole('textbox'), 'Cierre por mantenimiento');
     await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar reserva' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('La reserva ya fue cancelada');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: 'La reserva ya fue cancelada' }));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     await waitFor(() => expect(llamadas('/reservas/negocio/r1')).toHaveLength(2));
   });
 
-  it('cierra los modales de aceptar y rechazar con Escape sin enviar PATCH', async () => {
+  it('cierra el modal de rechazar con Escape sin enviar PATCH', async () => {
     const usuario = userEvent.setup();
     await listo();
-    await usuario.click(screen.getByRole('button', { name: 'Aceptar Reserva' }));
-    await usuario.keyboard('{Escape}');
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-
     await usuario.click(screen.getByRole('button', { name: 'Rechazar Solicitud' }));
     await usuario.keyboard('{Escape}');
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
@@ -435,19 +442,29 @@ describe('criterios de motivo, avisos y diseño', () => {
     ...acciones,
   ];
   for (const resultado of ['éxito', 'error']) {
-    it.each(flujos)(`C7 avisa dentro de la página al %s con ${resultado}, sin alert`, async (accion, estado, abrir, enviar) => {
+    it.each(flujos)(`C7 muestra alerta estándar al %s con ${resultado}, sin window.alert`, async (accion, estado, abrir, enviar) => {
       if (resultado === 'error') responderPatch(new Error('Sin red'));
       await listo(reserva({ estado }));
-      fireEvent.click(screen.getByRole('button', { name: abrir }));
-      const modal = screen.getByRole('alertdialog');
-      const campo = within(modal).queryByRole('textbox');
-      if (campo) fireEvent.change(campo, { target: { value: 'Cierre por mantenimiento' } });
-      fireEvent.click(within(modal).getByRole('button', { name: enviar }));
-      if (resultado === 'error') {
-        expect(await within(modal).findByRole('alert')).toHaveTextContent('No pudimos guardar tu respuesta');
+      if (accion === 'aceptar') {
+        mockearConfirmacion(true);
+        fireEvent.click(screen.getByRole('button', { name: abrir }));
       } else {
-        await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
-        expect(screen.getAllByRole('status').some(nodo => /confirmada|rechazada|cancelada/.test(nodo.textContent ?? ''))).toBe(true);
+        fireEvent.click(screen.getByRole('button', { name: abrir }));
+        const modal = screen.getByRole('alertdialog');
+        fireEvent.change(within(modal).getByRole('textbox'), { target: { value: 'Cierre por mantenimiento' } });
+        fireEvent.click(within(modal).getByRole('button', { name: enviar }));
+      }
+      if (resultado === 'error') {
+        await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+          icon: 'error',
+          text: expect.stringContaining('No pudimos guardar tu respuesta'),
+        }));
+      } else {
+        await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+          icon: 'success',
+          text: expect.stringMatching(/confirmada|rechazada|cancelada/),
+        }));
+        expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
       }
       expect(llamadas(`/reservas/negocio/r1/${accion}`)).toHaveLength(1);
       expect(alerta).not.toHaveBeenCalled();
@@ -455,18 +472,24 @@ describe('criterios de motivo, avisos y diseño', () => {
   }
 
   for (const codigo of [400, 409]) {
-    it.each(flujos)(`C8 conserva el aviso ${codigo} y recarga al %s`, async (_accion, estado, abrir, enviar) => {
+    it.each(flujos)(`C8 muestra alerta ${codigo} y recarga al %s`, async (accion, estado, abrir, enviar) => {
       responderPatch(new ErrorApi(codigo, `Mensaje persistente ${codigo}`));
       await listo(reserva({ estado }));
-      fireEvent.click(screen.getByRole('button', { name: abrir }));
-      const modal = screen.getByRole('alertdialog');
-      const campo = within(modal).queryByRole('textbox');
-      if (campo) fireEvent.change(campo, { target: { value: 'Cierre por mantenimiento' } });
-      fireEvent.click(within(modal).getByRole('button', { name: enviar }));
+      if (accion === 'aceptar') {
+        mockearConfirmacion(true);
+        fireEvent.click(screen.getByRole('button', { name: abrir }));
+      } else {
+        fireEvent.click(screen.getByRole('button', { name: abrir }));
+        const modal = screen.getByRole('alertdialog');
+        fireEvent.change(within(modal).getByRole('textbox'), { target: { value: 'Cierre por mantenimiento' } });
+        fireEvent.click(within(modal).getByRole('button', { name: enviar }));
+      }
       await waitFor(() => expect(llamadas('/reservas/negocio/r1')).toHaveLength(2));
+      await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: `Mensaje persistente ${codigo}` }));
       await screen.findByRole('heading', { name: 'Reserva SRV-123' });
-      expect(screen.getAllByRole('alert').some(nodo => nodo.textContent === `Mensaje persistente ${codigo}`)).toBe(true);
-      expect(screen.queryByRole('alertdialog') !== null).toBe(codigo === 400);
+      if (accion !== 'aceptar') {
+        expect(screen.queryByRole('alertdialog') !== null).toBe(codigo === 400);
+      }
     });
   }
 

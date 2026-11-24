@@ -1,10 +1,11 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { vi } from 'vitest';
 import { api, ErrorApi } from '../../servicios/api';
 import { useAuth } from '../../contextos/AuthContext';
 import { DetalleReserva } from './DetalleReserva';
 import { formatearFecha, formatearHora } from './estados';
+import { mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas';
 
 vi.mock('../../servicios/api', () => ({
   api: vi.fn(),
@@ -67,8 +68,10 @@ async function mostrar(datos = reserva()) {
 async function pulsar(elemento: HTMLElement) {
   await act(async () => { fireEvent.click(elemento); });
 }
-async function abrir() { await pulsar(screen.getByRole('button', { name: textoBoton })); }
-async function confirmar() { await pulsar(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' })); }
+async function abrir(confirmada = true) {
+  mockearConfirmacion(confirmada);
+  await pulsar(screen.getByRole('button', { name: textoBoton }));
+}
 function patches() { return apiMock.mock.calls.filter(([, opciones]) => opciones?.method === 'PATCH'); }
 
 describe('MVP-27 completar reserva', () => {
@@ -100,49 +103,32 @@ describe('MVP-27 completar reserva', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('C2 presenta folio, cliente, fecha y hora; Cancelar no envía', async () => {
+  it('C2 presenta folio, cliente, fecha y hora en la confirmación; Cancelar no envía', async () => {
     await mostrar();
-    await abrir();
-    const modal = screen.getByRole('alertdialog');
-    expect(modal).toHaveAttribute('aria-modal', 'true');
-    expect(within(modal).getByRole('heading')).toHaveTextContent(textoDialogo);
+    await abrir(false);
+    const alerta = ultimaAlerta();
+    expect(alerta).toMatchObject({ title: textoDialogo, showCancelButton: true });
     for (const dato of ['SRV-7KQ2MX', 'Ana López', formatearFecha(inicio), formatearHora(inicio)]) {
-      expect(modal).toHaveTextContent(dato);
+      expect(String(alerta?.text)).toContain(dato);
     }
     expect(patches()).toHaveLength(0);
-    await pulsar(within(modal).getByRole('button', { name: 'Cancelar' }));
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-    expect(patches()).toHaveLength(0);
     expect(screen.getByText('Confirmada')).toBeInTheDocument();
-  });
-
-  it('C2 Escape cierra sin enviar', async () => {
-    await mostrar();
-    await abrir();
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-    expect(patches()).toHaveLength(0);
   });
 
   it('C3 PATCH sin cuerpo bloquea durante el envío y usa el 200 sin otro GET', async () => {
     await mostrar();
     let resolver!: (datos: unknown) => void;
     apiMock.mockReturnValueOnce(new Promise(resolve => { resolver = resolve; }));
-    await abrir();
-    await confirmar();
-    const modal = screen.getByRole('alertdialog');
-    expect(within(modal).getByRole('button', { name: 'Confirmando...' })).toBeDisabled();
-    expect(within(modal).getByRole('button', { name: 'Cancelar' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: textoBoton })).toBeDisabled();
-    await pulsar(within(modal).getByRole('button', { name: 'Confirmando...' }));
+    await abrir(true);
+    const boton = screen.getByRole('button', { name: 'Confirmando...' });
+    expect(boton).toBeDisabled();
+    await pulsar(boton);
     expect(patches()).toEqual([[completar, { method: 'PATCH' }]]);
     expect(apiMock).toHaveBeenCalledTimes(2);
     await act(async () => { resolver({ ...reserva('completada'), servicio: { nombre: 'Servicio actualizado', precio: 200, duracionMin: 60 } }); });
-    expect(screen.getByRole('status')).toHaveTextContent(textoExito);
-    expect(screen.getByRole('status')).toHaveClass('panel-alerta', 'panel-alerta--exito');
+    expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: textoExito });
     expect(screen.getByText('Servicio actualizado')).toBeInTheDocument();
     expect(screen.getByText('Completada')).toBeInTheDocument();
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(screen.queryAllByRole('button')).toHaveLength(0);
     expect(apiMock).toHaveBeenCalledTimes(2);
   });
@@ -155,15 +141,12 @@ describe('MVP-27 completar reserva', () => {
     expect(patches()).toHaveLength(0);
   });
 
-  it('C5 409 conserva message, cierra y recarga el detalle vigente', async () => {
+  it('C5 409 muestra el mensaje en alerta de error y recarga el detalle vigente', async () => {
     await mostrar();
     apiMock.mockRejectedValueOnce(new ErrorApi(409, 'La reserva ya fue completada.'));
     apiMock.mockResolvedValueOnce(reserva('completada'));
-    await abrir();
-    await confirmar();
-    expect(screen.getByRole('alert')).toHaveTextContent('La reserva ya fue completada.');
-    expect(screen.getByRole('alert')).toHaveClass('panel-alerta--error');
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    await abrir(true);
+    expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: 'La reserva ya fue completada.' });
     expect(screen.getByText('Completada')).toBeInTheDocument();
     expect(apiMock.mock.calls).toEqual([[ruta], [completar, { method: 'PATCH' }], [ruta]]);
   });
@@ -174,44 +157,37 @@ describe('MVP-27 completar reserva', () => {
   ])('C5 muestra el error traducido %s y permite reintentar', async (error, texto) => {
     await mostrar();
     apiMock.mockRejectedValueOnce(error);
-    await abrir();
-    await confirmar();
-    const modal = screen.getByRole('alertdialog');
-    expect(within(modal).getByRole('alert')).toHaveTextContent(texto);
-    expect(within(modal).getByRole('button', { name: 'Confirmar' })).toBeEnabled();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    await abrir(true);
+    expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: texto });
+    expect(screen.getByRole('button', { name: textoBoton })).toBeEnabled();
     expect(apiMock).toHaveBeenCalledTimes(2);
     apiMock.mockResolvedValueOnce(reserva('completada'));
-    await confirmar();
-    expect(screen.getByRole('status')).toHaveTextContent(textoExito);
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await abrir(true);
+    expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: textoExito });
   });
 
   it('C5 401 cierra la sesión antes de volver al inicio de sesión', async () => {
     await mostrar();
     apiMock.mockRejectedValueOnce(new ErrorApi(401, 'Sesión expirada'));
-    await abrir();
-    await confirmar();
+    await abrir(true);
     expect(cerrarSesion).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('heading', { name: 'Inicia sesión' })).toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(apiMock).toHaveBeenCalledTimes(2);
   });
 
-  it('C6 comparte diálogo y botones de aceptar, sin estilos nuevos', async () => {
+  it('C6 usa la misma alerta de confirmación que Aceptar y botón primario del panel', async () => {
     const vista = await mostrar(reserva('pendiente'));
+    mockearConfirmacion(false);
     await pulsar(screen.getByRole('button', { name: 'Aceptar Reserva' }));
-    const referencia = screen.getByRole('alertdialog');
-    const clases = (modal: HTMLElement) => [modal.className, ...Array.from(modal.querySelectorAll('div, h3, p, button'), e => e.className)];
-    const clasesReferencia = clases(referencia);
+    const alertaAceptar = ultimaAlerta();
     vista.unmount();
+
     await mostrar();
     expect(screen.getByRole('button', { name: textoBoton })).toHaveClass('btn-servia-primary');
-    await abrir();
-    const modal = screen.getByRole('alertdialog');
-    expect(clases(modal)).toEqual(clasesReferencia);
-    expect(modal.querySelector('[style]')).toBeNull();
-    expect(within(modal).getByRole('button', { name: 'Confirmar' })).toHaveClass('btn-servia-primary');
-    expect(within(modal).getByRole('button', { name: 'Cancelar' })).toHaveClass('btn-servia-secondary');
+    await abrir(false);
+    const alertaCompletar = ultimaAlerta();
+    expect(alertaCompletar?.customClass).toEqual(alertaAceptar?.customClass);
+    expect(alertaCompletar?.confirmButtonText).toBe('Confirmar');
+    expect(alertaCompletar?.cancelButtonText).toBe('Cancelar');
   });
 });

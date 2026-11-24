@@ -2,8 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../contextos/AuthContext';
 import { api, ErrorApi } from '../../servicios/api';
+import { confirmar, error as alertaError, exito } from '../../servicios/alertas';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { ESTADOS_CONFIG, formatearFecha, formatearHora, calcularTiempoRestante } from './estados';
+import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
+import { atributosErrorCampo, idErrorCampo, validarMotivo } from '../../utilidades/validacion';
 import './Reservas.css';
 import { CalendarCheck, Clock } from 'lucide-react';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
@@ -36,17 +39,14 @@ export function DetalleReserva() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
-  // Modales y acciones
-  const [mostrarCompletar, setMostrarCompletar] = useState(false);
-  const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
+  // Modales con campo de motivo y estado de envío
   const [mostrarRechazar, setMostrarRechazar] = useState(false);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState('');
   const [motivo, setMotivo] = useState('');
   const [errorMotivo, setErrorMotivo] = useState('');
   const [procesando, setProcesando] = useState(false);
-  const [mensajeExito, setMensajeExito] = useState('');
-  const [mensajeError, setMensajeError] = useState('');
+  const enProceso = useRef(false);
 
   const [ahora, setAhora] = useState(Date.now);
   const vencimientosConsultados = useRef(new Set<string>());
@@ -90,77 +90,94 @@ export function DetalleReserva() {
     void Promise.resolve().then(cargarDetalle);
   }, [cargando, error, reserva, segundosRestantes, id, cargarDetalle]);
 
-  const validarMotivo = (texto: string, accion: string) => {
-    const longitud = texto.trim().length;
-    if (!longitud) return `Escribe el motivo ${accion}.`;
-    if (longitud < MOTIVO_MIN) return `El motivo debe tener al menos ${MOTIVO_MIN} caracteres.`;
-    if (longitud > MOTIVO_MAX) return `El motivo no puede exceder ${MOTIVO_MAX} caracteres.`;
-    return '';
-  };
-
   const iniciarAccion = () => {
     setProcesando(true);
     setErrorMotivo('');
-    setMensajeError('');
-    setMensajeExito('');
   };
 
-  const mostrarErrorAccion = (err: unknown, completando = false) => {
+  const mostrarErrorAccion = async (err: unknown, completando = false) => {
     const mensaje = completando && err instanceof ErrorApi && err.estado === 404
       ? 'La reserva no existe.'
-      : err instanceof ErrorApi ? err.message
-      : completando ? 'No se pudo conectar. Inténtalo de nuevo.'
-      : 'No pudimos guardar tu respuesta. Intenta de nuevo.';
-    setMensajeError(mensaje);
-    setErrorMotivo(mensaje);
+      : mensajeDeError(
+        err,
+        completando
+          ? 'No se pudo conectar. Inténtalo de nuevo.'
+          : 'No pudimos guardar tu respuesta. Intenta de nuevo.',
+      );
     if (err instanceof ErrorApi && (err.estado === 409 || err.estado === 400)) {
       if (err.estado === 409) {
-        setMostrarCompletar(false);
-        setMostrarConfirmar(false);
         setMostrarRechazar(false);
         setMostrarModal(false);
       }
       void cargarDetalle();
     }
+    await alertaError(mensaje);
   };
 
   const handleCompletar = async () => {
-    iniciarAccion();
+    if (!reserva || procesando || enProceso.current) return;
+    enProceso.current = true;
     try {
-      const detalle = await api<DetalleReservaAPI>(`/reservas/negocio/${id}/completar`, { method: 'PATCH' });
-      setReserva(detalle);
-      setMensajeExito('Reserva marcada como completada.');
-      setMostrarCompletar(false);
-    } catch (err: unknown) {
-      if (err instanceof ErrorApi && err.estado === 401) {
-        await cerrarSesion();
-        navigate('/login', { replace: true });
-      } else {
-        mostrarErrorAccion(err, true);
+      const aceptado = await confirmar({
+        titulo: '¿Marcar esta reserva como completada? Ya no se podrá modificar.',
+        texto: `Reserva ${reserva.folio} de ${reserva.cliente.nombre} el ${formatearFecha(reserva.inicio)} a las ${formatearHora(reserva.inicio)}.`,
+        confirmar: 'Confirmar',
+        cancelar: 'Cancelar',
+      });
+      if (!aceptado) return;
+
+      iniciarAccion();
+      try {
+        const detalle = await api<DetalleReservaAPI>(`/reservas/negocio/${id}/completar`, { method: 'PATCH' });
+        setReserva(detalle);
+        await exito('Reserva marcada como completada.');
+      } catch (err: unknown) {
+        if (err instanceof ErrorApi && err.estado === 401) {
+          await cerrarSesion();
+          navigate('/login', { replace: true });
+        } else {
+          await mostrarErrorAccion(err, true);
+        }
+      } finally {
+        setProcesando(false);
       }
     } finally {
-      setProcesando(false);
+      enProceso.current = false;
     }
   };
 
   const handleAceptar = async () => {
-    iniciarAccion();
+    if (!reserva || procesando || enProceso.current) return;
+    enProceso.current = true;
     try {
-      await api(`/reservas/negocio/${id}/aceptar`, { method: 'PATCH' });
-      setMensajeExito('Reserva confirmada.');
-      setMostrarConfirmar(false);
-      void cargarDetalle();
-    } catch (err: unknown) {
-      mostrarErrorAccion(err);
+      const aceptado = await confirmar({
+        titulo: '¿Confirmar la reserva?',
+        texto: `¿Confirmar la reserva de ${reserva.cliente.nombre} el ${formatearFecha(reserva.inicio)} a las ${formatearHora(reserva.inicio)}?`,
+        confirmar: 'Confirmar',
+        cancelar: 'Cancelar',
+      });
+      if (!aceptado) return;
+
+      iniciarAccion();
+      try {
+        await api(`/reservas/negocio/${id}/aceptar`, { method: 'PATCH' });
+        void cargarDetalle();
+        await exito('Reserva confirmada.');
+      } catch (err: unknown) {
+        await mostrarErrorAccion(err);
+      } finally {
+        setProcesando(false);
+      }
     } finally {
-      setProcesando(false);
+      enProceso.current = false;
     }
   };
 
   const handleRechazar = async () => {
-    const validacion = validarMotivo(motivoRechazo, 'del rechazo');
+    const validacion = validarMotivo(motivoRechazo, 'del rechazo', MOTIVO_MIN, MOTIVO_MAX);
     if (validacion) {
       setErrorMotivo(validacion);
+      document.getElementById('motivo-rechazo')?.focus();
       return;
     }
     iniciarAccion();
@@ -169,21 +186,22 @@ export function DetalleReserva() {
         method: 'PATCH',
         body: JSON.stringify({ motivo: motivoRechazo.trim() }),
       });
-      setMensajeExito('Solicitud rechazada. El horario quedó libre.');
       setMostrarRechazar(false);
       setMotivoRechazo('');
       void cargarDetalle();
+      await exito('Solicitud rechazada. El horario quedó libre.');
     } catch (err: unknown) {
-      mostrarErrorAccion(err);
+      await mostrarErrorAccion(err);
     } finally {
       setProcesando(false);
     }
   };
 
   const handleCancelar = async () => {
-    const validacion = validarMotivo(motivo, 'de la cancelación');
+    const validacion = validarMotivo(motivo, 'de la cancelación', MOTIVO_MIN, MOTIVO_MAX);
     if (validacion) {
       setErrorMotivo(validacion);
+      document.getElementById('motivo-cancelacion')?.focus();
       return;
     }
     iniciarAccion();
@@ -192,30 +210,28 @@ export function DetalleReserva() {
         method: 'PATCH',
         body: JSON.stringify({ motivo: motivo.trim() }),
       });
-      setMensajeExito('Reserva cancelada. El horario quedó libre.');
       setMostrarModal(false);
       setMotivo('');
       void cargarDetalle();
+      await exito('Reserva cancelada. El horario quedó libre.');
     } catch (err: unknown) {
-      mostrarErrorAccion(err);
+      await mostrarErrorAccion(err);
     } finally {
       setProcesando(false);
     }
   };
 
-  // Cerrar los modales con Escape.
+  // Cerrar los modales de motivo con Escape.
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setMostrarCompletar(false);
-        setMostrarConfirmar(false);
+      if (e.key === 'Escape' && !procesando) {
         setMostrarRechazar(false);
         setMostrarModal(false);
       }
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, []);
+  }, [procesando]);
 
   if (cargando) return (
     <div className="panel-pagina"><div className="panel-contenedor panel-estado">
@@ -246,18 +262,6 @@ export function DetalleReserva() {
   return (
     <div className="panel-pagina">
       <div className="panel-contenedor">
-
-        {mensajeExito && (
-          <div className="panel-alerta panel-alerta--exito" role="status">
-            <div className="panel-alerta-contenido">{mensajeExito}</div>
-          </div>
-        )}
-
-        {mensajeError && (
-          <div className="panel-alerta panel-alerta--error" role="alert">
-            <div className="panel-alerta-contenido">{mensajeError}</div>
-          </div>
-        )}
 
         {reserva.estado === 'pendiente' && segundosRestantes !== null && segundosRestantes > 0 && (
           <div className="panel-alerta panel-alerta--aviso" role="status">
@@ -294,12 +298,14 @@ export function DetalleReserva() {
           <div className="reserva-detalle-acciones">
             <BotonPanel
               variante="primario"
-              onClick={() => { setErrorMotivo(''); setMostrarConfirmar(true); }}
+              disabled={procesando}
+              onClick={() => void handleAceptar()}
             >
               Aceptar Reserva
             </BotonPanel>
             <BotonPanel
               variante="peligro"
+              disabled={procesando}
               onClick={() => { setErrorMotivo(''); setMostrarRechazar(true); }}
             >
               Rechazar Solicitud
@@ -368,10 +374,10 @@ export function DetalleReserva() {
             {puedeCompletar && (
               <BotonPanel
                 variante="primario"
-                onClick={() => { setErrorMotivo(''); setMostrarCompletar(true); }}
+                onClick={() => void handleCompletar()}
                 disabled={procesando}
               >
-                Marcar como completada
+                {procesando ? 'Confirmando...' : 'Marcar como completada'}
               </BotonPanel>
             )}
 
@@ -379,6 +385,7 @@ export function DetalleReserva() {
               <BotonPanel
                 variante="peligro"
                 onClick={() => { setErrorMotivo(''); setMostrarModal(true); }}
+                disabled={procesando}
               >
                 Cancelar reserva
               </BotonPanel>
@@ -401,41 +408,21 @@ export function DetalleReserva() {
                 className={`form-control ${errorMotivo ? 'is-invalid' : ''}`}
                 rows={3}
                 id="motivo-cancelacion"
-                aria-describedby="ayuda-cancelacion contador-cancelacion"
-                aria-invalid={!!errorMotivo}
+                {...atributosErrorCampo('motivo-cancelacion', errorMotivo, 'ayuda-cancelacion contador-cancelacion')}
                 value={motivo}
                 onChange={(e) => { setMotivo(e.target.value); setErrorMotivo(''); }}
                 placeholder="Explica al cliente por qué se cancela la reserva..."
                 disabled={procesando}
               ></textarea>
               <div className="reserva-dialogo-pie-campo">
-                {errorMotivo && <div className="panel-alerta panel-alerta--error" role="alert"><div className="panel-alerta-contenido">{errorMotivo}</div></div>}
+                <ErrorCampo id={idErrorCampo('motivo-cancelacion')} mensaje={errorMotivo} />
                 <span id="contador-cancelacion" className="panel-ayuda">{motivo.trim().length}/{MOTIVO_MAX}</span>
               </div>
             </div>
             <div className="panel-dialogo-acciones">
               <BotonPanel variante="secundario" onClick={() => setMostrarModal(false)} disabled={procesando}>Volver</BotonPanel>
-              <BotonPanel variante="peligro" onClick={handleCancelar} disabled={procesando}>
+              <BotonPanel variante="peligro" onClick={() => void handleCancelar()} disabled={procesando}>
                 {procesando ? 'Cancelando...' : 'Cancelar reserva'}
-              </BotonPanel>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {(mostrarConfirmar || mostrarCompletar) && (
-        <div className="panel-dialogo-fondo" role="alertdialog" aria-modal="true">
-          <div className="panel-dialogo">
-            <h3 className="panel-dialogo-titulo">{mostrarCompletar ? '¿Marcar esta reserva como completada? Ya no se podrá modificar.' : '¿Confirmar la reserva?'}</h3>
-            <p className="panel-dialogo-texto">
-              {mostrarCompletar ? <>Reserva <strong>{reserva.folio}</strong> de </> : '¿Confirmar la reserva de '}
-              <strong>{reserva.cliente.nombre}</strong> el {formatearFecha(reserva.inicio)} a las {formatearHora(reserva.inicio)}{mostrarCompletar ? '.' : '?'}
-            </p>
-            {errorMotivo && <div className="panel-alerta panel-alerta--error" role="alert"><div className="panel-alerta-contenido">{errorMotivo}</div></div>}
-            <div className="panel-dialogo-acciones">
-              <BotonPanel variante="secundario" onClick={() => { setMostrarConfirmar(false); setMostrarCompletar(false); }} disabled={procesando}>Cancelar</BotonPanel>
-              <BotonPanel variante="primario" onClick={mostrarCompletar ? handleCompletar : handleAceptar} disabled={procesando}>
-                {procesando ? 'Confirmando...' : 'Confirmar'}
               </BotonPanel>
             </div>
           </div>
@@ -454,21 +441,20 @@ export function DetalleReserva() {
                 className={`form-control ${errorMotivo ? 'is-invalid' : ''}`}
                 rows={3}
                 id="motivo-rechazo"
-                aria-describedby="ayuda-rechazo contador-rechazo"
-                aria-invalid={!!errorMotivo}
+                {...atributosErrorCampo('motivo-rechazo', errorMotivo, 'ayuda-rechazo contador-rechazo')}
                 value={motivoRechazo}
                 onChange={(e) => { setMotivoRechazo(e.target.value); setErrorMotivo(''); }}
                 placeholder="Explica al cliente por qué no puedes aceptar la reserva..."
                 disabled={procesando}
               ></textarea>
               <div className="reserva-dialogo-pie-campo">
-                {errorMotivo && <div className="panel-alerta panel-alerta--error" role="alert"><div className="panel-alerta-contenido">{errorMotivo}</div></div>}
+                <ErrorCampo id={idErrorCampo('motivo-rechazo')} mensaje={errorMotivo} />
                 <span id="contador-rechazo" className="panel-ayuda">{motivoRechazo.trim().length}/{MOTIVO_MAX}</span>
               </div>
             </div>
             <div className="panel-dialogo-acciones">
               <BotonPanel variante="secundario" onClick={() => setMostrarRechazar(false)} disabled={procesando}>Cancelar</BotonPanel>
-              <BotonPanel variante="peligro" onClick={handleRechazar} disabled={procesando}>
+              <BotonPanel variante="peligro" onClick={() => void handleRechazar()} disabled={procesando}>
                 {procesando ? 'Rechazando...' : 'Rechazar solicitud'}
               </BotonPanel>
             </div>
