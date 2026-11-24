@@ -34,7 +34,9 @@ const abrir = (ruta: string) => {
 beforeEach(() => { 
   sesion.usuario = { uid: 'negocio-simulado', email: 'negocio@example.test', providerData: [] }; 
   mockApi.mockReset();
-  mockApi.mockResolvedValue(preferencias); // Por defecto, resolvemos con las preferencias
+  // Solo las preferencias responden; las demás tarjetas siguen cargando, como antes de UI#132.
+  mockApi.mockImplementation((ruta: string) =>
+    (ruta === '/notificaciones/preferencias' ? Promise.resolve(preferencias) : new Promise(() => {})) as ReturnType<typeof api>);
 });
 
 it('UI109 protege /configuracion sin sesión', async () => {
@@ -83,7 +85,9 @@ it('UI132 si falla al guardar el recordatorio, revierte y muestra error', async 
   
   const switchRecordatorio = await screen.findByRole('switch', { name: 'Recordatorio de cita' });
   
-  mockApi.mockRejectedValueOnce(new ErrorApi(500, 'No se pudieron guardar las preferencias.'));
+  mockApi.mockImplementation((ruta: string, opciones?: RequestInit) =>
+    (opciones?.method === 'PUT' ? Promise.reject(new ErrorApi(500, 'No se pudieron guardar las preferencias.'))
+      : ruta === '/notificaciones/preferencias' ? Promise.resolve(preferencias) : new Promise(() => {})) as ReturnType<typeof api>);
 
   await userEvent.click(switchRecordatorio);
   

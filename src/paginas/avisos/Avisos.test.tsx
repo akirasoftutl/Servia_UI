@@ -273,3 +273,24 @@ it.each([
   await userEvent.click(await screen.findByRole('button', { name: 'Activar notificaciones' }))
   expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
 })
+
+it('muestra el recordatorio de cita (RECORDATORIO_CITA_NEGOCIO) y al tocarlo abre el detalle de su reserva', async () => {
+  const recordatorio: Aviso = {
+    id: 'av-3',
+    tipo: 'RECORDATORIO_CITA_NEGOCIO',
+    reservaId: 'res-300',
+    titulo: 'Recordatorio de cita',
+    cuerpo: 'Ana tiene Corte hoy a las 10:00.',
+    leida: false,
+    creadaEn: '2026-11-21T14:00:00.000Z',
+  }
+  notifMocks.listarAvisos.mockResolvedValue({ items: [recordatorio, avisoNuevo], noLeidas: 2, siguiente: null })
+  notifMocks.marcarAvisoLeido.mockResolvedValue({ ...recordatorio, leida: true })
+  const { router } = montarAvisos()
+
+  await userEvent.click(await screen.findByRole('button', { name: /Recordatorio de cita/i }))
+
+  expect(notifMocks.marcarAvisoLeido).toHaveBeenCalledWith('av-3')
+  expect(await screen.findByRole('heading', { name: 'Detalle de reserva' })).toBeVisible()
+  expect(router.state.location.pathname).toBe('/reservas/res-300')
+})
