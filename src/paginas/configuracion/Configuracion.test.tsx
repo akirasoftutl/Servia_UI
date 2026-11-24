@@ -39,7 +39,7 @@ beforeEach(() => {
   vi.mocked(EmailAuthProvider.credential).mockClear()
   apiMock.mockReset().mockImplementation(async (ruta: string, opciones?: RequestInit) => {
     if (ruta === '/negocios/mio') return { nombre: 'Estética Ana', aceptaReservas: true }
-    if (ruta === '/notificaciones/preferencias') return { nuevaSolicitud: true, reservaCancelada: false }
+    if (ruta === '/notificaciones/preferencias') return { nuevaSolicitud: true, reservaCancelada: false, recordatorioCita: true }
     if (ruta === '/soporte/reportes/mios') {
       if (listaReportes instanceof Error) throw listaReportes
       return listaReportes
@@ -131,15 +131,16 @@ describe('UI109 página Configuración', () => {
   })
 
   describe('tarjeta Notificaciones', () => {
-    it('muestra los dos interruptores con lo guardado y guarda un cambio', async () => {
+    it('muestra los tres interruptores con lo guardado y guarda un cambio', async () => {
       pagina()
       const notificaciones = tarjeta('Notificaciones')
       const solicitud = await within(notificaciones).findByRole('switch', { name: 'Nueva solicitud' })
       expect(solicitud).toHaveAttribute('aria-checked', 'true')
       expect(within(notificaciones).getByRole('switch', { name: 'Reserva cancelada por el cliente' })).toHaveAttribute('aria-checked', 'false')
-      apiMock.mockImplementationOnce(async () => ({ nuevaSolicitud: false, reservaCancelada: false }))
+      expect(within(notificaciones).getByRole('switch', { name: 'Recordatorio de cita' })).toHaveAttribute('aria-checked', 'true')
+      apiMock.mockImplementationOnce(async () => ({ nuevaSolicitud: false, reservaCancelada: false, recordatorioCita: true }))
       await userEvent.click(solicitud)
-      expect(apiMock).toHaveBeenCalledWith('/notificaciones/preferencias', { method: 'PUT', body: JSON.stringify({ nuevaSolicitud: false, reservaCancelada: false }) })
+      expect(apiMock).toHaveBeenCalledWith('/notificaciones/preferencias', { method: 'PUT', body: JSON.stringify({ nuevaSolicitud: false, reservaCancelada: false, recordatorioCita: true }) })
       expect(await within(notificaciones).findByText('Preferencias guardadas.')).toBeVisible()
     })
     it('si las preferencias no cargan, ofrece reintentar sin afectar las demás tarjetas', async () => {

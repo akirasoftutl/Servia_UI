@@ -285,3 +285,20 @@ export function eliminarImagenServicio(servicioId: string, imagenId: string): Pr
 
 // Se usa al cerrar sesión para no dejar datos ni acciones de ese negocio.
 export { vaciarCacheDatos }
+
+// Descarga la imagen del mapa del negocio (`GET /negocios/mio/mapa`, Servia_BE#119)
+// y devuelve una URL temporal. Un `<img src>` no manda el token de Firebase, por eso
+// se pide con `fetch`. Quien la use debe llamar a `URL.revokeObjectURL()` al soltarla.
+export async function descargarMapaNegocio(): Promise<string> {
+  const cabeceras = new Headers()
+  const token = await auth?.currentUser?.getIdToken()
+  if (token) {
+    cabeceras.set('Authorization', `Bearer ${token}`)
+  }
+
+  const respuesta = await fetch(`${URL_API}/negocios/mio/mapa`, { headers: cabeceras, cache: 'no-store' })
+  if (!respuesta.ok) {
+    throw new ErrorApi(respuesta.status, 'No se pudo cargar el mapa.')
+  }
+  return URL.createObjectURL(await respuesta.blob())
+}

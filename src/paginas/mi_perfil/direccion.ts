@@ -1,6 +1,12 @@
 // Dirección del negocio por campos. Mismo contrato y mismas reglas que la API
 // (Servia_BE#65, DireccionDto). Ajusta la decisión D8.
 
+// Ubicación del negocio que entrega Google al elegir una sugerencia (Servia_BE#109).
+export interface Ubicacion {
+  lat: number;
+  lng: number;
+}
+
 export const ESTADOS_MEXICO = [
   'Aguascalientes',
   'Baja California',
@@ -103,6 +109,7 @@ export interface DetalleLugar {
   codigoPostal: string;
   municipio: string;
   estado: string;
+  ubicacion?: Ubicacion | null;
 }
 
 const CAMPOS_DETALLE = ['calle', 'numeroExterior', 'colonia', 'codigoPostal', 'municipio', 'estado'] as const;

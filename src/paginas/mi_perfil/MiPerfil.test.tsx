@@ -1,19 +1,20 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router'
-import { api, ErrorApi } from '../../servicios/api'
+import { api, descargarMapaNegocio, ErrorApi } from '../../servicios/api'
 import { MiPerfil } from './MiPerfil'
 import { AVISO_REVISAR, AVISO_SUGERENCIA } from './CampoCalle'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../servicios/api')>()
-  return { ...actual, api: vi.fn() }
+  return { ...actual, api: vi.fn(), descargarMapaNegocio: vi.fn() }
 })
 
 // Sin sesión simulada, la sección «Cambiar contraseña» (MVP-04) no se muestra aquí; se prueba en CambiarContrasena.test.tsx.
 vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => ({ usuario: null }) }))
 
 const apiMock = vi.mocked(api)
+const mapaMock = vi.mocked(descargarMapaNegocio)
 
 const direccionGuardada = {
   calle: 'Blvd. Adolfo López Mateos',
@@ -563,5 +564,134 @@ describe('Mi perfil: limpieza (#116)', () => {
     await screen.findByText('Perfil actualizado correctamente', { exact: false })
     const put = apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')!
     expect(JSON.parse(String(put[1]!.body))).not.toHaveProperty('referencias')
+  })
+})
+
+describe('Mi perfil: mapa de la ubicación (UI#139, HU-N103)', () => {
+  const UBICACION = { lat: 21.1236, lng: -101.6827 }
+  const SUGERENCIA = 'Blvd. Adolfo López Mateos 1102, Jardines del Moral, León, Gto., México'
+  const DETALLE = {
+    calle: 'Blvd. Adolfo López Mateos',
+    numeroExterior: '1102',
+    colonia: 'Jardines del Moral',
+    codigoPostal: '37160',
+    municipio: 'León',
+    estado: 'Guanajuato',
+    ubicacion: UBICACION,
+  }
+  const TITULO_MAPA = 'Así te ve el cliente en el mapa'
+  const ALT_MAPA = 'Mapa con la ubicación de tu negocio'
+
+  // GET /negocios/mio con la dirección guardada y, si se pide, la ubicación.
+  function responderMapa(ubicacion: unknown, detalle: unknown = DETALLE) {
+    apiMock.mockImplementation(async (ruta: string, opciones?: RequestInit) => {
+      if (ruta === '/categorias') return [{ id: 'cabello-barba', nombre: 'Cabello y barba' }]
+      if (ruta.startsWith('/lugares/autocompletar')) return [{ texto: SUGERENCIA, lugarId: 'lugar-1' }]
+      if (ruta.startsWith('/lugares/detalle')) return detalle
+      if (ruta === '/negocios/mio' && opciones?.method === 'PUT') return { ...perfilBase, ...JSON.parse(String(opciones.body)), direccionTexto: '' }
+      return { ...perfilBase, direccion: direccionGuardada, direccionTexto: '', ubicacion }
+    })
+  }
+
+  async function guardarYLeerPut() {
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }))
+    await screen.findByText('Perfil actualizado correctamente', { exact: false })
+    return JSON.parse(String(apiMock.mock.calls.find(([, o]) => o?.method === 'PUT')![1]!.body))
+  }
+
+  async function elegirSugerencia() {
+    await escribir('Calle *', 'Blvd López')
+    await screen.findByRole('option', { name: SUGERENCIA })
+    await userEvent.keyboard('{ArrowDown}{Enter}')
+    await waitFor(() => expect(apiMock.mock.calls.some(([ruta]) => ruta.startsWith('/lugares/detalle'))).toBe(true))
+    await act(async () => {})
+  }
+
+  beforeEach(() => {
+    apiMock.mockReset()
+    mapaMock.mockReset()
+    mapaMock.mockResolvedValue('blob:mapa-1')
+    window.scrollTo = vi.fn()
+  })
+
+  it('con ubicación guardada muestra el título y la imagen con su texto alternativo', async () => {
+    responderMapa(UBICACION)
+    await abrirPaso2()
+    expect(await screen.findByRole('heading', { name: TITULO_MAPA })).toBeInTheDocument()
+    expect(await screen.findByAltText(ALT_MAPA)).toHaveAttribute('src', 'blob:mapa-1')
+    expect(mapaMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('sin ubicación no pide ni muestra nada del mapa', async () => {
+    responderMapa(null)
+    await abrirPaso2()
+    expect(screen.queryByRole('heading', { name: TITULO_MAPA })).not.toBeInTheDocument()
+    expect(screen.queryByAltText(ALT_MAPA)).not.toBeInTheDocument()
+    expect(mapaMock).not.toHaveBeenCalled()
+  })
+
+  it('con error de la API avisa «No se pudo cargar el mapa.» y el resto de la pantalla sigue', async () => {
+    mapaMock.mockRejectedValue(new ErrorApi(503, 'No se pudo cargar el mapa.'))
+    responderMapa(UBICACION)
+    await abrirPaso2()
+    expect(await screen.findByText('No se pudo cargar el mapa.')).toBeInTheDocument()
+    expect(screen.queryByAltText(ALT_MAPA)).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Calle *')).toHaveValue(direccionGuardada.calle)
+    expect(screen.getByRole('button', { name: 'Continuar' })).toBeEnabled()
+  })
+
+  it('al salir de la pantalla libera la URL temporal de la imagen', async () => {
+    const revocar = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    responderMapa(UBICACION)
+    const { unmount } = render(<MemoryRouter><MiPerfil /></MemoryRouter>)
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+    await screen.findByAltText(ALT_MAPA)
+    unmount()
+    expect(revocar).toHaveBeenCalledWith('blob:mapa-1')
+    revocar.mockRestore()
+  })
+
+  it('al elegir una sugerencia y guardar manda la ubicación y el mapa se vuelve a pedir', async () => {
+    responderMapa(null)
+    await abrirPaso2()
+    await elegirSugerencia()
+    expect(mapaMock).not.toHaveBeenCalled()
+    const cuerpo = await guardarYLeerPut()
+    expect(cuerpo.ubicacion).toEqual(UBICACION)
+    expect(cuerpo.direccion).toMatchObject({ numeroExterior: '1102', colonia: 'Jardines del Moral' })
+    await userEvent.click(await screen.findByRole('button', { name: 'Anterior' }))
+    expect(await screen.findByAltText(ALT_MAPA)).toBeInTheDocument()
+    expect(mapaMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('si edita el domicilio a mano después de la sugerencia no manda la ubicación', async () => {
+    responderMapa(null)
+    await abrirPaso2()
+    await elegirSugerencia()
+    await escribir('Número exterior *', '2000')
+    const cuerpo = await guardarYLeerPut()
+    expect(cuerpo).not.toHaveProperty('ubicacion')
+    expect(cuerpo.direccion.numeroExterior).toBe('2000')
+  })
+
+  it('si la dirección no cambió no manda la ubicación', async () => {
+    responderMapa(UBICACION, { ...direccionGuardada, ubicacion: UBICACION })
+    await abrirPaso2()
+    await elegirSugerencia()
+    const cuerpo = await guardarYLeerPut()
+    expect(cuerpo).not.toHaveProperty('ubicacion')
+  })
+
+  it('al guardar un cambio a mano la API deja la ubicación en null y el mapa desaparece', async () => {
+    responderMapa(UBICACION)
+    await abrirPaso2()
+    await screen.findByAltText(ALT_MAPA)
+    await escribir('Número exterior *', '2000')
+    const cuerpo = await guardarYLeerPut()
+    expect(cuerpo).not.toHaveProperty('ubicacion')
+    await userEvent.click(await screen.findByRole('button', { name: 'Anterior' }))
+    await screen.findByLabelText('Calle *')
+    expect(screen.queryByRole('heading', { name: TITULO_MAPA })).not.toBeInTheDocument()
   })
 })

@@ -12,8 +12,10 @@ import {
   validarDireccion,
   type Direccion,
   type DireccionForm,
+  type Ubicacion,
 } from './direccion';
 import { CampoCalle, type EleccionCalle } from './CampoCalle';
+import { MapaNegocio } from './MapaNegocio';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { FotosNegocio } from './FotosNegocio';
 import { FOTOS_VACIAS, normalizarFotosNegocio } from './fotos';
@@ -40,6 +42,7 @@ type RespuestaPerfil = Partial<PerfilNegocio> & {
   direccion?: Direccion | null;
   direccionTexto?: string;
   fotos?: Partial<FotosNegocioDatos> | null;
+  ubicacion?: Ubicacion | null;
 };
 
 const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -72,6 +75,13 @@ export function MiPerfil() {
 
   const [fotos, setFotos] = useState<FotosNegocioDatos>(FOTOS_VACIAS);
 
+  // Ubicación guardada: es la que dibuja el mapa que da la API.
+  const [ubicacionGuardada, setUbicacionGuardada] = useState<Ubicacion | null>(null);
+  // Ubicación de la sugerencia elegida, aún sin guardar. Se manda con la dirección
+  // y se descarta si el negocio edita el domicilio a mano (no correspondería).
+  const [ubicacionElegida, setUbicacionElegida] = useState<Ubicacion | null>(null);
+  // Dirección tal como está guardada, para no mandar la ubicación si no cambió.
+  const [direccionGuardada, setDireccionGuardada] = useState<DireccionForm>(DIRECCION_VACIA);
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -94,9 +104,11 @@ export function MiPerfil() {
         setFotos(normalizarFotosNegocio(perfil.fotos));
         if (perfil.direccion) {
           setDireccion(direccionAForm(perfil.direccion));
+          setDireccionGuardada(direccionAForm(perfil.direccion));
         } else if (perfil.direccionTexto) {
           setDireccionVieja(perfil.direccionTexto);
         }
+        setUbicacionGuardada(perfil.ubicacion ?? null);
       } catch (error) {
         console.error('Error al cargar datos:', error);
       } finally {
@@ -116,12 +128,14 @@ export function MiPerfil() {
     const { name, value } = e.target;
     setDireccion({ ...direccion, [name]: value });
     setErrores({ ...errores, [name]: '' });
+    setUbicacionElegida(null);
   };
 
   // Con detalle llena cada campo (menos el número interior); sin él, decisión A1:
   // solo `calle`, con todo el texto de la sugerencia.
   const handleCalleElegida = ({ texto, detalle }: EleccionCalle) => {
     setDireccion((prev) => (detalle ? aplicarDetalleADireccion(prev, detalle) : { ...prev, calle: texto }));
+    setUbicacionElegida(detalle?.ubicacion ?? null);
     setErrores((prev) => ({
       ...prev,
       calle: '',
@@ -187,9 +201,16 @@ export function MiPerfil() {
       const { nombre, descripcion, categoriaId } = form;
       const telefono = normalizarTelefono(form.telefono);
       const correoContacto = form.correoContacto.trim();
+      // Sin `ubicacion` la API conserva la guardada si la dirección no cambió y la borra si cambió.
+      const direccionCambio = JSON.stringify(direccion) !== JSON.stringify(direccionGuardada);
+      const enviarUbicacion = ubicacionElegida !== null && direccionCambio;
       const respuesta = await api<RespuestaPerfil>('/negocios/mio', {
         method: 'PUT',
-        body: JSON.stringify({ nombre, descripcion, categoriaId, telefono, correoContacto, direccion: direccionParaApi(direccion) }),
+        body: JSON.stringify({
+          nombre, descripcion, categoriaId, telefono, correoContacto,
+          direccion: direccionParaApi(direccion),
+          ...(enviarUbicacion ? { ubicacion: ubicacionElegida } : {}),
+        }),
       });
 
       setForm((prev) => ({
@@ -205,8 +226,11 @@ export function MiPerfil() {
       }));
       if (respuesta.direccion) {
         setDireccion(direccionAForm(respuesta.direccion));
+        setDireccionGuardada(direccionAForm(respuesta.direccion));
         setDireccionVieja('');
       }
+      setUbicacionGuardada(respuesta.ubicacion ?? null);
+      setUbicacionElegida(null);
       if (respuesta.fotos) {
         setFotos(normalizarFotosNegocio(respuesta.fotos));
       }
@@ -629,6 +653,12 @@ export function MiPerfil() {
                         <div className="invalid-feedback">{errores.estado}</div>
                       )}
                     </div>
+
+                    {ubicacionGuardada && (
+                      <div className="col-12">
+                        <MapaNegocio ubicacion={ubicacionGuardada} />
+                      </div>
+                    )}
 
                   </div>
                 </section>
