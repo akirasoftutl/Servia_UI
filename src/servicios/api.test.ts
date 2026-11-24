@@ -1,5 +1,6 @@
 import {
   api,
+  descargarMapaNegocio,
   eliminarFotoNegocio,
   eliminarImagenServicio,
   ErrorApi,
@@ -119,5 +120,26 @@ describe('api', () => {
       'http://localhost:3000/negocios/mio/servicios/s1/imagenes/img%2F1',
       expect.objectContaining({ method: 'DELETE' }),
     )
+  })
+})
+
+describe('descargarMapaNegocio', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('pide la imagen en GET /negocios/mio/mapa sin caché y la devuelve como URL temporal', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, status: 200, blob: async () => new Blob(['png'], { type: 'image/png' }) } as Response)
+    URL.createObjectURL = vi.fn(() => 'blob:mapa')
+    await expect(descargarMapaNegocio()).resolves.toBe('blob:mapa')
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3000/negocios/mio/mapa', expect.objectContaining({ cache: 'no-store' }))
+    expect(vi.mocked(URL.createObjectURL).mock.calls[0][0]).toBeInstanceOf(Blob)
+  })
+
+  it('con 503 lanza ErrorApi con el aviso y no crea la URL', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(respuesta(503, { message: 'Mapa no disponible' }))
+    URL.createObjectURL = vi.fn(() => 'blob:mapa')
+    await expect(descargarMapaNegocio()).rejects.toMatchObject({ name: 'ErrorApi', estado: 503, message: 'No se pudo cargar el mapa.' })
+    expect(URL.createObjectURL).not.toHaveBeenCalled()
   })
 })

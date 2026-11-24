@@ -27,6 +27,11 @@ function aDetalle(datos: unknown): DetalleLugar | null {
   if (typeof datos !== 'object' || datos === null || Array.isArray(datos)) return null
   const crudo = datos as Record<string, unknown>
   const texto = (campo: string) => (typeof crudo[campo] === 'string' ? (crudo[campo] as string) : '')
+  // La ubicación (Servia_BE#109) viene como `{ lat, lng }` o `null`.
+  const ubi = crudo.ubicacion as Record<string, unknown> | null | undefined
+  const ubicacion =
+    ubi && typeof ubi.lat === 'number' && typeof ubi.lng === 'number' ? { lat: ubi.lat, lng: ubi.lng } : null
+
   return {
     calle: texto('calle'),
     numeroExterior: texto('numeroExterior'),
@@ -34,6 +39,7 @@ function aDetalle(datos: unknown): DetalleLugar | null {
     codigoPostal: texto('codigoPostal'),
     municipio: texto('municipio'),
     estado: texto('estado'),
+    ubicacion,
   }
 }
 
