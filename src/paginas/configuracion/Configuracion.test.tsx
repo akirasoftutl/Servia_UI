@@ -132,13 +132,14 @@ describe('UI109 página Configuración', () => {
 
   describe('tarjeta Recepción de reservas', () => {
     it('reutiliza el componente compartido: carga el estado del negocio y pide confirmar la pausa', async () => {
+      mockearConfirmacion(false)
       pagina()
       const recepcion = tarjeta('Recepción de reservas')
       expect(recepcion).toHaveAttribute('id', 'recepcion-reservas')
       expect(apiMock).toHaveBeenCalledWith('/negocios/mio')
       const interruptor = await within(recepcion).findByRole('switch')
       await userEvent.click(interruptor)
-      expect(await screen.findByRole('dialog')).toHaveTextContent('¿Pausar las reservas?')
+      expect(ultimaAlerta()).toMatchObject({ title: '¿Pausar las reservas?', showCancelButton: true })
     })
   })
 

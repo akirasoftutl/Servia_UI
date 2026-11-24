@@ -8,6 +8,7 @@ import { api, ErrorApi } from '../../servicios/api';
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { Configuracion } from '../../paginas/configuracion/Configuracion';
 import { Reservas } from '../../paginas/reservas/Reservas';
+import { llamadasAlertas, mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas';
 
 vi.mock('../../servicios/api', async (original) => ({
   ...await original<typeof import('../../servicios/api')>(), api: vi.fn(),
@@ -62,34 +63,40 @@ describe.each([['Configuración', Configuracion], ['Reservas', Reservas]] as con
     const control = await findInterruptor();
     await waitFor(() => expect(control).toBeEnabled());
     expect(control).toHaveAttribute('aria-checked', String(inicial));
+
+    mockearConfirmacion(false);
     await userEvent.click(control);
-    const modal = screen.getByRole('dialog');
-    expect(modal).toHaveAccessibleName(inicial ? '¿Pausar las reservas?' : '¿Reanudar las reservas?');
-    expect(modal).toHaveAccessibleDescription(/Tu perfil seguirá visible.*Las reservas que ya tienes no cambiarán/);
-    expect(cambios()).toHaveLength(0);
-    await userEvent.click(within(modal).getByRole('button', { name: 'Cancelar' }));
+    expect(ultimaAlerta()).toMatchObject({
+      title: inicial ? '¿Pausar las reservas?' : '¿Reanudar las reservas?',
+      showCancelButton: true,
+    });
+    expect(String(ultimaAlerta()?.text)).toMatch(/Tu perfil seguirá visible.*Las reservas que ya tienes no cambiarán/);
     expect(cambios()).toHaveLength(0);
     expect(control).toHaveAttribute('aria-checked', String(inicial));
+
+    mockearConfirmacion(true);
     await userEvent.click(control);
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: inicial ? 'Pausar' : 'Reanudar' }));
     await waitFor(() => expect(control).toHaveAttribute('aria-checked', String(!inicial)));
     expect(cambios()).toEqual([['/negocios/mio/recepcion-reservas', { method: 'PATCH', body: JSON.stringify({ aceptaReservas: !inicial }) }]]);
-    expect(screen.getByRole('status')).toHaveTextContent(inicial ? 'Reservas pausadas.' : 'Reservas reanudadas.');
+    expect(ultimaAlerta()).toMatchObject({
+      icon: 'success',
+      text: inicial ? 'Reservas pausadas.' : 'Reservas reanudadas.',
+    });
   });
 
   it.each([
     [new ErrorApi(429, 'Demasiados cambios; inténtalo más tarde.'), 'Demasiados cambios; inténtalo más tarde.'],
     [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
     [new TypeError('Failed to fetch'), 'No pudimos cambiar la recepción de reservas. Intenta de nuevo.'],
-  ])('C4 error %s en español, sin alert y conserva estado', async (error, esperado) => {
+  ])('C4 error %s en español con alerta estándar, sin window.alert y conserva estado', async (error, esperado) => {
     fallo = error;
     const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {});
     mostrar(Pagina);
     await waitFor(() => expect(getInterruptor()).toBeEnabled());
+    mockearConfirmacion(true);
     await userEvent.click(getInterruptor());
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Pausar' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(esperado);
-    expect(within(zona()).getByRole('switch', { hidden: true })).toHaveAttribute('aria-checked', 'true');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: esperado }));
+    expect(within(zona()).getByRole('switch')).toHaveAttribute('aria-checked', 'true');
     expect(alerta).not.toHaveBeenCalled();
     alerta.mockRestore();
   });
@@ -110,8 +117,8 @@ describe.each([['Configuración', Configuracion], ['Reservas', Reservas]] as con
     mostrar(Pagina);
     if (metodo === 'PATCH') {
       await waitFor(() => expect(getInterruptor()).toBeEnabled());
+      mockearConfirmacion(true);
       await userEvent.click(getInterruptor());
-      await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Pausar' }));
     }
     expect(await screen.findByRole('heading', { name: 'Inicia sesión' })).toBeVisible();
     expect(signOut).toHaveBeenCalledExactlyOnceWith(auth);
@@ -123,22 +130,23 @@ describe.each([['Configuración', Configuracion], ['Reservas', Reservas]] as con
     enviar = () => new Promise<void>((resolve) => { resolver = resolve; });
     mostrar(Pagina);
     await waitFor(() => expect(getInterruptor()).toBeEnabled());
+    mockearConfirmacion(true);
     await userEvent.click(getInterruptor());
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Reanudar' }));
-    expect(screen.getByRole('button', { name: 'Reanudando...' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+    await waitFor(() => expect(getInterruptor()).toBeDisabled());
+    expect(getInterruptor()).toHaveTextContent('Reanudando...');
     expect(cambios()).toHaveLength(1);
     await act(async () => resolver());
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() => expect(getInterruptor()).toBeEnabled());
+    expect(llamadasAlertas().at(-1)).toMatchObject({ icon: 'success', text: 'Reservas reanudadas.' });
   });
 });
 
 it('C1-C2 conserva el estado al pasar de Configuración a Reservas', async () => {
   const vista = mostrar(Configuracion);
   await waitFor(() => expect(getInterruptor()).toBeEnabled());
+  mockearConfirmacion(true);
   await userEvent.click(getInterruptor());
-  await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Pausar' }));
-  await screen.findByText('Reservas pausadas.');
+  await waitFor(() => expect(getInterruptor()).toHaveAttribute('aria-checked', 'false'));
   vista.unmount();
   mostrar(Reservas);
   await waitFor(() => expect(getInterruptor()).toBeEnabled());
