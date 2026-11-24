@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router';
 import { vi } from 'vitest';
 import { api } from '../../servicios/api';
 import { Reservas } from './Reservas';
-import { llamadasAlertas, mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas';
+import { llamadasAlertas, mockearConfirmacion, swalFireMock, ultimaAlerta } from '../../pruebas/mockAlertas';
 
 vi.mock('../../servicios/api', () => ({ api: vi.fn() }));
 
@@ -129,6 +129,78 @@ describe('Recepción de reservas (MVP-12)', () => {
     mockearConfirmacion(false);
     await userEvent.click(screen.getByRole('switch'));
     expect(screen.getByRole('switch')).toBeChecked();
+    expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
+  });
+
+  it('configura la confirmación de pausa con foco inicial en Cancelar, Esc, retorno de foco y sin cierre externo', async () => {
+    await listo(true);
+    mockearConfirmacion(false, 'esc');
+    await userEvent.click(screen.getByRole('switch'));
+    expect(ultimaAlerta()).toMatchObject({
+      icon: 'warning',
+      title: '¿Pausar las reservas?',
+      confirmButtonText: 'Pausar',
+      cancelButtonText: 'Cancelar',
+      showCancelButton: true,
+      focusCancel: true,
+      allowEscapeKey: true,
+      returnFocus: true,
+      allowOutsideClick: false,
+      customClass: expect.objectContaining({
+        popup: 'servia-swal-popup servia-swal-popup--peligro',
+      }),
+    });
+    expect(screen.getByRole('switch')).toBeChecked();
+    expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
+  });
+
+  it('pide confirmación con textos correctos al reanudar y cancelar no llama a la API', async () => {
+    await listo(false);
+    mockearConfirmacion(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Reanudar' }));
+    expect(ultimaAlerta()).toMatchObject({
+      icon: 'question',
+      title: '¿Reanudar las reservas?',
+      text: 'Tu perfil seguirá visible y los clientes podrán solicitar nuevas reservas. Nota: Las reservas que ya tienes no cambiarán.',
+      confirmButtonText: 'Reanudar',
+      cancelButtonText: 'Cancelar',
+      showCancelButton: true,
+      focusCancel: false,
+      allowEscapeKey: true,
+      returnFocus: true,
+      allowOutsideClick: false,
+    });
+    expect(screen.getByRole('switch')).not.toBeChecked();
+    expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
+  });
+
+  it('el error al pausar conserva el estado activo, muestra alerta de error y permite reintentar', async () => {
+    await listo(true);
+    responderPatch(new Error('Sin conexión'));
+    mockearConfirmacion(true);
+    await userEvent.click(screen.getByRole('switch'));
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: errorCambio }));
+    expect(screen.getByRole('switch')).toBeChecked();
+
+    responderPatch(null);
+    mockearConfirmacion(true);
+    await userEvent.click(screen.getByRole('switch'));
+    await waitFor(() => expect(screen.getByRole('switch')).not.toBeChecked());
+    expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Reservas pausadas.' });
+  });
+
+  it('evita abrir una segunda confirmación mientras la primera sigue abierta', async () => {
+    await listo(true);
+    const dialogo = pendiente<{ isConfirmed: boolean; isDenied: boolean; isDismissed: boolean }>();
+    swalFireMock.mockReturnValueOnce(dialogo.promesa);
+    const interruptor = screen.getByRole('switch');
+    await userEvent.click(interruptor);
+    await userEvent.click(interruptor);
+    expect(swalFireMock).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      dialogo.resolver({ isConfirmed: false, isDenied: false, isDismissed: true });
+    });
+    expect(interruptor).toBeChecked();
     expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
   });
 
