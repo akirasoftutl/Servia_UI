@@ -16,10 +16,16 @@ import { AccionesServicio } from './AccionesServicio';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { ImagenesServicio } from './ImagenesServicio';
 import { AVISO_IMAGENES_FALLIDAS, liberarPendiente, type ArchivoPendiente } from './imagenes';
+import { CategoriaServicio } from './CategoriaServicio';
+import {
+  SIN_CATEGORIA, camposDeCategoria, categoriaDelServicio, errorDeCategoria, useCatalogoCategorias,
+  type CategoriaDeServicio, type CategoriaElegida,
+} from './categorias';
 
 interface PerfilNegocio {
   perfilCompleto: boolean;
   camposFaltantes: string[];
+  categoriaId?: string | null;
 }
 
 // Al pasar de /servicios/nuevo a /servicios/:id (p. ej. si fallan las imágenes al crear) el
@@ -51,6 +57,11 @@ function FormularioServicio() {
   const [servicioPublicado, setServicioPublicado] = useState(false);
   const [perfilCompleto, setPerfilCompleto] = useState(true);
   const [camposFaltantes, setCamposFaltantes] = useState<string[]>([]);
+  // Categoría del servicio (HU-N28, HU-N31 a HU-N34): lo elegido, lo que había al abrir y lo guardado.
+  const [categoria, setCategoria] = useState<CategoriaElegida>(SIN_CATEGORIA);
+  const [categoriaInicial, setCategoriaInicial] = useState<CategoriaElegida>(SIN_CATEGORIA);
+  const [categoriaGuardada, setCategoriaGuardada] = useState<{ id: string; nombre: string } | null>(null);
+  const [categoriaNegocioId, setCategoriaNegocioId] = useState<string | null | undefined>(undefined);
   // Imágenes (HU-N27): las guardadas en edición y, al crear, las elegidas que se suben tras crear el servicio.
   const [imagenes, setImagenes] = useState<ImagenServicio[]>([]);
   const [pendientes, setPendientes] = useState<ArchivoPendiente[]>([]);
@@ -65,6 +76,8 @@ function FormularioServicio() {
     if (servicioPublicado) botonExito.current?.focus();
   }, [servicioPublicado]);
   const [mensajeExito, setMensajeExito] = useState('');
+  // Al editar, la categoría del negocio no viene en la carga del servicio: el hook consulta el perfil.
+  const catalogo = useCatalogoCategorias(!cargando && !errorCarga, categoriaNegocioId, esEdicion);
 
   useEffect(() => {
     let vigente = true;
@@ -72,10 +85,13 @@ function FormularioServicio() {
       try {
         if (esEdicion && id) {
           // La edición no depende de la disponibilidad del perfil.
-          const servicio = await api<{ nombre: string; descripcion: string; precio: number; duracionMin: number; activo: boolean; imagenes?: ImagenServicio[] }>(`/negocios/mio/servicios/${id}`);
+          const servicio = await api<{ nombre: string; descripcion: string; precio: number; duracionMin: number; activo: boolean; imagenes?: ImagenServicio[] } & CategoriaDeServicio>(`/negocios/mio/servicios/${id}`);
           if (!vigente) return;
           setActivo(servicio.activo);
           setImagenes(servicio.imagenes ?? []);
+          const guardada = categoriaDelServicio(servicio);
+          setCategoria(guardada); setCategoriaInicial(guardada);
+          setCategoriaGuardada(servicio.categoriaServicio ?? null);
           setForm({ nombre: servicio.nombre, descripcion: servicio.descripcion,
             precio: String(servicio.precio), duracion: String(servicio.duracionMin) });
         } else {
@@ -83,6 +99,7 @@ function FormularioServicio() {
           if (!vigente) return;
           setPerfilCompleto(perfil.perfilCompleto);
           setCamposFaltantes(perfil.camposFaltantes || []);
+          setCategoriaNegocioId(perfil.categoriaId ?? null);
         }
       } catch (error) {
         if (vigente) setErrorCarga(error instanceof ErrorApi && error.estado === 404 && esEdicion
@@ -116,6 +133,9 @@ function FormularioServicio() {
       nuevosErrores.duracion = 'La duración debe ser de al menos 1 minuto.';
     }
 
+    const errorCategoria = catalogo.estado === 'listo' ? errorDeCategoria(categoria) : '';
+    if (errorCategoria) nuevosErrores.categoria = errorCategoria;
+
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
@@ -141,14 +161,18 @@ function FormularioServicio() {
 
     setPublicando(true);
     setErrorGuardar('');
+    let payloadEnviado: object = {};
     try {
       const payload = {
         nombre: form.nombre,
         descripcion: form.descripcion,
         precio: Number(form.precio),
         duracionMin: Number(form.duracion),
+        // Con el catálogo caído no se toca la categoría: al editar se conserva la que ya tenía.
+        ...(catalogo.estado === 'listo' ? camposDeCategoria(categoria, categoriaInicial, esEdicion) : {}),
       };
 
+      payloadEnviado = payload;
       if (esEdicion) {
         await api(`/negocios/mio/servicios/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
         navigate('/servicios', { state: { mensaje: 'Cambios guardados.' } });
@@ -168,6 +192,9 @@ function FormularioServicio() {
       if (!esEdicion && error instanceof ErrorApi && error.estado === 409) {
         setPerfilCompleto(false);
         setCamposFaltantes([error.message]);
+      } else if (error instanceof ErrorApi && error.estado === 400 && ('categoriaServicioId' in payloadEnviado || 'categoriaPersonalizada' in payloadEnviado)) {
+        // 400 de validación con categoría de por medio: se muestra junto al campo.
+        setErrores(prev => ({ ...prev, categoria: error.message }));
       } else {
         setErrorGuardar(mensajeDeError(error, esEdicion
           ? 'No pudimos guardar los cambios. Intenta de nuevo.'
@@ -182,6 +209,7 @@ function FormularioServicio() {
     setServicioPublicado(false);
     setForm({ nombre: '', descripcion: '', precio: '', duracion: '' });
     setErrores({});
+    setCategoria(SIN_CATEGORIA);
     pendientes.forEach(liberarPendiente);
     setPendientes([]);
   };
@@ -312,6 +340,14 @@ function FormularioServicio() {
                       <small className="panel-ayuda mt-2 d-block">Tiempo aproximado para realizar el servicio.</small>
                     </div>
                   </div>
+                </section>
+
+                <section className="servicio-seccion">
+                  <h2 className="panel-tarjeta-titulo">Categoría</h2>
+                  <p className="panel-tarjeta-subtitulo servicio-seccion-subtitulo">Elige una categoría o escribe la tuya.</p>
+                  <CategoriaServicio valor={categoria} catalogo={catalogo} error={errores.categoria ?? ''}
+                    actual={categoriaGuardada}
+                    alCambiar={nueva => { setCategoria(nueva); setErrores(prev => ({ ...prev, categoria: '' })); }} />
                 </section>
 
                 {esEdicion && <p className="panel-alerta panel-alerta--info">Los cambios de precio o duración no afectan las reservas que ya existen.</p>}

@@ -7,6 +7,7 @@ import { EsqueletoLista, EstadoVacio, IlustracionEstado } from '../../componente
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
+import { nombreDeCategoria, type CategoriaDeServicio } from './categorias';
 
 // Iniciales del servicio para la ficha decorativa de cada tarjeta.
 function iniciales(nombre: string) {
@@ -15,7 +16,7 @@ function iniciales(nombre: string) {
   return (importantes.length ? importantes : palabras).slice(0, 2).map((palabra) => palabra.charAt(0).toUpperCase()).join('');
 }
 
-interface Servicio {
+interface Servicio extends CategoriaDeServicio {
   id: string;
   nombre: string;
   precio: number;
@@ -143,6 +144,7 @@ export function MisServicios() {
                     <div className="servicio-informacion">
                       <div className="servicio-titulo-fila">
                         <h3>{srv.nombre}</h3>
+                        {nombreDeCategoria(srv) && <span className="panel-contador servicio-categoria">{nombreDeCategoria(srv)}</span>}
                         <span className={`servicio-estado ${srv.activo ? 'activo' : 'inactivo'}`}>
                           <span className="servicio-estado-punto" />
                           {srv.activo ? 'Activo' : 'Inactivo'}
