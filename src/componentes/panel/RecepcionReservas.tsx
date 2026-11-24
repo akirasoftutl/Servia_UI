@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
+import { BotonPanel } from './BotonPanel';
 import '../../estilos/panel.css';
 
 async function cerrarSesionVencida() {
@@ -128,19 +129,18 @@ export function RecepcionReservas() {
 
       <div className="panel-recepcion-cuerpo">
         <div className="panel-recepcion-acciones">
-          <button
+          <BotonPanel
             ref={interruptor}
-            type="button"
+            variante="secundario"
             role="switch"
             aria-label="Recibir reservas"
             aria-checked={aceptaReservas === true}
             aria-describedby="estadoRecepcion"
-            className="btn-servia-secondary"
             onClick={handleToggleReservas}
             disabled={cargandoRecepcion || aceptaReservas === null}
           >
             {aceptaReservas === false ? 'Reanudar recepción' : 'Pausar recepción'}
-          </button>
+          </BotonPanel>
         </div>
 
         {mensajeReservas && !mostrarModalPausa && (
@@ -162,15 +162,17 @@ export function RecepcionReservas() {
               <strong>No pudimos cargar la recepción de reservas.</strong>
               <p>{errorCargaRecepcion}</p>
             </div>
-            <button
-              className="btn-servia-secondary btn-servia-sm panel-alerta-accion"
+            <BotonPanel
+              variante="secundario"
+              tamano="sm"
+              className="panel-alerta-accion"
               onClick={() => {
                 setErrorCargaRecepcion('');
                 setReintentoRecepcion((valor) => valor + 1);
               }}
             >
               Reintentar
-            </button>
+            </BotonPanel>
           </div>
         )}
 
@@ -181,13 +183,15 @@ export function RecepcionReservas() {
               <strong>Pausaste las reservas</strong>
               <p>Los clientes no pueden pedir reservas nuevas.</p>
             </div>
-            <button
-              className="btn-servia-secondary btn-servia-sm panel-alerta-accion"
+            <BotonPanel
+              variante="secundario"
+              tamano="sm"
+              className="panel-alerta-accion"
               onClick={() => handleToggleReservas()}
               disabled={cargandoRecepcion || aceptaReservas === null}
             >
               Reanudar
-            </button>
+            </BotonPanel>
           </div>
         )}
       </div>
@@ -240,21 +244,21 @@ export function RecepcionReservas() {
           </div>
           {errorCambio && mensajeReservas && <p role="alert" className="panel-error-campo">{mensajeReservas}</p>}
           <div className="panel-dialogo-acciones">
-            <button
+            <BotonPanel
               ref={cancelar}
-              className="btn-servia-secondary"
+              variante="secundario"
               onClick={() => setMostrarModalPausa(false)}
               disabled={cargandoRecepcion || aceptaReservas === null}
             >
               Cancelar
-            </button>
-            <button
-              className="btn-servia-primary"
+            </BotonPanel>
+            <BotonPanel
+              variante="primario"
               onClick={() => cambiarRecepcion(!aceptaReservas)}
               disabled={cargandoRecepcion || aceptaReservas === null}
             >
               {cargandoRecepcion ? (aceptaReservas ? 'Pausando...' : 'Reanudando...') : (aceptaReservas ? 'Pausar' : 'Reanudar')}
-            </button>
+            </BotonPanel>
           </div>
         </div>
       </div>

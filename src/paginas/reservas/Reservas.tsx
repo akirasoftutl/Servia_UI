@@ -3,7 +3,7 @@ import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import './Reservas.css';
 import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { CalendarClock, Timer, CalendarCheck } from 'lucide-react';
 import { EstadoCargando, EstadoError, EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
@@ -172,7 +172,7 @@ export function Reservas() {
             icono={CalendarClock}
             titulo={pestana === 'pendientes' ? 'Sin solicitudes por ahora' : 'Sin citas próximas'}
             texto={pestana === 'pendientes' ? 'Cuando un cliente solicite una cita, la verás aquí para aceptarla o rechazarla.' : 'Las citas que confirmes aparecerán aquí.'}
-            accion={<Link to="/mi-perfil/vista-previa" className="btn-servia-secondary">Ver cómo te ven tus clientes</Link>}
+            accion={<BotonPanel variante="secundario" to="/mi-perfil/vista-previa">Ver cómo te ven tus clientes</BotonPanel>}
           />}
           {!cargando && !error && <div className="panel-lista">
             {pagina.items.map((r) => (

@@ -33,9 +33,9 @@ function TarjetaCuenta() {
       <CambiarContrasena incrustada />
       <div className="panel-formulario-acciones panel-formulario-acciones--separado">
         <p className="panel-ayuda">Cierra la sesión en este dispositivo.</p>
-        <button type="button" className="btn-servia-danger" onClick={async () => { await cerrarSesion(); navigate('/login'); }}>
+        <BotonPanel variante="peligro" onClick={async () => { await cerrarSesion(); navigate('/login'); }}>
           <LogOut aria-hidden="true" />Cerrar sesión
-        </button>
+        </BotonPanel>
       </div>
     </TarjetaPanel>
   );

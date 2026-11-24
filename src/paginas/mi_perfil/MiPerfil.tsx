@@ -1,5 +1,4 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import { Link } from 'react-router';
 import { Check, ShieldAlert, Store } from 'lucide-react'
 import './MiPerfil.css';
 import { api, type FotosNegocio as FotosNegocioDatos } from '../../servicios/api';
@@ -747,29 +746,27 @@ export function MiPerfil() {
               <div className="perfil-actions">
                 <div>
                   {pasoActual > 1 && (
-                    <button
-                      type="button"
+                    <BotonPanel
+                      variante="secundario"
                       onClick={handleAnterior}
-                      className="btn-servia-secondary"
                     >
                        Anterior
-                    </button>
+                    </BotonPanel>
                   )}
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
                   {pasoActual < 3 ? (
-                    <button
-                      type="button"
+                    <BotonPanel
+                      variante="primario"
                       onClick={handleSiguiente}
-                      className="btn-servia-primary"
                     >
                       Continuar
-                    </button>
+                    </BotonPanel>
                   ) : (
-                    <button
+                    <BotonPanel
                       type="submit"
-                      className="btn-servia-primary"
+                      variante="primario"
                       disabled={guardando}
                     >
                       {guardando ? (
@@ -786,15 +783,15 @@ export function MiPerfil() {
                           Guardar cambios
                         </>
                       )}
-                    </button>
+                    </BotonPanel>
                   )}
 
-                  <Link
+                  <BotonPanel
+                    variante="secundario"
                     to="/servicios"
-                    className="btn-servia-secondary"
                   >
                     Salir
-                  </Link>
+                  </BotonPanel>
                 </div>
               </div>
 

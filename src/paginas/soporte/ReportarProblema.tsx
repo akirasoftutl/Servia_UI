@@ -6,6 +6,7 @@ import { EsqueletoLista, EstadoError, EstadoVacio } from '../../componentes/pane
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
 import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
 import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import '../../estilos/panel.css';
 
 interface Reporte { id: string; asunto: string; estado: 'abierto'; creadaEn: string }
@@ -79,7 +80,7 @@ export function ReportarProblema() {
           aria-invalid={intentado && descripcionInvalida} aria-describedby="descripcion-ayuda" onChange={e => setDescripcion(e.target.value)} />
         <p className={intentado && descripcionInvalida ? 'panel-error-campo' : 'panel-ayuda'} id="descripcion-ayuda">{largoDescripcion}/1000 caracteres. La descripción debe tener entre 20 y 1000 caracteres.</p>
         <div className="panel-formulario-acciones"><p className="panel-ayuda">No se cuentan los espacios de los extremos.</p>
-          <button type="submit" className="btn-servia-primary" disabled={enviando}>{enviando ? 'Enviando...' : 'Enviar reporte'}</button>
+          <BotonPanel type="submit" variante="primario" disabled={enviando}>{enviando ? 'Enviando...' : 'Enviar reporte'}</BotonPanel>
         </div>
       </form>
     </TarjetaPanel>

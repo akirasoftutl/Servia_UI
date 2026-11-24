@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 import { Link, type LinkProps } from 'react-router';
 
 type VarianteBoton = 'primario' | 'secundario' | 'peligro';
@@ -21,6 +21,7 @@ interface PropsComunes {
 type PropsBoton = PropsComunes &
   Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children'> & {
     to?: undefined;
+    ref?: Ref<HTMLButtonElement>;
   };
 
 type PropsEnlace = PropsComunes &

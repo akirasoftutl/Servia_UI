@@ -6,6 +6,7 @@ import './Horario.css'
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel'
 import { EstadoCargando, EstadoError } from '../../componentes/panel/EstadosPanel'
 import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado'
+import { BotonPanel } from '../../componentes/panel/BotonPanel'
 
 const DIAS = [
   { clave: 'lunes', nombre: 'Lunes' },
@@ -589,9 +590,10 @@ export function Horario() {
                 </div>
               </div>
 
-              <button
+              <BotonPanel
                 type="submit"
-                className="btn-servia-primary horario-btn-guardar"
+                variante="primario"
+                className="horario-btn-guardar"
                 disabled={guardando}
               >
                 {guardando ? (
@@ -606,7 +608,7 @@ export function Horario() {
                 ) : (
                   'Guardar horario'
                 )}
-              </button>
+              </BotonPanel>
             </div>
             </fieldset>
           </form>
@@ -669,9 +671,8 @@ export function Horario() {
             </div>
 
             <div className="panel-dialogo-acciones">
-              <button
-                type="button"
-                className="btn-servia-primary"
+              <BotonPanel
+                variante="primario"
                 onClick={() => void guardar(true)}
                 disabled={guardando}
               >
@@ -687,16 +688,15 @@ export function Horario() {
                 ) : (
                   'Guardar de todos modos'
                 )}
-              </button>
+              </BotonPanel>
 
-              <button
-                type="button"
-                className="btn-servia-secondary"
+              <BotonPanel
+                variante="secundario"
                 onClick={cerrarConflicto}
                 disabled={guardando}
               >
                 Volver
-              </button>
+              </BotonPanel>
             </div>
           </div>
         </div>
@@ -738,13 +738,12 @@ export function Horario() {
             </p>
 
             <div className="panel-dialogo-acciones panel-dialogo-acciones--columna">
-              <button
-                type="button"
-                className="btn-servia-primary"
+              <BotonPanel
+                variante="primario"
                 onClick={() => setMostrarModalExito(false)}
               >
                 Aceptar
-              </button>
+              </BotonPanel>
             </div>
           </div>
         </div>

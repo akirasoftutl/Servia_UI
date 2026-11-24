@@ -45,9 +45,9 @@ export function Ayuda() {
       <div className="panel-lista">{grupo.preguntas.map(p => {
         const abierta = abiertas.includes(p.id);
         return <div className="panel-acordeon" key={p.id}>
-          <h3 className="panel-item-titulo"><button id={`pregunta-${p.id}`} className="btn-servia-secondary panel-acordeon-boton" aria-expanded={abierta} aria-controls={`respuesta-${p.id}`} onClick={() => setAbiertas(prev => abierta ? prev.filter(id => id !== p.id) : [...prev, p.id])}>
+          <h3 className="panel-item-titulo"><BotonPanel id={`pregunta-${p.id}`} variante="secundario" className="panel-acordeon-boton" aria-expanded={abierta} aria-controls={`respuesta-${p.id}`} onClick={() => setAbiertas(prev => abierta ? prev.filter(id => id !== p.id) : [...prev, p.id])}>
             <span>{p.pregunta}</span>{abierta ? <Minus aria-hidden="true" /> : <Plus aria-hidden="true" />}
-          </button></h3>
+          </BotonPanel></h3>
           <div id={`respuesta-${p.id}`} role="region" aria-labelledby={`pregunta-${p.id}`} hidden={!abierta}><p className="panel-item-texto">{p.respuesta}</p></div>
         </div>;
       })}</div>

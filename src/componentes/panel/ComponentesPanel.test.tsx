@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
@@ -58,6 +59,10 @@ describe('componentes compartidos del panel (unificación con app móvil)', () =
     const enlace = screen.getByRole('link', { name: 'Ver reservas' });
     expect(enlace).toHaveClass('btn-servia-secondary');
     expect(enlace).toHaveAttribute('href', '/reservas');
+
+    const referencia = createRef<HTMLButtonElement>();
+    render(<BotonPanel ref={referencia} variante="secundario">Enfocar</BotonPanel>);
+    expect(referencia.current).toBe(screen.getByRole('button', { name: 'Enfocar' }));
   });
 
   it('EtiquetaEstado aplica el tono semántico y su ícono decorativo', () => {

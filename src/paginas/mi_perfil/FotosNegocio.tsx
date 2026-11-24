@@ -10,6 +10,7 @@ import {
   type TipoFotoNegocio,
 } from '../../servicios/api';
 import { IlustracionEstado } from '../../componentes/panel/EstadosPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import {
   ACCEPT_FOTOS,
   FOTOS_VACIAS,
@@ -287,26 +288,26 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               onChange={seleccionarArchivo('portada')}
             />
             <div className="panel-fotos-cabecera-acciones">
-              <button
-                type="button"
-                className="btn-servia-secondary btn-servia-sm"
+              <BotonPanel
+                variante="secundario"
+                tamano="sm"
                 disabled={ocupado}
                 aria-describedby="aviso-fotos-aparte"
                 onClick={() => inputPortadaRef.current?.click()}
               >
                 <Upload aria-hidden="true" />
                 {fotos.portada ? 'Cambiar portada' : 'Subir portada'}
-              </button>
+              </BotonPanel>
               {fotos.portada && (
-                <button
-                  type="button"
-                  className="btn-servia-danger btn-servia-sm"
+                <BotonPanel
+                  variante="peligro"
+                  tamano="sm"
                   disabled={ocupado}
                   onClick={() => setFotoPorEliminar({ foto: fotos.portada!, tipo: 'portada', numero: 0 })}
                 >
                   <Trash2 aria-hidden="true" />
                   Quitar portada
-                </button>
+                </BotonPanel>
               )}
             </div>
           </div>
@@ -324,9 +325,9 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                   {pendiente.archivo.name} · {formatearTamanoArchivo(pendiente.archivo.size)}
                 </p>
                 <div className="panel-fotos-previa-acciones">
-                  <button
-                    type="button"
-                    className="btn-servia-primary btn-servia-sm"
+                  <BotonPanel
+                    variante="primario"
+                    tamano="sm"
                     disabled={ocupado}
                     onClick={() => void confirmarSubida()}
                   >
@@ -335,15 +336,15 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                       : fotos.portada
                         ? 'Confirmar cambio'
                         : 'Guardar portada'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-servia-secondary btn-servia-sm"
+                  </BotonPanel>
+                  <BotonPanel
+                    variante="secundario"
+                    tamano="sm"
                     disabled={ocupado}
                     onClick={cancelarPrevia}
                   >
                     Cancelar
-                  </button>
+                  </BotonPanel>
                 </div>
               </div>
             </div>
@@ -393,16 +394,16 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
               disabled={ocupado || galeriaLlena}
               onChange={seleccionarArchivo('galeria')}
             />
-            <button
-              type="button"
-              className="btn-servia-primary btn-servia-sm"
+            <BotonPanel
+              variante="primario"
+              tamano="sm"
               disabled={ocupado || galeriaLlena}
               aria-describedby="aviso-fotos-aparte"
               onClick={() => inputGaleriaRef.current?.click()}
             >
               <Plus aria-hidden="true" />
               {galeriaLlena ? 'Máximo 5 fotos' : 'Agregar foto'}
-            </button>
+            </BotonPanel>
           </div>
 
           {pendiente?.tipo === 'galeria' && (
@@ -418,22 +419,22 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                   {pendiente.archivo.name} · {formatearTamanoArchivo(pendiente.archivo.size)}
                 </p>
                 <div className="panel-fotos-previa-acciones">
-                  <button
-                    type="button"
-                    className="btn-servia-primary btn-servia-sm"
+                  <BotonPanel
+                    variante="primario"
+                    tamano="sm"
                     disabled={ocupado}
                     onClick={() => void confirmarSubida()}
                   >
                     {operacion === 'subiendo' ? 'Subiendo...' : 'Subir a la galería'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-servia-secondary btn-servia-sm"
+                  </BotonPanel>
+                  <BotonPanel
+                    variante="secundario"
+                    tamano="sm"
                     disabled={ocupado}
                     onClick={cancelarPrevia}
                   >
                     Cancelar
-                  </button>
+                  </BotonPanel>
                 </div>
               </div>
             </div>
@@ -464,16 +465,16 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                   />
                   <div className="panel-fotos-tarjeta-pie">
                     <span className="panel-ayuda">Foto {indice + 1}</span>
-                    <button
-                      type="button"
-                      className="btn-servia-danger btn-servia-sm"
+                    <BotonPanel
+                      variante="peligro"
+                      tamano="sm"
                       disabled={ocupado}
                       aria-label={`Quitar foto ${indice + 1}`}
                       onClick={() => setFotoPorEliminar({ foto, tipo: 'galeria', numero: indice + 1 })}
                     >
                       <Trash2 aria-hidden="true" />
                       Quitar
-                    </button>
+                    </BotonPanel>
                   </div>
                 </li>
               ))}
@@ -519,18 +520,16 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                   : `Se eliminará la foto ${fotoPorEliminar.numero} de tu galería y dejará de mostrarse a tus clientes.`}
               </p>
               <div className="panel-dialogo-acciones">
-                <button
+                <BotonPanel
                   ref={cancelarDialogoRef}
-                  type="button"
-                  className="btn-servia-secondary"
+                  variante="secundario"
                   disabled={ocupado}
                   onClick={() => setFotoPorEliminar(null)}
                 >
                   Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="btn-servia-danger"
+                </BotonPanel>
+                <BotonPanel
+                  variante="peligro"
                   disabled={ocupado}
                   onClick={() => void confirmarEliminacion()}
                 >
@@ -539,7 +538,7 @@ export function FotosNegocio({ fotosIniciales = FOTOS_VACIAS, alCambiar }: Fotos
                     : fotoPorEliminar.tipo === 'portada'
                       ? 'Sí, quitar portada'
                       : 'Quitar foto'}
-                </button>
+                </BotonPanel>
               </div>
             </div>
           </div>,

@@ -172,7 +172,7 @@ export function MisServicios() {
 
                   {/* Botones de acción */}
                   <div className="servicio-acciones">
-                    <button onClick={() => navigate(`/servicios/${srv.id}`)} className="btn-servia-secondary btn-servia-sm">Editar</button>
+                    <BotonPanel variante="secundario" tamano="sm" onClick={() => navigate(`/servicios/${srv.id}`)}>Editar</BotonPanel>
                     <AccionesServicio id={srv.id} nombre={srv.nombre} activo={srv.activo}
                       alMensaje={setAlerta}
                       alCambiarEstado={activo => {

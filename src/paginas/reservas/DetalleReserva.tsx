@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../contextos/AuthContext';
 import { api, ErrorApi } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
@@ -292,18 +292,18 @@ export function DetalleReserva() {
 
         {esPendienteVigente && (
           <div className="reserva-detalle-acciones">
-            <button
-              className="btn-servia-primary"
+            <BotonPanel
+              variante="primario"
               onClick={() => { setErrorMotivo(''); setMostrarConfirmar(true); }}
             >
               Aceptar Reserva
-            </button>
-            <button
-              className="btn-servia-danger"
+            </BotonPanel>
+            <BotonPanel
+              variante="peligro"
               onClick={() => { setErrorMotivo(''); setMostrarRechazar(true); }}
             >
               Rechazar Solicitud
-            </button>
+            </BotonPanel>
           </div>
         )}
 
@@ -363,27 +363,25 @@ export function DetalleReserva() {
           </div>
           <div className="reserva-detalle-pie">
 
-            <Link to="/reservas" className="btn-servia-secondary">Volver a reservas</Link>
+            <BotonPanel variante="secundario" to="/reservas">Volver a reservas</BotonPanel>
 
             {puedeCompletar && (
-              <button
-                type="button"
-                className="btn-servia-primary"
+              <BotonPanel
+                variante="primario"
                 onClick={() => { setErrorMotivo(''); setMostrarCompletar(true); }}
                 disabled={procesando}
               >
                 Marcar como completada
-              </button>
+              </BotonPanel>
             )}
 
             {puedeCancelar && (
-              <button
-                type="button"
-                className="btn-servia-danger"
+              <BotonPanel
+                variante="peligro"
                 onClick={() => { setErrorMotivo(''); setMostrarModal(true); }}
               >
                 Cancelar reserva
-              </button>
+              </BotonPanel>
             )}
           </div>
         </section>
@@ -416,10 +414,10 @@ export function DetalleReserva() {
               </div>
             </div>
             <div className="panel-dialogo-acciones">
-              <button className="btn-servia-secondary" onClick={() => setMostrarModal(false)} disabled={procesando}>Volver</button>
-              <button className="btn-servia-danger" onClick={handleCancelar} disabled={procesando}>
+              <BotonPanel variante="secundario" onClick={() => setMostrarModal(false)} disabled={procesando}>Volver</BotonPanel>
+              <BotonPanel variante="peligro" onClick={handleCancelar} disabled={procesando}>
                 {procesando ? 'Cancelando...' : 'Cancelar reserva'}
-              </button>
+              </BotonPanel>
             </div>
           </div>
         </div>
@@ -435,10 +433,10 @@ export function DetalleReserva() {
             </p>
             {errorMotivo && <div className="panel-alerta panel-alerta--error" role="alert"><div className="panel-alerta-contenido">{errorMotivo}</div></div>}
             <div className="panel-dialogo-acciones">
-              <button className="btn-servia-secondary" onClick={() => { setMostrarConfirmar(false); setMostrarCompletar(false); }} disabled={procesando}>Cancelar</button>
-              <button className="btn-servia-primary" onClick={mostrarCompletar ? handleCompletar : handleAceptar} disabled={procesando}>
+              <BotonPanel variante="secundario" onClick={() => { setMostrarConfirmar(false); setMostrarCompletar(false); }} disabled={procesando}>Cancelar</BotonPanel>
+              <BotonPanel variante="primario" onClick={mostrarCompletar ? handleCompletar : handleAceptar} disabled={procesando}>
                 {procesando ? 'Confirmando...' : 'Confirmar'}
-              </button>
+              </BotonPanel>
             </div>
           </div>
         </div>
@@ -469,10 +467,10 @@ export function DetalleReserva() {
               </div>
             </div>
             <div className="panel-dialogo-acciones">
-              <button className="btn-servia-secondary" onClick={() => setMostrarRechazar(false)} disabled={procesando}>Cancelar</button>
-              <button className="btn-servia-danger" onClick={handleRechazar} disabled={procesando}>
+              <BotonPanel variante="secundario" onClick={() => setMostrarRechazar(false)} disabled={procesando}>Cancelar</BotonPanel>
+              <BotonPanel variante="peligro" onClick={handleRechazar} disabled={procesando}>
                 {procesando ? 'Rechazando...' : 'Rechazar solicitud'}
-              </button>
+              </BotonPanel>
             </div>
           </div>
         </div>

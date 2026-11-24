@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { CircleAlert, type LucideIcon } from 'lucide-react';
+import { BotonPanel } from './BotonPanel';
 
 // Piezas visuales compartidas por los estados de los módulos del panel,
 // alineadas con lib/core/widgets/estados.dart de la app móvil.
@@ -68,9 +69,9 @@ export function EstadoError({
         {(onReintentar || accionSecundaria) && (
           <div className="panel-estado-acciones">
             {onReintentar && (
-              <button type="button" className="btn-servia-primary" onClick={onReintentar}>
+              <BotonPanel variante="primario" onClick={onReintentar}>
                 {textoReintentar}
-              </button>
+              </BotonPanel>
             )}
             {accionSecundaria}
           </div>

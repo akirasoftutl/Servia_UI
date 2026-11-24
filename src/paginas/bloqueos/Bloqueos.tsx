@@ -5,6 +5,7 @@ import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EstadoCargando, EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
 import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import './Bloqueos.css';
 
 interface Bloqueo {
@@ -217,7 +218,7 @@ export function Bloqueos() {
         />
 
         {alerta && <div role="status" className="panel-alerta panel-alerta--exito">{alerta}</div>}
-        {error && <div role="alert" className="panel-alerta panel-alerta--error bloqueos-alerta-error">{error} <button className="btn-servia-secondary btn-servia-sm" onClick={() => void cargarBloqueos()}>Reintentar</button></div>}
+        {error && <div role="alert" className="panel-alerta panel-alerta--error bloqueos-alerta-error">{error} <BotonPanel variante="secundario" tamano="sm" onClick={() => void cargarBloqueos()}>Reintentar</BotonPanel></div>}
 
         <TarjetaPanel>
           <div className="bloqueos-grid">
@@ -271,9 +272,9 @@ export function Bloqueos() {
                   {errores.motivo && <p id="error-motivo" role="alert" className="panel-error-campo">{errores.motivo}</p>}
                 </div>
 
-                <button id="bloquear" type="submit" className="btn-servia-primary btn-servia-bloque" disabled={creando}>
+                <BotonPanel id="bloquear" type="submit" variante="primario" bloque disabled={creando}>
                   {creando ? 'Creando...' : 'Bloquear'}
-                </button>
+                </BotonPanel>
               </form>
             </div>
 
@@ -310,7 +311,7 @@ export function Bloqueos() {
                           {b.motivo && ` · ${b.motivo}`}
                         </p>
                       </div>
-                      <button onClick={() => setQuitarId(b.id)} className="btn-servia-danger btn-servia-sm">Quitar</button>
+                      <BotonPanel variante="peligro" tamano="sm" onClick={() => setQuitarId(b.id)}>Quitar</BotonPanel>
                     </div>
                   ); })}
                 </div>
@@ -337,15 +338,15 @@ export function Bloqueos() {
                 </table>
               </div>
               <div className="panel-dialogo-acciones">
-                <button className="btn-servia-secondary" onClick={() => setMostrarConflicto(false)}>Entendido</button>
+                <BotonPanel variante="secundario" onClick={() => setMostrarConflicto(false)}>Entendido</BotonPanel>
               </div>
           </Dialogo>
         )}
         {quitarId && <Dialogo titulo="Quitar bloqueo" cerrar={() => { if (!quitando) setQuitarId(null); }}>
           <p id="descripcion-dialogo" className="panel-dialogo-texto">¿Quitar este bloqueo? Los clientes podrán volver a reservar en ese periodo.</p>
           <div className="panel-dialogo-acciones">
-            <button className="btn-servia-secondary" disabled={quitando} onClick={() => setQuitarId(null)}>Cancelar</button>
-            <button className="btn-servia-danger" disabled={quitando} onClick={() => void handleQuitar()}>Quitar</button>
+            <BotonPanel variante="secundario" disabled={quitando} onClick={() => setQuitarId(null)}>Cancelar</BotonPanel>
+            <BotonPanel variante="peligro" disabled={quitando} onClick={() => void handleQuitar()}>Quitar</BotonPanel>
           </div>
         </Dialogo>}
     </div>

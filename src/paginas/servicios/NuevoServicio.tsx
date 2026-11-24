@@ -10,7 +10,7 @@ import { CircleAlert, PackagePlus, ShieldAlert } from 'lucide-react';
 import { EsqueletoEncabezado, EsqueletoLista, EstadoError } from '../../componentes/panel/EstadosPanel';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { api, ErrorApi, subirImagenServicio, type ImagenServicio } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import './Servicios.css';
@@ -354,10 +354,10 @@ function FormularioServicio() {
               </fieldset>
 
               <div className="panel-formulario-acciones">
-                <Link to="/servicios" className="btn-servia-secondary">Cancelar</Link>
-                <button type="submit" className="btn-servia-primary" disabled={(!perfilCompleto && !esEdicion) || publicando}>
+                <BotonPanel variante="secundario" to="/servicios">Cancelar</BotonPanel>
+                <BotonPanel type="submit" variante="primario" disabled={(!perfilCompleto && !esEdicion) || publicando}>
                   {publicando ? (<><span className="spinner-border spinner-border-sm me-2" />{subiendoImagenes ? 'Subiendo imágenes...' : 'Guardando...'}</>) : (<>{esEdicion ? 'Guardar cambios' : 'Publicar servicio'}</>)}
-                </button>
+                </BotonPanel>
               </div>
             </form>
 
@@ -384,8 +384,8 @@ function FormularioServicio() {
               <h2 id="servicio-alerta-titulo" className="panel-dialogo-titulo">{mensajeExito}</h2>
               <p id="servicio-alerta-texto" className="panel-dialogo-texto"><strong>{form.nombre}</strong> ya forma parte de tu catálogo. Tus clientes podrán encontrarlo y reservarlo.</p>
               <div className="panel-dialogo-acciones panel-dialogo-acciones--columna">
-                <button ref={botonExito} type="button" className="btn-servia-primary" onClick={() => navigate('/servicios')}>Ver mis servicios</button>
-                {!esEdicion && <button type="button" className="btn-servia-secondary" onClick={crearOtroServicio}>Crear otro servicio</button>}
+                <BotonPanel ref={botonExito} variante="primario" onClick={() => navigate('/servicios')}>Ver mis servicios</BotonPanel>
+                {!esEdicion && <BotonPanel variante="secundario" onClick={crearOtroServicio}>Crear otro servicio</BotonPanel>}
               </div>
             </div>
           </div>

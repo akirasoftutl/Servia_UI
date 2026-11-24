@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Bell, CircleAlert } from 'lucide-react';
 import { api, ErrorApi } from '../../servicios/api';
 import { EsqueletoLista, IlustracionEstado } from './EstadosPanel';
+import { BotonPanel } from './BotonPanel';
 import '../../estilos/panel.css';
 
 // 1. Agregamos recordatorioCita a la interfaz
@@ -73,9 +74,9 @@ export function PreferenciasNotificaciones({ titulo = 'Avisos push', ancla }: Pr
           <IlustracionEstado icono={CircleAlert} error />
           <div className="panel-estado-cuerpo"><h2 className="panel-estado-titulo">No pudimos cargar las preferencias</h2>
             <p className="panel-estado-texto" role="alert">{error}</p></div>
-          <div className="panel-estado-acciones"><button className="btn-servia-primary" onClick={() => {
+          <div className="panel-estado-acciones"><BotonPanel variante="primario" onClick={() => {
             setError(''); setCargando(true); setRevision(r => r + 1);
-          }}>Reintentar</button></div>
+          }}>Reintentar</BotonPanel></div>
         </div> : <>
           {error && <div className="panel-alerta panel-alerta--error" role="alert"><span className="panel-alerta-icono"><CircleAlert aria-hidden="true" /></span><div className="panel-alerta-contenido">{error}</div></div>}
           {exito && <div className="panel-alerta panel-alerta--exito" role="status"><span className="panel-alerta-icono"><Bell aria-hidden="true" /></span><div className="panel-alerta-contenido">{exito}</div></div>}
