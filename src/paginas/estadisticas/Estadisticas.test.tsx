@@ -338,7 +338,9 @@ describe('Estadísticas', () => {
     const error = await screen.findByRole('alert');
     expect(error).toHaveTextContent('No pudimos cargar las estadísticas. Intenta de nuevo.');
     expect(error).toHaveClass('panel-estado-texto');
-    expect(error.closest('.panel-estado')!.querySelector('.panel-estado-icono--error')).toBeInTheDocument();
+    const estado = error.closest('.panel-estado')!;
+    expect(estado).toHaveClass('panel-estado--error');
+    expect(estado.querySelector('.panel-ilustracion--error')).toBeInTheDocument();
     const boton = screen.getByRole('button', { name: 'Reintentar' });
     expect(boton).toHaveClass('btn-servia-primary');
     fireEvent.click(boton);
