@@ -154,7 +154,7 @@ describe('UI109 página Configuración', () => {
       apiMock.mockImplementationOnce(async () => ({ nuevaSolicitud: false, reservaCancelada: false, recordatorioCita: true }))
       await userEvent.click(solicitud)
       expect(apiMock).toHaveBeenCalledWith('/notificaciones/preferencias', { method: 'PUT', body: JSON.stringify({ nuevaSolicitud: false, reservaCancelada: false, recordatorioCita: true }) })
-      expect(await within(notificaciones).findByText('Preferencias guardadas.')).toBeVisible()
+      expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Preferencias guardadas.' })
     })
     it('si las preferencias no cargan, ofrece reintentar sin afectar las demás tarjetas', async () => {
       apiMock.mockImplementation(async (ruta: string) => {
