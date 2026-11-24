@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   onAuthStateChanged: vi.fn(),
   signOut: vi.fn(),
   api: vi.fn(),
+  vaciarCacheDatos: vi.fn(),
   desactivarTokenPushActual: vi.fn(),
 }))
 
@@ -15,7 +16,7 @@ vi.mock('firebase/auth', () => ({
   signOut: mocks.signOut,
 }))
 vi.mock('../servicios/firebase', () => ({ auth: { nombre: 'auth-prueba' } }))
-vi.mock('../servicios/api', () => ({ api: mocks.api }))
+vi.mock('../servicios/api', () => ({ api: mocks.api, vaciarCacheDatos: mocks.vaciarCacheDatos }))
 vi.mock('../servicios/notificaciones', () => ({
   desactivarTokenPushActual: mocks.desactivarTokenPushActual,
 }))
@@ -39,6 +40,7 @@ beforeEach(() => {
     return () => {}
   })
   mocks.api.mockReset().mockResolvedValue({ tipo: 'negocio' })
+  mocks.vaciarCacheDatos.mockReset().mockResolvedValue(undefined)
   mocks.desactivarTokenPushActual.mockReset().mockImplementation(async () => {
     orden.push('DELETE /notificaciones/tokens')
   })
@@ -61,4 +63,17 @@ it('al cerrar sesión desactiva el token push ANTES de llamar signOut', async ()
   expect(mocks.desactivarTokenPushActual).toHaveBeenCalledTimes(1)
   expect(mocks.signOut).toHaveBeenCalledTimes(1)
   expect(orden).toEqual(['DELETE /notificaciones/tokens', 'signOut'])
+})
+
+it('sin conexión conserva la sesión local en vez de cerrarla', async () => {
+  mocks.api.mockRejectedValueOnce(Object.assign(new Error('Sin conexión'), { sinConexion: true }))
+
+  render(
+    <AuthProvider>
+      <BotonCerrar />
+    </AuthProvider>,
+  )
+
+  expect(await screen.findByText('Sesión: negocio-1')).toBeVisible()
+  expect(mocks.signOut).not.toHaveBeenCalled()
 })

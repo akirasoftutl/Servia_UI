@@ -17,6 +17,10 @@ function esErrorApi(error: unknown): error is ErrorApi {
 // - Fallo de red (TypeError / sin respuesta): el mensaje propio de la pantalla.
 // 401 no se intercepta aquí para no alterar la salida de sesión existente.
 export function mensajeDeError(error: unknown, mensajeRed: string): string {
+  // Los errores offline ya traen el texto exacto que debe ver el usuario.
+  if (error instanceof Error && 'sinConexion' in error && error.message) {
+    return error.message
+  }
   if (esErrorApi(error)) {
     if (error.estado >= 500) {
       return MENSAJE_ERROR_SERVIDOR
