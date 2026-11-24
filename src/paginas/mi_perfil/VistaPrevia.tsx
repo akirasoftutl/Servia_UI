@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
 import { Tags, Eye } from 'lucide-react'
-import { EstadoVacio } from '../../componentes/panel/EstadosPanel'
+import { EstadoCargando, EstadoError, EstadoVacio } from '../../componentes/panel/EstadosPanel'
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel'
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel'
+import { BotonPanel } from '../../componentes/panel/BotonPanel'
 import { api, ErrorApi } from '../../servicios/api'
 import { mensajeDeError } from '../../servicios/mensajeDeError'
 import type { Direccion } from './direccion'
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel'
 import './VistaPrevia.css'
 
 interface Perfil {
@@ -116,23 +117,15 @@ export function VistaPrevia() {
   return (
     <div className="panel-pagina vista-previa">
       <div className="panel-contenedor">
-        <header className="panel-encabezado">
-          <div>
-            <EyebrowPanel grupo="negocio" icono={Eye} />
-            <h1 className="panel-titulo">Vista previa: así te ven tus clientes</h1>
-            <p className="panel-subtitulo">Consulta cómo se muestran tu perfil y tus servicios.</p>
-          </div>
-          <Link to="/mi-perfil" className="btn-servia-secondary">Volver a Mi perfil</Link>
-        </header>
-        {error ? <div className="panel-estado">
-          <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
-          <p className="panel-estado-texto" role="alert">{error}</p>
-          <button type="button" className="btn-servia-primary" onClick={reintentar}>Reintentar</button>
-        </div> : !datos ? <div className="panel-estado">
-          <div className="spinner-border" aria-hidden="true" />
-          <p className="panel-estado-texto" role="status">Cargando vista previa...</p>
-        </div> : <>
-          <section className="panel-tarjeta" aria-labelledby="estado-app">
+        <EncabezadoPanel
+          grupo="negocio"
+          icono={Eye}
+          titulo="Vista previa: así te ven tus clientes"
+          subtitulo="Consulta cómo se muestran tu perfil y tus servicios."
+          acciones={<BotonPanel variante="secundario" to="/mi-perfil">Volver a Mi perfil</BotonPanel>}
+        />
+        {error ? <EstadoError mensaje={error} onReintentar={reintentar} /> : !datos ? <EstadoCargando mensaje="Cargando vista previa..." /> : <>
+          <TarjetaPanel tituloId="estado-app">
             <div className={`panel-alerta ${datos.vistaPropia ? 'panel-alerta--aviso' : 'panel-alerta--info'} mb-0`}>
               <span className="panel-alerta-icono" aria-hidden="true">!</span>
               <div className="panel-alerta-contenido">
@@ -145,9 +138,8 @@ export function VistaPrevia() {
                   <p className="panel-item-texto">Los clientes verán: <strong>No acepta reservas por ahora</strong></p>}
               </div>
             </div>
-          </section>
-          <section className="panel-tarjeta" aria-labelledby="nombre-negocio">
-            <h2 id="nombre-negocio" className="panel-tarjeta-titulo">{datos.perfil.nombre || 'Nombre pendiente'}</h2>
+          </TarjetaPanel>
+          <TarjetaPanel titulo={datos.perfil.nombre || 'Nombre pendiente'} tituloId="nombre-negocio">
             <p className="panel-item-texto vista-previa-texto">{datos.categoria}</p>
             <p className="panel-item-texto vista-previa-texto">{datos.perfil.descripcion || 'Descripción pendiente'}</p>
             <dl className="vista-previa-datos">
@@ -155,14 +147,13 @@ export function VistaPrevia() {
               <div><dt className="vista-previa-etiqueta">Teléfono</dt><dd className="vista-previa-valor">{datos.perfil.telefono || 'Teléfono pendiente'}</dd></div>
               <div><dt className="vista-previa-etiqueta">Correo de contacto</dt><dd className="vista-previa-valor">{datos.perfil.correoContacto || 'Correo pendiente'}</dd></div>
             </dl>
-          </section>
-          <section className="panel-tarjeta" aria-labelledby="servicios-activos">
-            <h2 id="servicios-activos" className="panel-tarjeta-titulo">Servicios activos</h2>
+          </TarjetaPanel>
+          <TarjetaPanel titulo="Servicios activos" tituloId="servicios-activos">
             {datos.servicios.length === 0 ? <EstadoVacio
               icono={Tags}
               titulo="Sin servicios activos"
               texto="Activa al menos un servicio para que los clientes vean tu perfil completo."
-              accion={<Link to="/servicios/nuevo" className="btn-servia-primary">Crear servicio</Link>}
+              accion={<BotonPanel variante="primario" to="/servicios/nuevo">Crear servicio</BotonPanel>}
             /> :
               <ul className="panel-lista list-unstyled mb-0">{datos.servicios.map(servicio => <li className="panel-item" key={servicio.id}>
                 <div>
@@ -170,7 +161,7 @@ export function VistaPrevia() {
                   <p className="panel-item-texto">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(servicio.precio)} · {servicio.duracionMin} minutos</p>
                 </div>
               </li>)}</ul>}
-          </section>
+          </TarjetaPanel>
         </>}
       </div>
     </div>

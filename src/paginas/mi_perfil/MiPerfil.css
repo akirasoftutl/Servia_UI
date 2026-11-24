@@ -1,30 +1,26 @@
 /*
  * Mi perfil. Lo común (página, encabezado, tarjeta, botones, campos,
  * alertas, diálogo y estados) vive en src/estilos/panel.css; aquí quedan el
- * progreso de pasos, la imagen del negocio y las tarjetas de categoría.
+ * progreso de pasos, las tarjetas de categoría, sugerencias de calle y mapa.
  */
-
-.perfil-alerta-incompleto .panel-alerta-icono {
-  background: #fff0c2;
-}
 
 /* Progreso de los tres pasos */
 .perfil-progress-lines {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--sv-esp-5);
-  margin: 0 0 var(--sv-esp-6);
+  gap: var(--sv-esp-4);
+  margin: 0 0 var(--sv-esp-5);
 }
 
 .perfil-progress-lines span {
-  height: 4px;
+  height: var(--sv-esp-1);
   border-radius: var(--sv-radio-pill);
-  background: #e9e6f0;
-  transition: background 0.25s ease;
+  background: var(--sv-superficie-mas-hundida);
+  transition: background var(--sv-rapido) ease;
 }
 
 .perfil-progress-lines span.active {
-  background: var(--sv-degradado);
+  background: var(--sv-primario);
 }
 
 .perfil-campo-pie {
@@ -41,19 +37,19 @@
   display: flex;
   align-items: flex-end;
   min-height: 155px;
-  padding: 18px;
+  padding: var(--sv-esp-4);
   border: 2px solid transparent;
-  border-radius: var(--sv-radio-md);
+  border-radius: var(--sv-radio-lg);
   background-position: center;
   background-size: cover;
-  color: #fff;
+  color: var(--sv-en-primario);
   font-family: inherit;
   cursor: pointer;
-  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: transform var(--sv-rapido), border-color var(--sv-rapido), box-shadow var(--sv-rapido);
 }
 
 .perfil-category:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 .perfil-category:focus-visible {
@@ -62,8 +58,8 @@
 }
 
 .perfil-category.selected {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3);
+  border-color: var(--sv-primario);
+  box-shadow: var(--sv-foco-campo);
 }
 
 /* Botones de navegación entre pasos */
@@ -93,10 +89,9 @@
   }
 }
 
-/* Cambiar contraseña (MVP-04): tarjeta aparte, debajo del formulario del perfil */
+/* Cambiar contraseña (MVP-04): tarjeta aparte */
 .perfil-tarjeta-contrasena {
   margin-top: var(--sv-esp-5);
-  /* En pantallas angostas el texto se parte antes que salirse de la tarjeta */
   overflow-wrap: anywhere;
 }
 
@@ -126,7 +121,7 @@
   right: 0;
   padding: var(--sv-esp-1);
   border: 1px solid var(--sv-borde-fuerte);
-  border-radius: var(--sv-radio-sm);
+  border-radius: var(--sv-radio-md);
   background: var(--sv-superficie);
   box-shadow: var(--sv-sombra-item);
 }
@@ -145,7 +140,8 @@
 
 .perfil-calle-opcion:hover,
 .perfil-calle-opcion.activa {
-  background: var(--sv-acento-suave);
+  background: var(--sv-primario-suave);
+  color: var(--sv-en-primario-suave);
 }
 
 .perfil-calle-vacio {
@@ -185,7 +181,7 @@
   margin-top: var(--sv-esp-5);
   padding: var(--sv-esp-4);
   border: 1px solid var(--sv-borde);
-  border-radius: var(--sv-radio-xs);
+  border-radius: var(--sv-radio-md);
   background: var(--sv-superficie-suave);
 }
 
@@ -193,6 +189,7 @@
   margin: 0 0 var(--sv-esp-3);
   font-family: var(--sv-fuente-titulos);
   font-size: var(--sv-texto-lg);
+  font-weight: 600;
   color: var(--sv-titulo);
 }
 
