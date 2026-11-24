@@ -858,11 +858,14 @@ fieldset:disabled .btn-servia-secondary {
 }
 
 .panel-estado-cuerpo {
+  min-width: 0;
+}
+
+.panel-estado > .panel-estado-cuerpo {
   display: flex;
   flex-direction: column;
   align-items: center;
   max-width: 420px;
-  min-width: 0;
 }
 
 .panel-estado-titulo {

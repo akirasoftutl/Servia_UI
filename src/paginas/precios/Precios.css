@@ -26,6 +26,12 @@
   margin: 0 0 var(--sv-esp-3) 0;
 }
 
+.pricing-title .hero__title-highlight {
+  background: none;
+  color: var(--sv-primario);
+  -webkit-text-fill-color: currentColor;
+}
+
 .pricing-subtitle {
   font-size: var(--sv-texto-lg);
   line-height: 1.5;
