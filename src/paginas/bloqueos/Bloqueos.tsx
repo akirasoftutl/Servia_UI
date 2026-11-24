@@ -1,11 +1,20 @@
 import { useState, useEffect, useRef, type ReactNode, type FormEvent } from 'react';
 import { CalendarOff } from 'lucide-react';
 import { api, ErrorApi } from '../../servicios/api';
+import { alertaDeError, confirmar, exito } from '../../servicios/alertas';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EstadoCargando, EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
 import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
+import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
+import {
+  atributosErrorCampo,
+  idErrorCampo,
+  longitudMaxima,
+  notificarErroresFormulario,
+  validarFechaNoPasada,
+} from '../../utilidades/validacion';
 import './Bloqueos.css';
 
 interface Bloqueo {
@@ -21,6 +30,8 @@ interface ReservaConflicto {
   servicio: { nombre: string };
   estado: string;
 }
+
+const ORDEN_CAMPOS = ['fechaInicio', 'fechaFin', 'horaInicio', 'horaFin', 'motivo'] as const;
 
 // El cuerpo del ErrorApi es desconocido: validar el contrato antes de renderizarlo.
 function leerReservas(datos: unknown): ReservaConflicto[] {
@@ -62,7 +73,6 @@ export function Bloqueos() {
   const [bloqueos, setBloqueos] = useState<Bloqueo[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
-  const [alerta, setAlerta] = useState('');
 
   const [tipo, setTipo] = useState<'dia' | 'rango' | 'horas'>('dia');
   const [fechaInicio, setFechaInicio] = useState('');
@@ -75,9 +85,7 @@ export function Bloqueos() {
 
   const [reservasConflicto, setReservasConflicto] = useState<ReservaConflicto[]>([]);
   const [mostrarConflicto, setMostrarConflicto] = useState(false);
-  const [quitarId, setQuitarId] = useState<string | null>(null);
   const [quitando, setQuitando] = useState(false);
-  const [errorGuardar, setErrorGuardar] = useState('');
 
   const cargarBloqueos = async () => {
     setCargando(true);
@@ -106,10 +114,14 @@ export function Bloqueos() {
     const nuevosErrores: Record<string, string> = {};
     if (!fechaInicio) nuevosErrores.fechaInicio = 'Elige la fecha.';
     // RN-32: el formulario compara la fecha civil del negocio, no la del navegador.
-    const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-    if (fechaInicio && (fechaInicio < hoy || (tipo === 'horas' && horaFin && new Date(`${fechaInicio}T${horaFin}:00-06:00`).getTime() <= Date.now()))) nuevosErrores.fechaInicio = 'No puedes bloquear fechas que ya pasaron.';
-    if (motivo.length > 200) nuevosErrores.motivo = 'El motivo no puede tener más de 200 caracteres.';
-    
+    const errPasada = validarFechaNoPasada(fechaInicio, {
+      horaFin: tipo === 'horas' ? horaFin : undefined,
+    });
+    if (errPasada) nuevosErrores.fechaInicio = errPasada;
+
+    const errMotivo = longitudMaxima(motivo, 200, 'El motivo no puede tener más de 200 caracteres.', true);
+    if (errMotivo) nuevosErrores.motivo = errMotivo;
+
     if (tipo === 'rango') {
       if (!fechaFin) nuevosErrores.fechaFin = 'Elige la fecha.';
       else if (fechaFin < fechaInicio) nuevosErrores.fechaFin = 'La fecha final no puede ser anterior a la inicial.';
@@ -122,13 +134,11 @@ export function Bloqueos() {
     }
 
     setErrores(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
+    return notificarErroresFormulario(nuevosErrores, ORDEN_CAMPOS, { mostrarAviso: true });
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setAlerta('');
-    setErrorGuardar('');
     setMostrarConflicto(false);
     setReservasConflicto([]);
 
@@ -152,37 +162,43 @@ export function Bloqueos() {
         body: JSON.stringify(payload),
       });
 
-      setAlerta('Bloqueo creado.');
       setFechaInicio('');
       setFechaFin('');
       setHoraInicio('');
       setHoraFin('');
       setMotivo('');
-      cargarBloqueos();
+      await cargarBloqueos();
+      await exito('Bloqueo creado.');
     } catch (error: unknown) {
       if (error instanceof ErrorApi && error.estado === 409) {
         setReservasConflicto(leerReservas(error.datos));
         setMostrarConflicto(true);
       } else {
-        setErrorGuardar(mensajeDeError(error, 'No pudimos guardar el bloqueo. Intenta de nuevo.'));
+        await alertaDeError(error, 'No pudimos guardar el bloqueo. Intenta de nuevo.');
       }
     } finally {
       setCreando(false);
     }
   };
 
-  const handleQuitar = async () => {
-    if (!quitarId || quitando) return;
+  const handleQuitar = async (id: string) => {
+    if (quitando) return;
+    const aceptado = await confirmar({
+      titulo: 'Quitar bloqueo',
+      texto: '¿Quitar este bloqueo? Los clientes podrán volver a reservar en ese periodo.',
+      confirmar: 'Quitar',
+      cancelar: 'Cancelar',
+      peligro: true,
+    });
+    if (!aceptado) return;
+
     setQuitando(true);
-    setErrorGuardar('');
     try {
-      await api(`/negocios/mio/bloqueos/${quitarId}`, { method: 'DELETE' });
-      setAlerta('Bloqueo quitado.');
-      setQuitarId(null);
+      await api(`/negocios/mio/bloqueos/${id}`, { method: 'DELETE' });
       await cargarBloqueos();
+      await exito('Bloqueo quitado.');
     } catch (causa: unknown) {
-      setErrorGuardar(mensajeDeError(causa, 'No pudimos quitar el bloqueo. Intenta de nuevo.'));
-      setQuitarId(null);
+      await alertaDeError(causa, 'No pudimos quitar el bloqueo. Intenta de nuevo.');
     } finally {
       setQuitando(false);
     }
@@ -208,7 +224,7 @@ export function Bloqueos() {
 
   return (
     <div className="panel-pagina">
-      <div className="panel-contenedor bloqueos-container" inert={mostrarConflicto || quitarId !== null}>
+      <div className="panel-contenedor bloqueos-container" inert={mostrarConflicto}>
 
         <EncabezadoPanel
           grupo="negocio"
@@ -217,7 +233,6 @@ export function Bloqueos() {
           subtitulo="Administra los días u horas en los que no atenderás."
         />
 
-        {alerta && <div role="status" className="panel-alerta panel-alerta--exito">{alerta}</div>}
         {error && <div role="alert" className="panel-alerta panel-alerta--error bloqueos-alerta-error">{error} <BotonPanel variante="secundario" tamano="sm" onClick={() => void cargarBloqueos()}>Reintentar</BotonPanel></div>}
 
         <TarjetaPanel>
@@ -227,7 +242,6 @@ export function Bloqueos() {
             <div className="bloqueos-form">
               <h2 className="panel-tarjeta-titulo bloqueos-columna-titulo">Nuevo bloqueo</h2>
               <form onSubmit={handleSubmit} noValidate>
-                {errorGuardar && <p role="alert" className="panel-alerta panel-alerta--error">{errorGuardar}</p>}
                 <div className="mb-3">
                   <label htmlFor="tipo" className="form-label">Tipo de bloqueo</label>
                   <select id="tipo" className="form-select" value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)}>
@@ -239,15 +253,15 @@ export function Bloqueos() {
 
                 <div className="mb-3">
                   <label htmlFor="fechaInicio" className="form-label">{tipo === 'rango' ? 'Desde *' : 'Fecha *'}</label>
-                  <input id="fechaInicio" aria-invalid={!!errores.fechaInicio} aria-describedby={errores.fechaInicio ? "error-fechaInicio" : undefined} type="date" className={`form-control ${errores.fechaInicio ? 'is-invalid' : ''}`} value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
-                  {errores.fechaInicio && <div id="error-fechaInicio" role="alert" className="invalid-feedback">{errores.fechaInicio}</div>}
+                  <input id="fechaInicio" {...atributosErrorCampo('fechaInicio', errores.fechaInicio)} type="date" className={`form-control ${errores.fechaInicio ? 'is-invalid' : ''}`} value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
+                  <ErrorCampo id={idErrorCampo('fechaInicio')} mensaje={errores.fechaInicio} />
                 </div>
 
                 {tipo === 'rango' && (
                   <div className="mb-3">
                     <label htmlFor="fechaFin" className="form-label">Hasta *</label>
-                    <input id="fechaFin" aria-invalid={!!errores.fechaFin} aria-describedby={errores.fechaFin ? "error-fechaFin" : undefined} type="date" className={`form-control ${errores.fechaFin ? 'is-invalid' : ''}`} value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
-                    {errores.fechaFin && <div id="error-fechaFin" role="alert" className="invalid-feedback">{errores.fechaFin}</div>}
+                    <input id="fechaFin" {...atributosErrorCampo('fechaFin', errores.fechaFin)} type="date" className={`form-control ${errores.fechaFin ? 'is-invalid' : ''}`} value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
+                    <ErrorCampo id={idErrorCampo('fechaFin')} mensaje={errores.fechaFin} />
                   </div>
                 )}
 
@@ -255,21 +269,21 @@ export function Bloqueos() {
                   <div className="row g-2 mb-3">
                     <div className="col-6">
                       <label htmlFor="horaInicio" className="form-label">De *</label>
-                      <input id="horaInicio" aria-invalid={!!errores.horaInicio} aria-describedby={errores.horaInicio ? "error-horaInicio" : undefined} type="time" className={`form-control ${errores.horaInicio ? 'is-invalid' : ''}`} value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
-                      {errores.horaInicio && <div id="error-horaInicio" role="alert" className="invalid-feedback">{errores.horaInicio}</div>}
+                      <input id="horaInicio" {...atributosErrorCampo('horaInicio', errores.horaInicio)} type="time" className={`form-control ${errores.horaInicio ? 'is-invalid' : ''}`} value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
+                      <ErrorCampo id={idErrorCampo('horaInicio')} mensaje={errores.horaInicio} />
                     </div>
                     <div className="col-6">
                       <label htmlFor="horaFin" className="form-label">A *</label>
-                      <input id="horaFin" aria-invalid={!!errores.horaFin} aria-describedby={errores.horaFin ? "error-horaFin" : undefined} type="time" className={`form-control ${errores.horaFin ? 'is-invalid' : ''}`} value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
-                      {errores.horaFin && <div id="error-horaFin" role="alert" className="invalid-feedback">{errores.horaFin}</div>}
+                      <input id="horaFin" {...atributosErrorCampo('horaFin', errores.horaFin)} type="time" className={`form-control ${errores.horaFin ? 'is-invalid' : ''}`} value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
+                      <ErrorCampo id={idErrorCampo('horaFin')} mensaje={errores.horaFin} />
                     </div>
                   </div>
                 )}
 
                 <div className="mb-4">
                   <label htmlFor="motivo" className="form-label">Motivo (opcional)</label>
-                  <input id="motivo" aria-invalid={!!errores.motivo} aria-describedby={errores.motivo ? "error-motivo" : undefined} type="text" maxLength={200} className="form-control" placeholder="Ej. Vacaciones" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
-                  {errores.motivo && <p id="error-motivo" role="alert" className="panel-error-campo">{errores.motivo}</p>}
+                  <input id="motivo" {...atributosErrorCampo('motivo', errores.motivo)} type="text" maxLength={200} className="form-control" placeholder="Ej. Vacaciones" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+                  <ErrorCampo id={idErrorCampo('motivo')} mensaje={errores.motivo} />
                 </div>
 
                 <BotonPanel id="bloquear" type="submit" variante="primario" bloque disabled={creando}>
@@ -311,7 +325,7 @@ export function Bloqueos() {
                           {b.motivo && ` · ${b.motivo}`}
                         </p>
                       </div>
-                      <BotonPanel variante="peligro" tamano="sm" onClick={() => setQuitarId(b.id)}>Quitar</BotonPanel>
+                      <BotonPanel variante="peligro" tamano="sm" disabled={quitando} onClick={() => void handleQuitar(b.id)}>Quitar</BotonPanel>
                     </div>
                   ); })}
                 </div>
@@ -342,13 +356,6 @@ export function Bloqueos() {
               </div>
           </Dialogo>
         )}
-        {quitarId && <Dialogo titulo="Quitar bloqueo" cerrar={() => { if (!quitando) setQuitarId(null); }}>
-          <p id="descripcion-dialogo" className="panel-dialogo-texto">¿Quitar este bloqueo? Los clientes podrán volver a reservar en ese periodo.</p>
-          <div className="panel-dialogo-acciones">
-            <BotonPanel variante="secundario" disabled={quitando} onClick={() => setQuitarId(null)}>Cancelar</BotonPanel>
-            <BotonPanel variante="peligro" disabled={quitando} onClick={() => void handleQuitar()}>Quitar</BotonPanel>
-          </div>
-        </Dialogo>}
     </div>
   );
 }
