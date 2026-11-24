@@ -1,3 +1,8 @@
+/*
+ * Servicios y formulario de servicio. Lo común vive en src/estilos/panel.css;
+ * aquí queda la ficha del catálogo, el estado de edición y la zona de imágenes.
+ */
+
 .panel-servicio-alerta {
   align-items: center;
   margin-top: var(--sv-esp-2);
@@ -13,17 +18,17 @@
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: var(--sv-esp-6);
+  height: var(--sv-esp-6);
   margin-left: auto;
   padding: 0;
   border: 0;
-  border-radius: var(--sv-radio-sm);
+  border-radius: var(--sv-radio-xs);
   background: transparent;
   color: inherit;
   cursor: pointer;
   opacity: 0.75;
-  transition: opacity 150ms ease, background-color 150ms ease;
+  transition: opacity var(--sv-rapido) ease, background-color var(--sv-rapido) ease;
 }
 
 .panel-servicio-alerta-cerrar:hover {
@@ -32,17 +37,17 @@
 }
 
 .panel-servicio-alerta-cerrar svg {
-  width: 16px;
-  height: 16px;
+  width: var(--sv-icono-menu);
+  height: var(--sv-icono-menu);
 }
 
 .servicio-card-principal {
   display: flex;
   flex: 1 1 auto;
   align-items: center;
-  gap: 17px;
+  gap: var(--sv-esp-4);
   min-width: 0;
-  border-radius: var(--sv-radio-sm);
+  border-radius: var(--sv-radio-md);
   color: inherit;
   text-decoration: none;
 }
@@ -59,32 +64,24 @@
 /* Ficha con las iniciales del servicio */
 .servicio-icono {
   display: flex;
-  flex: 0 0 52px;
+  flex: 0 0 var(--sv-esp-7);
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
-  border: 1px solid rgba(109, 63, 192, 0.18);
+  width: var(--sv-esp-7);
+  height: var(--sv-esp-7);
+  border: 1px solid var(--sv-primario-borde);
   border-radius: var(--sv-radio-md);
-  background:
-    radial-gradient(40px 30px at 100% 0%, rgba(226, 116, 65, 0.16), transparent 70%),
-    linear-gradient(160deg, #fbf9ff, #ece4fb);
-  color: var(--sv-acento);
+  background: var(--sv-primario-suave);
+  color: var(--sv-en-primario-suave);
   font-family: var(--sv-fuente-titulos);
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  transition: transform var(--sv-rapido) ease;
-}
-
-.servicio-card:hover .servicio-icono {
-  transform: rotate(-4deg);
+  font-size: var(--sv-texto-lg);
+  font-weight: 700;
 }
 
 .servicio-icono--inactivo {
   border-color: var(--sv-borde);
   background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-tenue);
+  color: var(--sv-texto-suave);
 }
 
 .servicio-informacion {
@@ -95,37 +92,34 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: var(--sv-esp-2);
+  margin-bottom: var(--sv-esp-2);
 }
 
 .servicio-titulo-fila h3 {
   margin: 0;
   color: var(--sv-titulo);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: var(--sv-texto-lg);
+  font-weight: 600;
 }
 
 .servicio-estado {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 9px;
+  gap: var(--sv-esp-1);
+  padding: var(--sv-esp-1) var(--sv-esp-2);
   border: 1px solid transparent;
   border-radius: var(--sv-radio-pill);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--sv-texto-xs);
+  font-weight: 600;
 }
 
 .servicio-estado.activo {
-  border-color: var(--sv-exito-borde);
   background: var(--sv-exito-fondo);
   color: var(--sv-exito);
 }
 
 .servicio-estado.inactivo {
-  border-color: var(--sv-borde);
   background: var(--sv-superficie-hundida);
   color: var(--sv-texto-suave);
 }
@@ -133,34 +127,34 @@
 .servicio-estado-punto {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--sv-radio-pill);
   background: currentColor;
 }
 
 .servicio-datos {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--sv-esp-4);
 }
 
 .servicio-datos span:not(.servicio-dato-separador) {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--sv-esp-1);
 }
 
 .servicio-datos small {
-  color: var(--sv-texto-tenue);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  color: var(--sv-texto-suave);
+  font-size: var(--sv-texto-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .servicio-datos strong {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--sv-esp-1);
   color: var(--sv-titulo);
   font-size: var(--sv-texto-md);
   font-variant-numeric: tabular-nums;
@@ -168,14 +162,14 @@
 }
 
 .servicio-datos strong svg {
-  width: 13px;
-  height: 13px;
-  color: var(--sv-texto-tenue);
+  width: 14px;
+  height: 14px;
+  color: var(--sv-texto-suave);
 }
 
 .servicio-dato-separador {
   width: 1px;
-  height: 25px;
+  height: var(--sv-esp-5);
   background: var(--sv-borde);
 }
 
@@ -190,10 +184,6 @@
 
 /* ---------- Nuevo / Editar servicio ---------- */
 
-.servicio-alerta-perfil .panel-alerta-icono {
-  background: #fff0c2;
-}
-
 .servicio-estado-edicion {
   display: flex;
   flex-wrap: wrap;
@@ -201,7 +191,7 @@
   justify-content: space-between;
   gap: var(--sv-esp-3);
   margin-bottom: var(--sv-esp-5);
-  padding: 14px 16px;
+  padding: var(--sv-esp-3) var(--sv-esp-4);
   border: 1px solid var(--sv-borde);
   border-radius: var(--sv-radio-md);
   background: var(--sv-superficie-suave);
@@ -209,7 +199,7 @@
 
 .servicio-estado-edicion > p {
   margin: 0;
-  padding: 6px 14px;
+  padding: var(--sv-esp-1) var(--sv-esp-3);
   font-size: var(--sv-texto-sm);
 }
 
@@ -238,7 +228,7 @@
 
 .servicio-fotos {
   padding: var(--sv-esp-5);
-  border: 1px dashed #c9b5e8;
+  border: 1px dashed var(--sv-borde-fuerte);
   border-radius: var(--sv-radio-md);
   background: var(--sv-superficie-suave);
 }
@@ -252,45 +242,33 @@
   padding: var(--sv-esp-4) 0;
   border-radius: var(--sv-radio-md);
   text-align: center;
-  cursor: pointer;
 }
 
 .servicio-fotos-vacio strong {
-  color: var(--sv-texto);
+  color: var(--sv-titulo);
 }
 
 .servicio-fotos-icono {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: var(--sv-esp-7);
+  height: var(--sv-esp-7);
   margin-bottom: var(--sv-esp-2);
-  border: 1px solid rgba(109, 63, 192, 0.2);
-  border-radius: var(--sv-radio-md);
-  background: #fff;
-  box-shadow: 0 10px 22px -12px rgba(76, 45, 140, 0.45);
-  color: var(--sv-acento);
-  transition: transform var(--sv-rapido) ease;
+  border-radius: var(--sv-radio-lg);
+  background: var(--sv-primario-suave);
+  color: var(--sv-marca);
 }
 
 .servicio-fotos-icono svg {
-  width: 24px;
-  height: 24px;
-}
-
-.servicio-fotos-vacio:hover .servicio-fotos-icono {
-  transform: translateY(-2px);
+  width: var(--sv-esp-5);
+  height: var(--sv-esp-5);
 }
 
 .servicio-fotos-enlace {
   margin-top: var(--sv-esp-2);
-  color: var(--sv-morado);
+  color: var(--sv-primario);
   font-size: var(--sv-texto-sm);
-  font-weight: 700;
-}
-
-.servicio-fotos-vacio:hover .servicio-fotos-enlace {
-  text-decoration: underline;
+  font-weight: 600;
 }
 
 .servicio-imagenes-cabecera {
@@ -332,18 +310,18 @@
   }
 
   .servicio-card-principal {
-    gap: 12px;
+    gap: var(--sv-esp-3);
   }
 
   .servicio-icono {
-    flex-basis: 42px;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
+    flex-basis: var(--sv-objetivo-tactil);
+    width: var(--sv-objetivo-tactil);
+    height: var(--sv-objetivo-tactil);
+    border-radius: var(--sv-radio-md);
   }
 
   .servicio-titulo-fila h3 {
-    font-size: 14px;
+    font-size: var(--sv-texto-md);
   }
 
   .servicio-acciones {
