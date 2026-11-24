@@ -75,10 +75,11 @@ export function ImagenesServicio({ servicioId, imagenes, alCambiarImagenes, pend
     bloqueo.current = false;
     if (!montado.current) return;
     setSubiendo(null);
-    if (!fallo && avisoCupo) {
-      await alertaAviso(avisoCupo);
-    } else if (agregadas > 0) {
+    if (agregadas > 0) {
       await alertaExito(agregadas === 1 ? 'Imagen agregada.' : `${agregadas} imágenes agregadas.`);
+    }
+    if (!fallo && avisoCupo && montado.current) {
+      await alertaAviso(avisoCupo);
     }
   };
 

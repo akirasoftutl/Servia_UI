@@ -6,7 +6,7 @@ import { MisServicios } from './MisServicios';
 import { MAX_IMAGENES_SERVICIO } from './imagenes';
 import { MAX_FOTO_BYTES, MENSAJE_TAMANO_EXCEDIDO, MENSAJE_TIPO_INVALIDO } from '../mi_perfil/fotos';
 import { MENSAJE_ACCION_PENDIENTE } from '../../servicios/api';
-import { mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas';
+import { llamadasAlertas, mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas';
 
 // Estas pruebas no sustituyen `api()`: simulan solo `fetch` con las respuestas
 // reales del contrato de la API (akirasoftutl/Servia_BE#114) para que una forma
@@ -182,17 +182,21 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Agregar imagen' })).toBeEnabled());
   });
 
-  it('si se eligen más archivos de los que caben solo sube los que caben y lo explica', async () => {
+  it('si se eligen más archivos de los que caben solo sube los que caben, anuncia el éxito y explica el cupo', async () => {
     servicio.imagenes = [imagen(1), imagen(2)];
     abrir();
     await screen.findByLabelText('Nombre del servicio *');
     elegir(archivo('a.jpg'), archivo('b.jpg'));
     expect(await screen.findByRole('img', { name: 'Imagen 3 del servicio' })).toBeInTheDocument();
     expect(subidas()).toHaveLength(1);
-    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
-      icon: 'warning',
-      text: 'Solo caben 1 imagen más: el máximo es 3 por servicio.',
-    }));
+    await waitFor(() => expect(llamadasAlertas()).toHaveLength(2));
+    expect(llamadasAlertas()).toEqual([
+      expect.objectContaining({ icon: 'success', text: 'Imagen agregada.' }),
+      expect.objectContaining({
+        icon: 'warning',
+        text: 'Solo caben 1 imagen más: el máximo es 3 por servicio.',
+      }),
+    ]);
   });
 
   it.each([
