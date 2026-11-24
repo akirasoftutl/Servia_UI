@@ -21,8 +21,7 @@ import { Bloqueos } from './paginas/bloqueos/Bloqueos.tsx'
 import { Estadisticas } from './paginas/estadisticas/Estadisticas.tsx'
 import { Reservas } from './paginas/reservas/Reservas.tsx'
 import { Resumen } from './paginas/resumen/Resumen.tsx'
-
-import { Clientes } from './paginas/clientes/Clientes'
+import { Clientes } from './paginas/clientes/Clientes.tsx'
 import { DetalleCliente } from './paginas/clientes/DetalleCliente'
 
 // Rutas del panel. Aquí se agregan las páginas de cada historia (registro, sesión, perfil…).

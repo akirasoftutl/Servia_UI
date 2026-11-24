@@ -23,10 +23,19 @@ export interface ResultadoElegir {
   detalle: DetalleLugar | null
 }
 
+
 function aDetalle(datos: unknown): DetalleLugar | null {
   if (typeof datos !== 'object' || datos === null || Array.isArray(datos)) return null
   const crudo = datos as Record<string, unknown>
   const texto = (campo: string) => (typeof crudo[campo] === 'string' ? (crudo[campo] as string) : '')
+  
+  // Extraemos la ubicación si viene
+  let ubicacion: { lat: number; lng: number } | null = null;
+  const rawUbi = crudo.ubicacion as any;
+  if (rawUbi && typeof rawUbi.lat === 'number' && typeof rawUbi.lng === 'number') {
+    ubicacion = { lat: rawUbi.lat, lng: rawUbi.lng };
+  }
+
   return {
     calle: texto('calle'),
     numeroExterior: texto('numeroExterior'),
@@ -34,6 +43,7 @@ function aDetalle(datos: unknown): DetalleLugar | null {
     codigoPostal: texto('codigoPostal'),
     municipio: texto('municipio'),
     estado: texto('estado'),
+    ubicacion,
   }
 }
 

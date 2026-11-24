@@ -1,10 +1,18 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { rutas } from '../../router';
+import { api, ErrorApi } from '../../servicios/api';
 
 const sesion = vi.hoisted(() => ({ usuario: null as { uid: string; email: string; providerData: unknown[] } | null, cargando: false, cerrarSesion: vi.fn() }));
 vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => sesion }));
-vi.mock('../../servicios/api', () => ({ api: vi.fn(() => new Promise(() => {})), ErrorApi: class extends Error {} }));
+
+// 1. Mejoramos el mock de api para poder controlar sus respuestas
+vi.mock('../../servicios/api', () => ({
+  api: vi.fn(),
+  ErrorApi: class extends Error { estado: number; constructor(estado: number, mensaje: string) { super(mensaje); this.estado = estado; } }
+}));
+
 vi.mock('../../servicios/firebase', () => ({ auth: null }));
 vi.mock('../../componentes/layout/Layout.tsx', async () => {
   const { Outlet } = await import('react-router');
@@ -12,13 +20,22 @@ vi.mock('../../componentes/layout/Layout.tsx', async () => {
 });
 vi.mock('../login/Login', () => ({ Login: () => <h1>Iniciar sesión para entrar</h1> }));
 
+const mockApi = vi.mocked(api);
+
+// 2. Agregamos recordatorioCita a los datos de prueba
+const preferencias = { nuevaSolicitud: true, reservaCancelada: true, recordatorioCita: true };
+
 const abrir = (ruta: string) => {
   const router = createMemoryRouter(rutas, { initialEntries: [ruta] });
   render(<RouterProvider router={router} />);
   return router;
 };
 
-beforeEach(() => { sesion.usuario = { uid: 'negocio-simulado', email: 'negocio@example.test', providerData: [] }; });
+beforeEach(() => { 
+  sesion.usuario = { uid: 'negocio-simulado', email: 'negocio@example.test', providerData: [] }; 
+  mockApi.mockReset();
+  mockApi.mockResolvedValue(preferencias); // Por defecto, resolvemos con las preferencias
+});
 
 it('UI109 protege /configuracion sin sesión', async () => {
   sesion.usuario = null;
@@ -26,12 +43,14 @@ it('UI109 protege /configuracion sin sesión', async () => {
   expect(await screen.findByText('Iniciar sesión para entrar')).toBeVisible();
   expect(router.state.location.pathname).toBe('/login');
 });
+
 it('UI109 abre /configuracion con sesión, ya no cae en el 404', async () => {
   const router = abrir('/configuracion');
   expect(await screen.findByRole('heading', { name: 'Configuración', level: 1 })).toBeVisible();
   expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(4);
   expect(router.state.location.pathname).toBe('/configuracion');
 });
+
 it.each([
   ['/ayuda', 'Ayuda'],
   ['/soporte', 'Reportar un problema'],
@@ -40,4 +59,34 @@ it.each([
   const router = abrir(ruta);
   expect(await screen.findByRole('heading', { name: titulo, level: 1 })).toBeVisible();
   expect(router.state.location.pathname).toBe(ruta);
+});
+
+// 3. NUEVO TEST: Verifica que el interruptor de recordatorio de cita funciona
+it('UI132 muestra el interruptor de recordatorio de cita, lo cambia y guarda', async () => {
+  abrir('/configuracion');
+  
+  const switchRecordatorio = await screen.findByRole('switch', { name: 'Recordatorio de cita' });
+  expect(switchRecordatorio).toHaveAttribute('aria-checked', 'true');
+
+  await userEvent.click(switchRecordatorio);
+  
+  expect(await screen.findByText('Preferencias guardadas.')).toBeVisible();
+  expect(mockApi).toHaveBeenCalledWith('/notificaciones/preferencias', {
+    method: 'PUT',
+    body: JSON.stringify({ ...preferencias, recordatorioCita: false })
+  });
+});
+
+// 4. NUEVO TEST: Verifica el control de errores
+it('UI132 si falla al guardar el recordatorio, revierte y muestra error', async () => {
+  abrir('/configuracion');
+  
+  const switchRecordatorio = await screen.findByRole('switch', { name: 'Recordatorio de cita' });
+  
+  mockApi.mockRejectedValueOnce(new ErrorApi(500, 'No se pudieron guardar las preferencias.'));
+
+  await userEvent.click(switchRecordatorio);
+  
+  expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron guardar las preferencias.');
+  expect(screen.getByRole('switch', { name: 'Recordatorio de cita' })).toHaveAttribute('aria-checked', 'true');
 });

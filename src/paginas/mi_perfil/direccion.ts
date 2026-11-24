@@ -1,6 +1,9 @@
 // Dirección del negocio por campos. Mismo contrato y mismas reglas que la API
 // (Servia_BE#65, DireccionDto). Ajusta la decisión D8.
-
+export interface Ubicacion {
+  lat: number;
+  lng: number;
+}
 export const ESTADOS_MEXICO = [
   'Aguascalientes',
   'Baja California',
@@ -103,8 +106,8 @@ export interface DetalleLugar {
   codigoPostal: string;
   municipio: string;
   estado: string;
+  ubicacion?: Ubicacion | null; 
 }
-
 const CAMPOS_DETALLE = ['calle', 'numeroExterior', 'colonia', 'codigoPostal', 'municipio', 'estado'] as const;
 
 function tieneDato(detalle: DetalleLugar, campo: (typeof CAMPOS_DETALLE)[number]): boolean {

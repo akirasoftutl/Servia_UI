@@ -3,9 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { readFileSync } from 'node:fs';
 import { api, ErrorApi } from '../../servicios/api';
 import { Preferencias } from './Preferencias';
+
 vi.mock('../../servicios/api', () => ({ api: vi.fn(), ErrorApi: class extends Error { estado: number; constructor(estado: number, mensaje: string) { super(mensaje); this.estado = estado; } } }));
 const mock = vi.mocked(api);
-const inicial = { nuevaSolicitud: false, reservaCancelada: true };
+
+// 1. Agregamos recordatorioCita al estado inicial
+const inicial = { nuevaSolicitud: false, reservaCancelada: true, recordatorioCita: true };
+
 beforeEach(() => mock.mockReset().mockResolvedValue(inicial));
 
 it('carga guardadas, guarda cada tipo con contrato real y conserva al recargar', async () => {
@@ -15,26 +19,63 @@ it('carga guardadas, guarda cada tipo con contrato real y conserva al recargar',
     return { ...persistidas };
   });
   const vista = render(<Preferencias />);
+  
+  // Verificamos los 3 interruptores
   expect(await screen.findByRole('switch', { name: 'Nueva solicitud' })).toHaveAttribute('aria-checked', 'false');
   expect(screen.getByRole('switch', { name: 'Reserva cancelada por el cliente' })).toHaveAttribute('aria-checked', 'true');
+  expect(screen.getByRole('switch', { name: 'Recordatorio de cita' })).toHaveAttribute('aria-checked', 'true');
+  
   await userEvent.click(screen.getByRole('switch', { name: 'Nueva solicitud' }));
   expect(await screen.findByText('Preferencias guardadas.')).toBeVisible();
-  expect(mock).toHaveBeenCalledWith('/notificaciones/preferencias', { method: 'PUT', body: JSON.stringify({ nuevaSolicitud: true, reservaCancelada: true }) });
+  
+  // 2. Actualizamos el expect del PUT
+  expect(mock).toHaveBeenCalledWith('/notificaciones/preferencias', { method: 'PUT', body: JSON.stringify({ nuevaSolicitud: true, reservaCancelada: true, recordatorioCita: true }) });
+  
   await userEvent.click(screen.getByRole('switch', { name: 'Reserva cancelada por el cliente' }));
-  await waitFor(() => expect(persistidas).toEqual({ nuevaSolicitud: true, reservaCancelada: false }));
+  
+  // 3. Actualizamos el expect del estado persistido
+  await waitFor(() => expect(persistidas).toEqual({ nuevaSolicitud: true, reservaCancelada: false, recordatorioCita: true }));
+  
   vista.unmount(); render(<Preferencias />);
   expect(await screen.findByRole('switch', { name: 'Reserva cancelada por el cliente' })).toHaveAttribute('aria-checked', 'false');
   expect(mock).toHaveBeenCalledWith('/notificaciones/preferencias');
 });
-it('falla al guardar: muestra error español y restaura el interruptor sin tocar el otro', async () => {
+
+// 4. NUEVO TEST para el recordatorio
+it('el interruptor de recordatorio de cita aparece, hace PUT y maneja error', async () => {
+  let persistidas = { ...inicial };
+  mock.mockImplementation(async (_ruta, opciones) => {
+    if (opciones?.method === 'PUT') persistidas = JSON.parse(opciones.body as string);
+    return { ...persistidas };
+  });
+  render(<Preferencias />);
+  
+  const switchRecordatorio = await screen.findByRole('switch', { name: 'Recordatorio de cita' });
+  expect(switchRecordatorio).toHaveAttribute('aria-checked', 'true');
+  
+  // Cambiarlo hace el PUT
+  await userEvent.click(switchRecordatorio);
+  expect(await screen.findByText('Preferencias guardadas.')).toBeVisible();
+  expect(mock).toHaveBeenCalledWith('/notificaciones/preferencias', { method: 'PUT', body: JSON.stringify({ nuevaSolicitud: false, reservaCancelada: true, recordatorioCita: false }) });
+  
+  // Si falla, vuelve a su valor y muestra el error
+  mock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+  await userEvent.click(screen.getByRole('switch', { name: 'Recordatorio de cita' })); 
+  expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar. Inténtalo de nuevo.');
+  expect(screen.getByRole('switch', { name: 'Recordatorio de cita' })).toHaveAttribute('aria-checked', 'false');
+});
+
+it('falla al guardar: muestra error español y restaura el interruptor sin tocar los otros', async () => {
   mock.mockResolvedValueOnce(inicial).mockRejectedValueOnce(new ErrorApi(500, 'No se pudieron guardar las preferencias.'));
   render(<Preferencias />);
   await userEvent.click(await screen.findByRole('switch', { name: 'Nueva solicitud' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron guardar las preferencias.');
   expect(screen.getByRole('switch', { name: 'Nueva solicitud' })).toHaveAttribute('aria-checked', 'false');
   expect(screen.getByRole('switch', { name: 'Reserva cancelada por el cliente' })).toHaveAttribute('aria-checked', 'true');
+  expect(screen.getByRole('switch', { name: 'Recordatorio de cita' })).toHaveAttribute('aria-checked', 'true');
   expect(screen.queryByText('Preferencias guardadas.')).not.toBeInTheDocument();
 });
+
 it('sin conexión al cargar muestra el texto exacto y permite reintentar', async () => {
   mock.mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce(inicial);
   render(<Preferencias />);
@@ -42,6 +83,7 @@ it('sin conexión al cargar muestra el texto exacto y permite reintentar', async
   await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
   expect(await screen.findByRole('switch', { name: 'Nueva solicitud' })).toHaveAttribute('aria-checked', 'false');
 });
+
 it('sin conexión al guardar revierte y muestra texto exacto', async () => {
   mock.mockResolvedValueOnce(inicial).mockRejectedValueOnce(new TypeError('Failed to fetch'));
   render(<Preferencias />);
@@ -49,6 +91,7 @@ it('sin conexión al guardar revierte y muestra texto exacto', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar. Inténtalo de nuevo.');
   expect(screen.getByRole('switch', { name: 'Reserva cancelada por el cliente' })).toHaveAttribute('aria-checked', 'true');
 });
+
 it('usa estados y clases compartidas del panel y bloquea cambios mientras guarda', async () => {
   let resolver!: (valor: unknown) => void;
   mock.mockReturnValueOnce(new Promise(resolve => { resolver = resolve; }));
@@ -61,7 +104,7 @@ it('usa estados y clases compartidas del panel y bloquea cambios mientras guarda
   await userEvent.click(screen.getByRole('switch', { name: 'Nueva solicitud' }));
   for (const control of screen.getAllByRole('switch')) expect(control).toBeDisabled();
   expect(screen.getByText('Guardando preferencias...')).toBeVisible();
-  await act(async () => resolver({ nuevaSolicitud: true, reservaCancelada: true }));
+  await act(async () => resolver({ nuevaSolicitud: true, reservaCancelada: true, recordatorioCita: true }));
   expect(screen.getByText('Preferencias guardadas.').closest('.panel-alerta--exito')).toBeInTheDocument();
   const fuente = readFileSync('src/paginas/preferencias/Preferencias.tsx', 'utf8');
   expect(fuente).not.toMatch(/style=|\b\d+(?:px|rem)\b|#[\da-f]{3,8}\b|alert\(/i);

@@ -4,11 +4,20 @@ import { api, ErrorApi } from '../../servicios/api';
 import { EsqueletoLista, IlustracionEstado } from './EstadosPanel';
 import '../../estilos/panel.css';
 
-interface PreferenciasPush { nuevaSolicitud: boolean; reservaCancelada: boolean }
+// 1. Agregamos recordatorioCita a la interfaz
+interface PreferenciasPush { 
+  nuevaSolicitud: boolean; 
+  reservaCancelada: boolean; 
+  recordatorioCita: boolean; 
+}
+
+// 2. Agregamos el tercer tipo
 const tipos = [
   { campo: 'nuevaSolicitud', titulo: 'Nueva solicitud', descripcion: 'Cuando un cliente solicita una reserva.' },
   { campo: 'reservaCancelada', titulo: 'Reserva cancelada por el cliente', descripcion: 'Cuando un cliente cancela su reserva.' },
+  { campo: 'recordatorioCita', titulo: 'Recordatorio de cita', descripcion: 'Poco antes de una cita confirmada.' },
 ] as const;
+
 const mensajeError = (causa: unknown) => causa instanceof ErrorApi
   ? causa.message : 'No se pudo conectar. Inténtalo de nuevo.';
 
@@ -59,7 +68,7 @@ export function PreferenciasNotificaciones({ titulo = 'Avisos push', ancla }: Pr
         <h2 id="preferencias-titulo" className="panel-tarjeta-titulo">{titulo}</h2>
         <p className="panel-tarjeta-subtitulo">Los avisos siempre aparecerán en tu bandeja, aunque apagues el push.</p>
       </div></div>
-      {cargando ? <div role="status" aria-label="Cargando preferencias"><EsqueletoLista filas={2} /></div> : !datos ?
+      {cargando ? <div role="status" aria-label="Cargando preferencias"><EsqueletoLista filas={3} /></div> : !datos ?
         <div className="panel-estado panel-estado--error">
           <IlustracionEstado icono={CircleAlert} error />
           <div className="panel-estado-cuerpo"><h2 className="panel-estado-titulo">No pudimos cargar las preferencias</h2>

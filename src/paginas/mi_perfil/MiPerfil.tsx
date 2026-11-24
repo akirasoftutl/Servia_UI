@@ -1,8 +1,8 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Link } from 'react-router';
-import { Check, ShieldAlert, Store } from 'lucide-react'
+import { Check, ShieldAlert, Store, Map } from 'lucide-react';
 import './MiPerfil.css';
-import { api, type FotosNegocio as FotosNegocioDatos } from '../../servicios/api';
+import { api, descargarMapaNegocio, type FotosNegocio as FotosNegocioDatos } from '../../servicios/api';
 import {
   DIRECCION_VACIA,
   aplicarDetalleADireccion,
@@ -40,13 +40,12 @@ type RespuestaPerfil = Partial<PerfilNegocio> & {
   direccion?: Direccion | null;
   direccionTexto?: string;
   fotos?: Partial<FotosNegocioDatos> | null;
+  ubicacion?: { lat: number; lng: number } | null;
 };
 
 const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function MiPerfil() {
-
-  // Estado para controlar el paso actual (1, 2 o 3)
   const [pasoActual, setPasoActual] = useState<number>(1);
 
   const [form, setForm] = useState<PerfilNegocio>({
@@ -60,7 +59,6 @@ export function MiPerfil() {
   });
 
   const [direccion, setDireccion] = useState<DireccionForm>(DIRECCION_VACIA);
-  // Texto de una dirección guardada antes de capturarla por campos.
   const [direccionVieja, setDireccionVieja] = useState('');
   const [errorApi, setErrorApi] = useState('');
 
@@ -72,6 +70,13 @@ export function MiPerfil() {
 
   const [fotos, setFotos] = useState<FotosNegocioDatos>(FOTOS_VACIAS);
 
+  // Estados para el mapa y la ubicación
+  const [ubicacion, setUbicacion] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapaUrl, setMapaUrl] = useState<string | null>(null);
+  const [cargandoMapa, setCargandoMapa] = useState(false);
+  const [errorMapa, setErrorMapa] = useState(false);
+  // Indica si el usuario seleccionó una sugerencia recientemente
+  const [ubicacionSugerida, setUbicacionSugerida] = useState(false);
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -97,6 +102,11 @@ export function MiPerfil() {
         } else if (perfil.direccionTexto) {
           setDireccionVieja(perfil.direccionTexto);
         }
+
+        // Si el perfil ya trae una ubicación guardada, la usamos
+        if (perfil.ubicacion) {
+          setUbicacion(perfil.ubicacion);
+        }
       } catch (error) {
         console.error('Error al cargar datos:', error);
       } finally {
@@ -105,6 +115,35 @@ export function MiPerfil() {
     };
     cargarDatos();
   }, []);
+
+  // Efecto para descargar la imagen del mapa cuando cambie la ubicación
+  useEffect(() => {
+    if (!ubicacion) {
+      setMapaUrl(null);
+      return;
+    }
+
+    let activo = true;
+    setCargandoMapa(true);
+    setErrorMapa(false);
+
+    descargarMapaNegocio()
+      .then((url) => {
+        if (activo) setMapaUrl(url);
+      })
+      .catch(() => {
+        if (activo) setErrorMapa(true);
+      })
+      .finally(() => {
+        if (activo) setCargandoMapa(false);
+      });
+
+    return () => {
+      activo = false;
+      // Liberamos la URL temporal si el componente se desmonta o cambia la ubicación
+      if (mapaUrl) URL.revokeObjectURL(mapaUrl);
+    };
+  }, [ubicacion]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -116,10 +155,14 @@ export function MiPerfil() {
     const { name, value } = e.target;
     setDireccion({ ...direccion, [name]: value });
     setErrores({ ...errores, [name]: '' });
+
+    // Si el usuario edita a mano después de elegir una sugerencia, invalidamos la ubicación
+    if (ubicacionSugerida) {
+      setUbicacion(null);
+      setUbicacionSugerida(false);
+    }
   };
 
-  // Con detalle llena cada campo (menos el número interior); sin él, decisión A1:
-  // solo `calle`, con todo el texto de la sugerencia.
   const handleCalleElegida = ({ texto, detalle }: EleccionCalle) => {
     setDireccion((prev) => (detalle ? aplicarDetalleADireccion(prev, detalle) : { ...prev, calle: texto }));
     setErrores((prev) => ({
@@ -127,6 +170,15 @@ export function MiPerfil() {
       calle: '',
       ...(detalle ? { numeroExterior: '', colonia: '', codigoPostal: '', municipio: '', estado: '' } : {}),
     }));
+
+    // Si la sugerencia trae coordenadas, las guardamos
+    if (detalle && (detalle as any).ubicacion) {
+      setUbicacion((detalle as any).ubicacion);
+      setUbicacionSugerida(true);
+    } else {
+      setUbicacion(null);
+      setUbicacionSugerida(false);
+    }
   };
 
   const handleCategoriaChange = (id: string) => {
@@ -134,7 +186,6 @@ export function MiPerfil() {
     setErrores({ ...errores, categoriaId: '' });
   };
 
-  // Validación por paso individual
   const validarPaso = (paso: number): boolean => {
     const nuevosErrores: Record<string, string> = {};
 
@@ -187,9 +238,21 @@ export function MiPerfil() {
       const { nombre, descripcion, categoriaId } = form;
       const telefono = normalizarTelefono(form.telefono);
       const correoContacto = form.correoContacto.trim();
+      const direccionApi = direccionParaApi(direccion);
+
+      // Construimos el body. Solo enviamos ubicacion si fue sugerida y no invalidada
+      const body: any = {
+        nombre, descripcion, categoriaId, telefono, correoContacto,
+        direccion: direccionApi,
+      };
+
+      if (ubicacion && ubicacionSugerida) {
+        body.ubicacion = ubicacion;
+      }
+
       const respuesta = await api<RespuestaPerfil>('/negocios/mio', {
         method: 'PUT',
-        body: JSON.stringify({ nombre, descripcion, categoriaId, telefono, correoContacto, direccion: direccionParaApi(direccion) }),
+        body: JSON.stringify(body),
       });
 
       setForm((prev) => ({
@@ -203,15 +266,25 @@ export function MiPerfil() {
         perfilCompleto: respuesta.perfilCompleto ?? prev.perfilCompleto ?? false,
         camposFaltantes: respuesta.camposFaltantes ?? prev.camposFaltantes ?? [],
       }));
+
       if (respuesta.direccion) {
         setDireccion(direccionAForm(respuesta.direccion));
         setDireccionVieja('');
       }
+
       if (respuesta.fotos) {
         setFotos(normalizarFotosNegocio(respuesta.fotos));
       }
+
+      // Si el backend confirma que guardó una ubicación, actualizamos el estado
+      if (respuesta.ubicacion) {
+        setUbicacion(respuesta.ubicacion);
+        setUbicacionSugerida(false); // Ya está guardada, no necesitamos volver a enviarla
+      } else {
+        setUbicacion(null);
+      }
+
       setMensajeExito('Perfil actualizado correctamente');
-      // El botón de guardar está al final de la página: se sube para que el aviso quede a la vista.
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error: any) {
       setErrorApi(error.message || 'Error al guardar el perfil');
@@ -227,9 +300,7 @@ export function MiPerfil() {
           <div className="spinner-border" role="status">
             <span className="visually-hidden">Cargando...</span>
           </div>
-          <p className="panel-estado-texto">
-            Cargando información del negocio...
-          </p>
+          <p className="panel-estado-texto">Cargando información del negocio...</p>
         </div>
       </div>
     );
@@ -238,66 +309,37 @@ export function MiPerfil() {
   return (
     <div className="panel-pagina">
       <div className="panel-contenedor">
-
         {/* Aviso de perfil incompleto */}
-        {!form.perfilCompleto &&
-          (form.camposFaltantes?.length ?? 0) > 0 && (
-            <div
-              className="panel-alerta panel-alerta--aviso perfil-alerta-incompleto"
-              role="status"
-            >
-              <div className="panel-alerta-icono" aria-hidden="true">
-                <ShieldAlert />
-              </div>
-
-              <div className="panel-alerta-contenido">
-                <strong className="d-block">
-                  Completa tu perfil para publicar servicios
-                </strong>
-                <p>
-                  Campos pendientes:{' '}
-                  <strong>
-                    {form.camposFaltantes.join(', ')}
-                  </strong>
-                </p>
-              </div>
+        {!form.perfilCompleto && (form.camposFaltantes?.length ?? 0) > 0 && (
+          <div className="panel-alerta panel-alerta--aviso perfil-alerta-incompleto" role="status">
+            <div className="panel-alerta-icono" aria-hidden="true"><ShieldAlert /></div>
+            <div className="panel-alerta-contenido">
+              <strong className="d-block">Completa tu perfil para publicar servicios</strong>
+              <p>Campos pendientes: <strong>{form.camposFaltantes.join(', ')}</strong></p>
             </div>
-          )}
+          </div>
+        )}
 
         {/* Mensaje de éxito */}
         {mensajeExito && (
-          <div
-            className="panel-alerta panel-alerta--exito"
-            role="status"
-          >
+          <div className="panel-alerta panel-alerta--exito" role="status">
             <Check aria-hidden="true" />
             <strong>{mensajeExito}</strong>
           </div>
         )}
 
         <form onSubmit={handleSubmit} noValidate>
-
-          {/* Encabezado */}
           <header className="panel-encabezado">
             <div>
               <EyebrowPanel grupo="negocio" icono={Store} />
-
-              <h1 className="panel-titulo">
-                Perfil del negocio
-              </h1>
-
-              <p className="panel-subtitulo">
-                Administra la información de tu establecimiento
-                y haz que más clientes te encuentren en Servia.
-              </p>
+              <h1 className="panel-titulo">Perfil del negocio</h1>
+              <p className="panel-subtitulo">Administra la información de tu establecimiento y haz que más clientes te encuentren en Servia.</p>
             </div>
             <Link to="/mi-perfil/vista-previa" className="btn-servia-secondary">Ver como cliente</Link>
           </header>
 
-          {/* Tarjeta principal */}
           <div className="panel-tarjeta">
             <div>
-
               <div className="perfil-progress-lines" aria-hidden="true">
                 <span className={pasoActual >= 1 ? 'active' : ''} />
                 <span className={pasoActual >= 2 ? 'active' : ''} />
@@ -307,156 +349,41 @@ export function MiPerfil() {
               {pasoActual === 1 && (
                 <section aria-labelledby="titulo-informacion">
                   <div className="mb-4">
-                    <h2
-                      id="titulo-informacion"
-                      className="panel-tarjeta-titulo"
-                    >
-                      Información general
-                    </h2>
-
-                    <p className="panel-tarjeta-subtitulo">
-                      Cuéntales a tus clientes quién eres y cómo
-                      pueden ponerse en contacto contigo.
-                    </p>
+                    <h2 id="titulo-informacion" className="panel-tarjeta-titulo">Información general</h2>
+                    <p className="panel-tarjeta-subtitulo">Cuéntales a tus clientes quién eres y cómo pueden ponerse en contacto contigo.</p>
                   </div>
 
                   <div className="row g-4">
-
-                    {/* Campos del negocio */}
                     <div className="col-12">
                       <div className="row g-3">
-
                         <div className="col-12 col-md-6">
-                          <label
-                            htmlFor="nombre"
-                            className="form-label"
-                          >
-                            Nombre del negocio *
-                          </label>
-
-                          <input
-                            id="nombre"
-                            type="text"
-                            name="nombre"
-                            className={`form-control ${errores.nombre ? 'is-invalid' : ''
-                              }`}
-                            value={form.nombre}
-                            onChange={handleChange}
-                            placeholder="Ej. Barbería El Bigote"
-                            autoComplete="organization"
-                            required
-                          />
-
-                          {errores.nombre && (
-                            <div className="invalid-feedback">
-                              {errores.nombre}
-                            </div>
-                          )}
+                          <label htmlFor="nombre" className="form-label">Nombre del negocio *</label>
+                          <input id="nombre" type="text" name="nombre" className={`form-control ${errores.nombre ? 'is-invalid' : ''}`} value={form.nombre} onChange={handleChange} placeholder="Ej. Barbería El Bigote" autoComplete="organization" required />
+                          {errores.nombre && <div className="invalid-feedback">{errores.nombre}</div>}
                         </div>
 
                         <div className="col-12 col-md-6">
-                          <label
-                            htmlFor="telefono"
-                            className="form-label"
-                          >
-                            Teléfono de contacto *
-                          </label>
-
-                          <input
-                            id="telefono"
-                            type="tel"
-                            name="telefono"
-                            className={`form-control ${errores.telefono ? 'is-invalid' : ''
-                              }`}
-                            value={form.telefono}
-                            onChange={handleChange}
-                            placeholder="477 123 4567"
-                            autoComplete="tel"
-                            required
-                          />
-
-                          {errores.telefono && (
-                            <div className="invalid-feedback">
-                              {errores.telefono}
-                            </div>
-                          )}
+                          <label htmlFor="telefono" className="form-label">Teléfono de contacto *</label>
+                          <input id="telefono" type="tel" name="telefono" className={`form-control ${errores.telefono ? 'is-invalid' : ''}`} value={form.telefono} onChange={handleChange} placeholder="477 123 4567" autoComplete="tel" required />
+                          {errores.telefono && <div className="invalid-feedback">{errores.telefono}</div>}
                         </div>
 
                         <div className="col-12">
-                          <label
-                            htmlFor="correoContacto"
-                            className="form-label"
-                          >
-                            Correo de contacto del negocio *
-                          </label>
-
-                          <input
-                            id="correoContacto"
-                            type="email"
-                            name="correoContacto"
-                            className={`form-control ${errores.correoContacto ? 'is-invalid' : ''
-                              }`}
-                            value={form.correoContacto}
-                            onChange={handleChange}
-                            placeholder="contacto@negocio.com"
-                            autoComplete="email"
-                            required
-                          />
-
-                          {errores.correoContacto ? (
-                            <div className="invalid-feedback">
-                              {errores.correoContacto}
-                            </div>
-                          ) : (
-                            <div className="perfil-campo-pie">
-                              <span className="panel-ayuda">
-                                Es el correo que verán tus clientes. No cambia el correo con el que inicias sesión.
-                              </span>
-                            </div>
-                          )}
+                          <label htmlFor="correoContacto" className="form-label">Correo de contacto del negocio *</label>
+                          <input id="correoContacto" type="email" name="correoContacto" className={`form-control ${errores.correoContacto ? 'is-invalid' : ''}`} value={form.correoContacto} onChange={handleChange} placeholder="contacto@negocio.com" autoComplete="email" required />
+                          {errores.correoContacto ? <div className="invalid-feedback">{errores.correoContacto}</div> : <div className="perfil-campo-pie"><span className="panel-ayuda">Es el correo que verán tus clientes. No cambia el correo con el que inicias sesión.</span></div>}
                         </div>
 
                         <div className="col-12">
-                          <label
-                            htmlFor="descripcion"
-                            className="form-label"
-                          >
-                            Descripción del negocio *
-                          </label>
-
-                          <textarea
-                            id="descripcion"
-                            name="descripcion"
-                            rows={5}
-                            maxLength={500}
-                            className={`form-control ${errores.descripcion ? 'is-invalid' : ''
-                              }`}
-                            value={form.descripcion}
-                            onChange={handleChange}
-                            placeholder="Describe tus servicios, tu experiencia y qué te hace diferente..."
-                            required
-                          />
-
+                          <label htmlFor="descripcion" className="form-label">Descripción del negocio *</label>
+                          <textarea id="descripcion" name="descripcion" rows={5} maxLength={500} className={`form-control ${errores.descripcion ? 'is-invalid' : ''}`} value={form.descripcion} onChange={handleChange} placeholder="Describe tus servicios, tu experiencia y qué te hace diferente..." required />
                           <div className="perfil-campo-pie">
-                            {errores.descripcion ? (
-                              <span className="panel-error-campo">
-                                {errores.descripcion}
-                              </span>
-                            ) : (
-                              <span className="panel-ayuda">
-                                Una buena descripción genera confianza.
-                              </span>
-                            )}
-
-                            <span className="panel-ayuda">
-                              {(form.descripcion || '').length}/500
-                            </span>
+                            {errores.descripcion ? <span className="panel-error-campo">{errores.descripcion}</span> : <span className="panel-ayuda">Una buena descripción genera confianza.</span>}
+                            <span className="panel-ayuda">{(form.descripcion || '').length}/500</span>
                           </div>
                         </div>
-
                       </div>
                     </div>
-
                   </div>
                 </section>
               )}
@@ -467,169 +394,82 @@ export function MiPerfil() {
               {pasoActual === 2 && (
                 <section aria-labelledby="titulo-ubicacion">
                   <div className="mb-4">
-                    <h2
-                      id="titulo-ubicacion"
-                      className="panel-tarjeta-titulo"
-                    >
-                      Ubicación y contacto
-                    </h2>
-
-                    <p className="panel-tarjeta-subtitulo">
-                      Facilita que tus clientes encuentren tu
-                      establecimiento.
-                    </p>
+                    <h2 id="titulo-ubicacion" className="panel-tarjeta-titulo">Ubicación y contacto</h2>
+                    <p className="panel-tarjeta-subtitulo">Facilita que tus clientes encuentren tu establecimiento.</p>
                   </div>
 
                   <div className="row g-3">
-
                     {direccionVieja && (
                       <div className="col-12">
                         <div className="alert alert-warning border-0 rounded-4 p-3 mb-0" role="status">
-                          <strong className="d-block mb-1">
-                            Tu dirección está guardada como texto. Captúrala por campos para actualizarla
-                          </strong>
+                          <strong className="d-block mb-1">Tu dirección está guardada como texto. Captúrala por campos para actualizarla</strong>
                           <span className="small text-secondary">{direccionVieja}</span>
                         </div>
                       </div>
                     )}
 
                     <div className="col-12 col-md-6">
-                      <label htmlFor="calle" className="form-label">
-                        Calle *
-                      </label>
-
-                      <CampoCalle
-                        value={direccion.calle}
-                        error={errores.calle}
-                        onChange={handleDireccionChange}
-                        onElegir={handleCalleElegida}
-                      />
+                      <label htmlFor="calle" className="form-label">Calle *</label>
+                      <CampoCalle value={direccion.calle} error={errores.calle} onChange={handleDireccionChange} onElegir={handleCalleElegida} />
                     </div>
                     <div className="col-6 col-md-3">
-                      <label htmlFor="numeroExterior" className="form-label">
-                        Número exterior *
-                      </label>
-
-                      <input
-                        id="numeroExterior"
-                        type="text"
-                        name="numeroExterior"
-                        className={`form-control ${errores.numeroExterior ? 'is-invalid' : ''}`}
-                        value={direccion.numeroExterior}
-                        onChange={handleDireccionChange}
-                        placeholder="Ej. 123"
-                      />
-
-                      {errores.numeroExterior && (
-                        <div className="invalid-feedback">{errores.numeroExterior}</div>
-                      )}
+                      <label htmlFor="numeroExterior" className="form-label">Número exterior *</label>
+                      <input id="numeroExterior" type="text" name="numeroExterior" className={`form-control ${errores.numeroExterior ? 'is-invalid' : ''}`} value={direccion.numeroExterior} onChange={handleDireccionChange} placeholder="Ej. 123" />
+                      {errores.numeroExterior && <div className="invalid-feedback">{errores.numeroExterior}</div>}
                     </div>
                     <div className="col-6 col-md-3">
-                      <label htmlFor="numeroInterior" className="form-label">
-                        Número interior
-                      </label>
-
-                      <input
-                        id="numeroInterior"
-                        type="text"
-                        name="numeroInterior"
-                        className={`form-control ${errores.numeroInterior ? 'is-invalid' : ''}`}
-                        value={direccion.numeroInterior}
-                        onChange={handleDireccionChange}
-                        placeholder="Ej. 4"
-                      />
-
-                      {errores.numeroInterior && (
-                        <div className="invalid-feedback">{errores.numeroInterior}</div>
-                      )}
+                      <label htmlFor="numeroInterior" className="form-label">Número interior</label>
+                      <input id="numeroInterior" type="text" name="numeroInterior" className={`form-control ${errores.numeroInterior ? 'is-invalid' : ''}`} value={direccion.numeroInterior} onChange={handleDireccionChange} placeholder="Ej. 4" />
+                      {errores.numeroInterior && <div className="invalid-feedback">{errores.numeroInterior}</div>}
                     </div>
                     <div className="col-12 col-md-6">
-                      <label htmlFor="colonia" className="form-label">
-                        Colonia *
-                      </label>
-
-                      <input
-                        id="colonia"
-                        type="text"
-                        name="colonia"
-                        className={`form-control ${errores.colonia ? 'is-invalid' : ''}`}
-                        value={direccion.colonia}
-                        onChange={handleDireccionChange}
-                        placeholder="Ej. Centro"
-                      />
-
-                      {errores.colonia && (
-                        <div className="invalid-feedback">{errores.colonia}</div>
-                      )}
+                      <label htmlFor="colonia" className="form-label">Colonia *</label>
+                      <input id="colonia" type="text" name="colonia" className={`form-control ${errores.colonia ? 'is-invalid' : ''}`} value={direccion.colonia} onChange={handleDireccionChange} placeholder="Ej. Centro" />
+                      {errores.colonia && <div className="invalid-feedback">{errores.colonia}</div>}
                     </div>
                     <div className="col-12 col-md-6">
-                      <label htmlFor="codigoPostal" className="form-label">
-                        Código postal *
-                      </label>
-
-                      <input
-                        id="codigoPostal"
-                        type="text"
-                        name="codigoPostal"
-                        inputMode="numeric"
-                        maxLength={5}
-                        className={`form-control ${errores.codigoPostal ? 'is-invalid' : ''}`}
-                        value={direccion.codigoPostal}
-                        onChange={handleDireccionChange}
-                        placeholder="Ej. 37000"
-                        autoComplete="postal-code"
-                      />
-
-                      {errores.codigoPostal && (
-                        <div className="invalid-feedback">{errores.codigoPostal}</div>
-                      )}
+                      <label htmlFor="codigoPostal" className="form-label">Código postal *</label>
+                      <input id="codigoPostal" type="text" name="codigoPostal" inputMode="numeric" maxLength={5} className={`form-control ${errores.codigoPostal ? 'is-invalid' : ''}`} value={direccion.codigoPostal} onChange={handleDireccionChange} placeholder="Ej. 37000" autoComplete="postal-code" />
+                      {errores.codigoPostal && <div className="invalid-feedback">{errores.codigoPostal}</div>}
                     </div>
                     <div className="col-12 col-md-6">
-                      <label htmlFor="municipio" className="form-label">
-                        Municipio *
-                      </label>
-
-                      <input
-                        id="municipio"
-                        type="text"
-                        name="municipio"
-                        className={`form-control ${errores.municipio ? 'is-invalid' : ''}`}
-                        value={direccion.municipio}
-                        onChange={handleDireccionChange}
-                        placeholder="Ej. León"
-                        autoComplete="address-level2"
-                      />
-
-                      {errores.municipio && (
-                        <div className="invalid-feedback">{errores.municipio}</div>
-                      )}
+                      <label htmlFor="municipio" className="form-label">Municipio *</label>
+                      <input id="municipio" type="text" name="municipio" className={`form-control ${errores.municipio ? 'is-invalid' : ''}`} value={direccion.municipio} onChange={handleDireccionChange} placeholder="Ej. León" autoComplete="address-level2" />
+                      {errores.municipio && <div className="invalid-feedback">{errores.municipio}</div>}
                     </div>
                     <div className="col-12 col-md-6">
-                      <label htmlFor="estado" className="form-label">
-                        Estado *
-                      </label>
-
-                      <select
-                        id="estado"
-                        name="estado"
-                        className={`form-select ${errores.estado ? 'is-invalid' : ''}`}
-                        value={direccion.estado}
-                        onChange={handleDireccionChange}
-                        autoComplete="address-level1"
-                      >
+                      <label htmlFor="estado" className="form-label">Estado *</label>
+                      <select id="estado" name="estado" className={`form-select ${errores.estado ? 'is-invalid' : ''}`} value={direccion.estado} onChange={handleDireccionChange} autoComplete="address-level1">
                         <option value="">Selecciona un estado</option>
-                        {ESTADOS_MEXICO.map((nombre) => (
-                          <option key={nombre} value={nombre}>
-                            {nombre}
-                          </option>
-                        ))}
+                        {ESTADOS_MEXICO.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
                       </select>
-
-                      {errores.estado && (
-                        <div className="invalid-feedback">{errores.estado}</div>
-                      )}
+                      {errores.estado && <div className="invalid-feedback">{errores.estado}</div>}
                     </div>
 
+                    {/* MAPA DE UBICACIÓN */}
+                    {ubicacion && (
+                      <div className="col-12 mt-4">
+                        <div className="panel-tarjeta" style={{ padding: '1rem', background: '#faf9fc', border: '1px solid #eeeaf5' }}>
+                          <h3 className="panel-tarjeta-titulo mb-3" style={{ fontSize: '1.1rem' }}>
+                            <Map size={18} className="me-2" style={{ color: '#7452bd' }} />
+                            Así te ve el cliente en el mapa
+                          </h3>
+                          <div style={{ borderRadius: '12px', overflow: 'hidden', height: '250px', background: '#f1ecfa' }}>
+                            {cargandoMapa ? (
+                              <div className="d-flex justify-content-center align-items-center h-100">
+                                <div className="spinner-border" style={{ color: '#7452bd' }} role="status"></div>
+                              </div>
+                            ) : errorMapa ? (
+                              <div className="d-flex justify-content-center align-items-center h-100 text-muted small">
+                                No se pudo cargar el mapa.
+                              </div>
+                            ) : mapaUrl ? (
+                              <img src={mapaUrl} alt="Mapa con la ubicación de tu negocio" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </section>
               )}
@@ -640,37 +480,18 @@ export function MiPerfil() {
               {pasoActual === 3 && (
                 <section aria-labelledby="titulo-categoria">
                   <div className="mb-4">
-                    <h2
-                      id="titulo-categoria"
-                      className="panel-tarjeta-titulo"
-                    >
-                      Categoría del negocio
-                    </h2>
-
-                    <p className="panel-tarjeta-subtitulo">
-                      Selecciona la categoría que mejor describe
-                      los servicios que ofreces.
-                    </p>
+                    <h2 id="titulo-categoria" className="panel-tarjeta-titulo">Categoría del negocio</h2>
+                    <p className="panel-tarjeta-subtitulo">Selecciona la categoría que mejor describe los servicios que ofreces.</p>
                   </div>
 
-                  {errores.categoriaId && (
-                    <div className="panel-alerta panel-alerta--error">
-                      {errores.categoriaId}
-                    </div>
-                  )}
+                  {errores.categoriaId && <div className="panel-alerta panel-alerta--error">{errores.categoriaId}</div>}
 
                   {categorias.length === 0 ? (
-                    <div className="panel-estado">
-                      <p className="panel-estado-texto">
-                        No hay categorías disponibles por el momento.
-                      </p>
-                    </div>
+                    <div className="panel-estado"><p className="panel-estado-texto">No hay categorías disponibles por el momento.</p></div>
                   ) : (
                     <div className="row g-3">
                       {categorias.map((cat) => {
-                        const seleccionada =
-                          form.categoriaId === cat.id;
-
+                        const seleccionada = form.categoriaId === cat.id;
                         const categoriaImagenes: Record<string, string> = {
                           'cabello-barba': '/galeria_home/galeria_1.jpg',
                           'estetica-facial-corporal': '/galeria_home/galeria_2.jpg',
@@ -678,33 +499,19 @@ export function MiPerfil() {
                           'fitness': '/galeria_home/galeria_4.jpeg',
                           'maquillaje-imagen': '/galeria_home/galeria_5.jpeg',
                         };
-
-                        const imagenCategoria =
-                          categoriaImagenes[cat.id] || '/galeria_home/galeria_1.jpg';
+                        const imagenCategoria = categoriaImagenes[cat.id] || '/galeria_home/galeria_1.jpg';
 
                         return (
-                          <div
-                            className="col-12 col-sm-6 col-lg-4"
-                            key={cat.id}
-                          >
+                          <div className="col-12 col-sm-6 col-lg-4" key={cat.id}>
                             <button
                               type="button"
-                              className={`perfil-category w-100 text-start ${seleccionada ? 'selected' : ''
-                                }`}
-                              style={{
-                                backgroundImage: `linear-gradient(to top, rgba(20, 15, 30, 0.88), rgba(20, 15, 30, 0.08)), url('${imagenCategoria}')`,
-                              }}
-                              onClick={() =>
-                                handleCategoriaChange(cat.id)
-                              }
+                              className={`perfil-category w-100 text-start ${seleccionada ? 'selected' : ''}`}
+                              style={{ backgroundImage: `linear-gradient(to top, rgba(20, 15, 30, 0.88), rgba(20, 15, 30, 0.08)), url('${imagenCategoria}')` }}
+                              onClick={() => handleCategoriaChange(cat.id)}
                               aria-pressed={seleccionada}
                             >
                               <span className="w-100 d-flex align-items-end justify-content-between gap-2">
-                                <span className="fw-bold">
-                                  {cat.nombre}
-                                </span>
-
-                              
+                                <span className="fw-bold">{cat.nombre}</span>
                               </span>
                             </button>
                           </div>
@@ -712,87 +519,39 @@ export function MiPerfil() {
                       })}
                     </div>
                   )}
-
-                  <p className="panel-ayuda mt-3 mb-0">
-                    Puedes seleccionar una sola categoría.
-                  </p>
+                  <p className="panel-ayuda mt-3 mb-0">Puedes seleccionar una sola categoría.</p>
                 </section>
               )}
 
-              {errorApi && (
-                <div className="alert alert-danger py-2 small mt-3" role="alert">
-                  {errorApi}
-                </div>
-              )}
+              {errorApi && <div className="alert alert-danger py-2 small mt-3" role="alert">{errorApi}</div>}
 
               <div className="perfil-actions">
                 <div>
                   {pasoActual > 1 && (
-                    <button
-                      type="button"
-                      onClick={handleAnterior}
-                      className="btn-servia-secondary"
-                    >
-                       Anterior
-                    </button>
+                    <button type="button" onClick={handleAnterior} className="btn-servia-secondary">Anterior</button>
                   )}
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
                   {pasoActual < 3 ? (
-                    <button
-                      type="button"
-                      onClick={handleSiguiente}
-                      className="btn-servia-primary"
-                    >
-                      Continuar
-                    </button>
+                    <button type="button" onClick={handleSiguiente} className="btn-servia-primary">Continuar</button>
                   ) : (
-                    <button
-                      type="submit"
-                      className="btn-servia-primary"
-                      disabled={guardando}
-                    >
-                      {guardando ? (
-                        <>
-                          <span
-                            className="spinner-border spinner-border-sm me-2"
-                            role="status"
-                            aria-hidden="true"
-                          />
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          Guardar cambios
-                        </>
-                      )}
+                    <button type="submit" className="btn-servia-primary" disabled={guardando}>
+                      {guardando ? <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Guardando...</> : <>Guardar cambios</>}
                     </button>
                   )}
-
-                  <Link
-                    to="/servicios"
-                    className="btn-servia-secondary"
-                  >
-                    Salir
-                  </Link>
+                  <Link to="/servicios" className="btn-servia-secondary">Salir</Link>
                 </div>
               </div>
 
-              {/* Pie de la tarjeta */}
               <div className="panel-nota-pie">
                 <span className="panel-nota-pie-punto" aria-hidden="true">●</span>
-                <span>
-                  Tu información te ayuda a conectar con más clientes.
-                </span>
+                <span>Tu información te ayuda a conectar con más clientes.</span>
               </div>
-
             </div>
           </div>
-
         </form>
 
-        {/* Fuera del formulario del perfil: secciones independientes. */}
         <FotosNegocio fotosIniciales={fotos} alCambiar={setFotos} />
       </div>
     </div>
