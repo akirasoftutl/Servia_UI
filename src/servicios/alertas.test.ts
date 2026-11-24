@@ -149,4 +149,10 @@ describe('servicio de alertas (SweetAlert2)', () => {
     mockearAlertaVisible(false)
     expect(hayAlertaAbierta()).toBe(false)
   })
+
+  it('el mock de pruebas falla con mensaje claro si se dispara confirmar sin mockearConfirmacion', async () => {
+    await expect(
+      confirmar({ titulo: '¿Eliminar servicio?' }),
+    ).rejects.toThrow(/Confirmación de SweetAlert2 sin configurar.*¿Eliminar servicio\?.*mockearConfirmacion/)
+  })
 })
