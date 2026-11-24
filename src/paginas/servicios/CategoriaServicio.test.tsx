@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { NuevoServicio } from './NuevoServicio';
 import { MisServicios } from './MisServicios';
+import { ultimaAlerta } from '../../pruebas/mockAlertas';
 
 // Estas pruebas no sustituyen `api()`: simulan solo `fetch` con las respuestas
 // reales del contrato de la API (akirasoftutl/Servia_BE#120). El catálogo sale
@@ -307,7 +308,10 @@ describe('Categoría del servicio: editar', () => {
     abrir();
     await userEvent.selectOptions(await campo(), 'Cabello');
     await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Tuvimos un problema en el servidor.');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'error',
+      text: expect.stringContaining('Tuvimos un problema en el servidor.'),
+    }));
   });
 });
 

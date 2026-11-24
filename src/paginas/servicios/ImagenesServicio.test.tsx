@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { NuevoServicio } from './NuevoServicio';
@@ -6,6 +6,7 @@ import { MisServicios } from './MisServicios';
 import { MAX_IMAGENES_SERVICIO } from './imagenes';
 import { MAX_FOTO_BYTES, MENSAJE_TAMANO_EXCEDIDO, MENSAJE_TIPO_INVALIDO } from '../mi_perfil/fotos';
 import { MENSAJE_ACCION_PENDIENTE } from '../../servicios/api';
+import { mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas';
 
 // Estas pruebas no sustituyen `api()`: simulan solo `fetch` con las respuestas
 // reales del contrato de la API (akirasoftutl/Servia_BE#114) para que una forma
@@ -137,7 +138,7 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
 
     const nueva = await screen.findByRole('img', { name: 'Imagen 1 del servicio' });
     expect(nueva).toHaveAttribute('src', url(11));
-    expect(screen.getByRole('status')).toHaveTextContent('Imagen agregada.');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Imagen agregada.' }));
 
     expect(subidas()).toHaveLength(1);
     const [subida] = subidas();
@@ -176,9 +177,8 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     expect(screen.getByLabelText('Seleccionar imágenes del servicio')).toBeDisabled();
     expect(screen.getByText('Ya tienes 3 imágenes, el máximo por servicio. Quita una para agregar otra.')).toBeInTheDocument();
 
+    mockearConfirmacion(true);
     await userEvent.click(screen.getByRole('button', { name: 'Quitar imagen 3' }));
-    const dialogo = await screen.findByRole('alertdialog');
-    await userEvent.click(within(dialogo).getByRole('button', { name: 'Quitar' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Agregar imagen' })).toBeEnabled());
   });
 
@@ -189,7 +189,10 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     elegir(archivo('a.jpg'), archivo('b.jpg'));
     expect(await screen.findByRole('img', { name: 'Imagen 3 del servicio' })).toBeInTheDocument();
     expect(subidas()).toHaveLength(1);
-    expect(screen.getByRole('alert')).toHaveTextContent('Solo caben 1 imagen más: el máximo es 3 por servicio.');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'warning',
+      text: 'Solo caben 1 imagen más: el máximo es 3 por servicio.',
+    }));
   });
 
   it.each([
@@ -200,7 +203,7 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     abrir();
     await screen.findByLabelText('Nombre del servicio *');
     elegir(malo);
-    expect(await screen.findByRole('alert')).toHaveTextContent(mensaje);
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'warning', text: mensaje }));
     expect(subidas()).toHaveLength(0);
     expect(screen.queryByRole('img', { name: /Imagen 1/ })).not.toBeInTheDocument();
   });
@@ -214,7 +217,7 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     abrir();
     await screen.findByLabelText('Nombre del servicio *');
     elegir(archivo('corte.jpg'));
-    expect(await screen.findByRole('alert')).toHaveTextContent(mensaje);
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: mensaje }));
     expect(screen.queryByRole('img', { name: 'Imagen 1 del servicio' })).not.toBeInTheDocument();
     expect(screen.queryByText('Subiendo...')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Agregar imagen' })).toBeEnabled();
@@ -225,9 +228,11 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     abrir();
     await screen.findByLabelText('Nombre del servicio *');
     elegir(archivo('corte.jpg'));
-    const alerta = await screen.findByRole('alert');
-    expect(alerta).toHaveTextContent('Tuvimos un problema en el servidor. Inténtalo de nuevo en unos minutos.');
-    expect(alerta).not.toHaveTextContent('Supabase');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'error',
+      text: 'Tuvimos un problema en el servidor. Inténtalo de nuevo en unos minutos.',
+    }));
+    expect(String(ultimaAlerta()?.text)).not.toContain('Supabase');
   });
 
   it('401 y 403 se explican en español en lugar del texto en inglés de Nest', async () => {
@@ -235,9 +240,15 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     abrir();
     await screen.findByLabelText('Nombre del servicio *');
     elegir(archivo('a.jpg'));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Tu sesión expiró. Vuelve a iniciar sesión para continuar.');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'error',
+      text: 'Tu sesión expiró. Vuelve a iniciar sesión para continuar.',
+    }));
     elegir(archivo('b.jpg'));
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Tu cuenta no tiene permiso para cambiar las imágenes de este servicio.'));
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'error',
+      text: 'Tu cuenta no tiene permiso para cambiar las imágenes de este servicio.',
+    }));
   });
 
   it('sin red guarda la subida pendiente y lo explica en español', async () => {
@@ -245,33 +256,33 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     abrir();
     await screen.findByLabelText('Nombre del servicio *');
     elegir(archivo('corte.jpg'));
-    expect(await screen.findByRole('alert')).toHaveTextContent(MENSAJE_ACCION_PENDIENTE);
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: MENSAJE_ACCION_PENDIENTE }));
   });
 
-  it('pide confirmación antes de quitar: cancelar no llama a la API y devuelve el foco', async () => {
+  it('pide confirmación antes de quitar: cancelar no llama a la API', async () => {
     servicio.imagenes = [imagen(1), imagen(2)];
     abrir();
     const quitar = await screen.findByRole('button', { name: 'Quitar imagen 1' });
+    mockearConfirmacion(false);
     await userEvent.click(quitar);
-    const dialogo = screen.getByRole('alertdialog', { name: 'Quitar imagen' });
-    expect(dialogo).toHaveAccessibleDescription('¿Quitar la imagen 1? Dejará de mostrarse a tus clientes.');
-    await userEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(ultimaAlerta()).toMatchObject({
+      title: 'Quitar imagen',
+      text: '¿Quitar la imagen 1? Dejará de mostrarse a tus clientes.',
+      showCancelButton: true,
+    });
     expect(bajadas()).toHaveLength(0);
-    expect(quitar).toHaveFocus();
     expect(screen.getByRole('img', { name: 'Imagen 1 del servicio' })).toBeInTheDocument();
   });
 
   it('al confirmar quita la imagen con DELETE y desaparece del servicio (también al recargar)', async () => {
     servicio.imagenes = [imagen(1), imagen(2)];
     const { unmount } = abrir();
+    mockearConfirmacion(true);
     await userEvent.click(await screen.findByRole('button', { name: 'Quitar imagen 1' }));
-    await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Quitar' }));
 
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
-    expect(bajadas()).toHaveLength(1);
+    await waitFor(() => expect(bajadas()).toHaveLength(1));
     expect(bajadas()[0].ruta).toBe('/negocios/mio/servicios/uno/imagenes/img1');
-    expect(screen.getByRole('status')).toHaveTextContent('Imagen quitada.');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Imagen quitada.' }));
     // La que sobrevive pasa a ser la primera.
     expect(screen.getByRole('img', { name: 'Imagen 1 del servicio' })).toHaveAttribute('src', url(2));
     expect(screen.queryByRole('img', { name: 'Imagen 2 del servicio' })).not.toBeInTheDocument();
@@ -286,9 +297,12 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     servicio.imagenes = [imagen(1)];
     falloBajada = errorNest(404, 'La imagen no existe en este servicio.', 'Not Found');
     abrir();
+    mockearConfirmacion(true);
     await userEvent.click(await screen.findByRole('button', { name: 'Quitar imagen 1' }));
-    await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Quitar' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('La imagen no existe en este servicio.');
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'error',
+      text: 'La imagen no existe en este servicio.',
+    }));
     expect(screen.getByRole('img', { name: 'Imagen 1 del servicio' })).toBeInTheDocument();
   });
 
@@ -343,7 +357,10 @@ describe('Imágenes del servicio: creación (/servicios/nuevo)', () => {
     await screen.findByLabelText('Nombre del servicio *');
     elegir(archivo('a.jpg'), archivo('b.jpg'), archivo('c.jpg'), archivo('d.jpg'));
     expect(await screen.findByRole('button', { name: 'Máximo 3 imágenes' })).toBeDisabled();
-    expect(screen.getByRole('alert')).toHaveTextContent('Solo caben 3 imágenes más: el máximo es 3 por servicio.');
+    expect(ultimaAlerta()).toMatchObject({
+      icon: 'warning',
+      text: 'Solo caben 3 imágenes más: el máximo es 3 por servicio.',
+    });
     expect(screen.queryByRole('img', { name: 'Vista previa de la imagen 4' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Quitar imagen 3' }));
     expect(screen.getByRole('button', { name: 'Agregar imagen' })).toBeEnabled();
@@ -353,7 +370,7 @@ describe('Imágenes del servicio: creación (/servicios/nuevo)', () => {
     abrir('/servicios/nuevo');
     await screen.findByLabelText('Nombre del servicio *');
     elegir(archivo('menu.pdf', 'application/pdf'));
-    expect(await screen.findByRole('alert')).toHaveTextContent(MENSAJE_TIPO_INVALIDO);
+    expect(ultimaAlerta()).toMatchObject({ icon: 'warning', text: MENSAJE_TIPO_INVALIDO });
     expect(screen.queryByRole('img', { name: /Vista previa/ })).not.toBeInTheDocument();
   });
 
@@ -381,7 +398,7 @@ describe('Imágenes del servicio: creación (/servicios/nuevo)', () => {
     await llenarYPublicar(archivo('a.jpg'), archivo('b.jpg'));
 
     expect(await screen.findByRole('heading', { name: 'Editar servicio' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(AVISO_PARCIAL);
+    expect(ultimaAlerta()).toMatchObject({ icon: 'warning', text: AVISO_PARCIAL });
     expect(screen.getByLabelText('Nombre del servicio *')).toHaveValue('Corte');
     // La que sí se subió ya está en el servicio.
     expect(await screen.findByRole('img', { name: 'Imagen 1 del servicio' })).toBeInTheDocument();
