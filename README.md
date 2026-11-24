@@ -43,6 +43,18 @@ npm run dev               # http://localhost:5173
 
 **Probar que se puede instalar:** `npm run build && npm run preview`, abre http://localhost:4173 en Chrome y aparece el ícono de instalar en la barra de direcciones. En DevTools → *Application* se ven el *Manifest* y el *Service worker*.
 
+## Funcionamiento sin conexión
+
+La PWA guarda el panel (iconos, CSS y JS) en el service worker, así que se abre e instala aunque falte internet o esté apagada la API. Además:
+
+- **Lecturas:** cada respuesta GET se guarda por usuario. Si falla la red o el servicio responde 5xx, se muestra el último dato guardado; un aviso indica que estás viendo información local.
+- **Escrituras:** si una acción (crear, editar, borrar, subir fotos) no llega por falta de red, se guarda en una cola en IndexedDB y se muestra el aviso «Guardamos tu acción…». La cola se reenvía sola al recuperarse la conexión, al volver a la pestaña, al abrir la app y cada 15 segundos (el servicio puede volver sin que cambie `navigator.onLine`).
+- **Sesión:** si `api('/auth/yo')` falla por red, Firebase mantiene la sesión local en vez de cerrarla. Al cerrar sesión se borran la cola y la caché de ese negocio.
+
+**Cómo probarlo:** instala la PWA con `npm run build && npm run preview`, entra al panel y navega un rato para que se guarden datos. Luego apaga la API (o marca *Offline* en DevTools → *Network*): las pantallas siguen mostrando los datos guardados. Intenta guardar un cambio: verás el aviso de acción pendiente. Vuelve a encender la API (o desmarca *Offline*) y el cambio se enviará automáticamente.
+
+Si en la consola aparece `No 'Access-Control-Allow-Origin' header`, la API no está aceptando el puerto del preview: `CORS_ORIGENES` en `Servia_BE/.env` debe incluir `http://localhost:4173` (además de `http://localhost:5173`) y hay que **reiniciar la API** para que vuelva a leer el `.env`.
+
 ## Integración continua
 
 El workflow de GitHub Actions revisa automáticamente el código con oxlint, ejecuta las pruebas y compila el panel en cada pull request hacia `dev` y `main`, y en cada push a esas ramas. Usa Node.js 22 y no necesita credenciales de Firebase. Un PR con un error de lint, una prueba fallida o un build roto queda en rojo.
@@ -62,7 +74,10 @@ src/
 ├── componentes/         Piezas compartidas (Layout con el encabezado)
 ├── paginas/             Una página por ruta (Inicio, NoEncontrado…)
 ├── servicios/
-│   ├── api.ts           Cliente de la API: agrega el token de Firebase y convierte errores en ErrorApi
+│   ├── api.ts           Cliente de la API: token de Firebase, caché de lecturas y cola de escrituras
+│   ├── cacheOffline.ts  Caché por usuario de las respuestas GET
+│   ├── colaOffline.ts   Acciones pendientes en IndexedDB
+│   ├── sincronizacionOffline.ts  Reenvío automático de la cola
 │   └── firebase.ts      Inicializa Firebase web con las variables VITE_FIREBASE_*
 ├── pruebas/setup.ts     Configuración de las pruebas
 └── estilos.css          Estilos globales y color de Servia (#E27441)

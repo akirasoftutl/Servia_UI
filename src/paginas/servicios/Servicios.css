@@ -1,9 +1,40 @@
-/*
- * Mis servicios y Nuevo/Editar servicio. Lo común (página, encabezado,
- * tarjeta, botones, campos, diálogos y estados) vive en src/estilos/panel.css.
- */
+.panel-servicio-alerta {
+  align-items: center;
+  margin-top: var(--sv-esp-2);
+  margin-bottom: var(--sv-esp-4);
+}
 
-/* ---------- Tarjeta de servicio en la lista ---------- */
+.panel-servicio-alerta .panel-alerta-contenido p {
+  margin: 0;
+  font-size: var(--sv-texto-sm);
+}
+
+.panel-servicio-alerta-cerrar {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--sv-radio-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+
+.panel-servicio-alerta-cerrar:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.panel-servicio-alerta-cerrar svg {
+  width: 16px;
+  height: 16px;
+}
 
 .servicio-card-principal {
   display: flex;

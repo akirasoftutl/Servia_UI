@@ -9,13 +9,17 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // El service worker se actualiza solo cuando hay una versión nueva.
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.png', 'apple-touch-icon.png'],
       workbox: {
-        // El service worker de FCM tiene su propio alcance; no lo precacheamos.
         globIgnores: ['**/firebase-messaging-sw.js'],
+        globPatterns: [
+          '**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,avif,json,woff,woff2}'
+        ],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        navigateFallback: '/index.html',
       },
+
       manifest: {
         name: 'Servia · Panel del negocio',
         short_name: 'Servia Negocio',

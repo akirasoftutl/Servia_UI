@@ -5,6 +5,7 @@ import { NuevoServicio } from './NuevoServicio';
 import { MisServicios } from './MisServicios';
 import { MAX_IMAGENES_SERVICIO } from './imagenes';
 import { MAX_FOTO_BYTES, MENSAJE_TAMANO_EXCEDIDO, MENSAJE_TIPO_INVALIDO } from '../mi_perfil/fotos';
+import { MENSAJE_ACCION_PENDIENTE } from '../../servicios/api';
 
 // Estas pruebas no sustituyen `api()`: simulan solo `fetch` con las respuestas
 // reales del contrato de la API (akirasoftutl/Servia_BE#114) para que una forma
@@ -239,12 +240,12 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Tu cuenta no tiene permiso para cambiar las imágenes de este servicio.'));
   });
 
-  it('sin red muestra un error en español', async () => {
+  it('sin red guarda la subida pendiente y lo explica en español', async () => {
     falloSubida = [new TypeError('Failed to fetch')];
     abrir();
     await screen.findByLabelText('Nombre del servicio *');
     elegir(archivo('corte.jpg'));
-    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos subir la imagen. Revisa tu conexión e intenta de nuevo.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(MENSAJE_ACCION_PENDIENTE);
   });
 
   it('pide confirmación antes de quitar: cancelar no llama a la API y devuelve el foco', async () => {

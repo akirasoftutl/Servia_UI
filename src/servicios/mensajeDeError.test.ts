@@ -1,4 +1,4 @@
-import { ErrorApi } from './api'
+import { ErrorApi, MENSAJE_ACCION_PENDIENTE, MENSAJE_SIN_CONEXION } from './api'
 import { MENSAJE_ERROR_SERVIDOR, mensajeDeError } from './mensajeDeError'
 
 const MENSAJE_RED = 'No pudimos enviar tu reporte. Revisa tu conexión e intenta de nuevo.'
@@ -39,5 +39,15 @@ describe('mensajeDeError', () => {
 
   it('no interfiere con 401 y devuelve su mensaje sin redirigir', () => {
     expect(mensajeDeError(new ErrorApi(401, 'Sesión expirada'), MENSAJE_RED)).toBe('Sesión expirada')
+  })
+
+  it('muestra el aviso de datos guardados cuando no hay conexión', () => {
+    const error = Object.assign(new Error(MENSAJE_SIN_CONEXION), { sinConexion: true })
+    expect(mensajeDeError(error, MENSAJE_RED)).toBe(MENSAJE_SIN_CONEXION)
+  })
+
+  it('muestra el aviso de acción pendiente en vez del mensaje genérico de red', () => {
+    const error = Object.assign(new Error(MENSAJE_ACCION_PENDIENTE), { sinConexion: true })
+    expect(mensajeDeError(error, MENSAJE_RED)).toBe(MENSAJE_ACCION_PENDIENTE)
   })
 })

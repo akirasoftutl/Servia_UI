@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth } from '../servicios/firebase';
-import { api } from '../servicios/api';
+import { api, vaciarCacheDatos } from '../servicios/api';
+import { vaciarCola } from '../servicios/colaOffline';
 import { desactivarTokenPushActual } from '../servicios/notificaciones';
 
 interface AuthContextType {
@@ -30,9 +31,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUsuario(null);
           }
         } catch (error) {
-          // Si la cuenta está desactivada (403) o hay error, lo sacamos
-          await signOut(auth!);
-          setUsuario(null);
+          // Sin red no cerramos sesión: Firebase conserva el usuario en el
+          // dispositivo y las lecturas se sirven desde la caché local.
+          const sinConexion = Boolean(error && typeof error === 'object' && 'sinConexion' in error);
+          if (sinConexion) {
+            setUsuario(user);
+          } else {
+            // Si la cuenta está desactivada (403) o hay error, lo sacamos
+            await signOut(auth!);
+            setUsuario(null);
+          }
         }
       } else {
         setUsuario(null);
@@ -45,6 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const cerrarSesion = async () => {
     await desactivarTokenPushActual();
+    // No dejamos datos ni acciones pendientes del negocio en el dispositivo.
+    await Promise.all([vaciarCola(), vaciarCacheDatos()]);
     await signOut(auth!);
     setUsuario(null);
   };
