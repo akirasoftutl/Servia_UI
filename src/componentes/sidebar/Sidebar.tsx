@@ -6,6 +6,7 @@ import '../../estilos/panel.css';
 import { api } from '../../servicios/api';
 import { confirmar } from '../../servicios/alertas';
 import { useAuth } from '../../contextos/AuthContext';
+import { useSalirDeSesion } from '../../utilidades/useSalirDeSesion';
 import { useNotificaciones } from '../../contextos/notificacionesContexto';
 
 interface NavItem {
@@ -72,7 +73,8 @@ export const Sidebar: React.FC = () => {
   const { pathname } = useLocation();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const { cerrarSesion, usuario } = useAuth();
+  const { usuario } = useAuth();
+  const salirDeSesion = useSalirDeSesion();
   const { noLeidas } = useNotificaciones();
   const [negocio, setNegocio] = useState<{ uid: string; nombre: string } | null>(null);
   const uid = usuario?.uid;
@@ -215,8 +217,7 @@ export const Sidebar: React.FC = () => {
                 });
                 if (!aceptado) return;
                 setAbierta(false);
-                await cerrarSesion();
-                navigate('/login');
+                await salirDeSesion();
               }}
             >
               <LogOut aria-hidden="true" />

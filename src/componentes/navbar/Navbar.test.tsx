@@ -1,14 +1,17 @@
 /// <reference types="node" />
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, Outlet, RouterProvider } from 'react-router'
 import { vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import Navbar from './Navbar'
 
-vi.mock('../../contextos/AuthContext', () => ({
-  useAuth: () => ({ usuario: null, cargando: false, cerrarSesion: vi.fn() }),
-}))
+const sesion = vi.hoisted(() => ({ usuario: null as unknown, cargando: false, cerrarSesion: vi.fn() }))
+vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => sesion }))
+beforeEach(() => {
+  sesion.usuario = null
+  sesion.cerrarSesion = vi.fn().mockResolvedValue(undefined)
+})
 
 // Vitest omite el CSS por defecto; usamos el real para verificar el menú oculto.
 const estilos = document.createElement('style')
@@ -18,16 +21,18 @@ beforeAll(() => {
 })
 afterAll(() => estilos.remove())
 
-function mostrar() {
+function mostrar(entradas?: string[], indice?: number) {
   // La barra permanece montada para comprobar el cierre además de la navegación.
   const router = createMemoryRouter([{
     path: '/',
     element: <><Navbar /><Outlet /></>,
     children: [
+      { index: true, element: <h1>Landing</h1> },
+      { path: 'resumen', element: <h1>Resumen</h1> },
       { path: 'login', element: <h1>Inicio de sesión</h1> },
       { path: 'registro-negocio', element: <h1>Registro del negocio</h1> },
     ],
-  }])
+  }], { initialEntries: entradas, initialIndex: indice })
   render(<RouterProvider router={router} />)
   return router
 }
@@ -64,5 +69,16 @@ describe('Accesos de la barra de la landing', () => {
     expect(screen.getByRole('heading', { name: 'Registro del negocio' })).toBeVisible()
     expect(menu).toHaveAttribute('aria-expanded', 'false')
     expect(registro).not.toBeVisible()
+  })
+
+  it('al cerrar sesión lleva a /login y «atrás» regresa a la landing, no al panel', async () => {
+    sesion.usuario = { uid: 'ana' }
+    const router = mostrar(['/', '/resumen'], 1)
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+    expect(sesion.cerrarSesion).toHaveBeenCalledTimes(1)
+    expect(await screen.findByRole('heading', { name: 'Inicio de sesión' })).toBeVisible()
+    expect(router.state.location.pathname).toBe('/login')
+    await act(async () => { await router.navigate(-1) })
+    expect(router.state.location.pathname).toBe('/')
   })
 })

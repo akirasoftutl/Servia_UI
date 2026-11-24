@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { readFileSync } from 'node:fs'
@@ -49,14 +49,16 @@ beforeEach(() => {
   })
 })
 
-const pagina = () => {
+const pagina = (entradas = ['/configuracion'], indice?: number) => {
   const router = createMemoryRouter([
+    { path: '/', element: <h1>Landing</h1> },
+    { path: '/resumen', element: <h1>Resumen</h1> },
     { path: '/configuracion', element: <Configuracion /> },
     { path: '/mi-perfil', element: <h1>Perfil del negocio</h1> },
     { path: '/ayuda', element: <h1>Página de ayuda</h1> },
     { path: '/soporte', element: <h1>Página de soporte</h1> },
     { path: '/login', element: <h1>Iniciar sesión</h1> },
-  ], { initialEntries: ['/configuracion'] })
+  ], { initialEntries: entradas, initialIndex: indice })
   render(<RouterProvider router={router} />)
   return router
 }
@@ -119,14 +121,17 @@ describe('UI109 página Configuración', () => {
       expect(sesion.cerrarSesion).not.toHaveBeenCalled()
       expect(router.state.location.pathname).toBe('/configuracion')
     })
-    it('cierra la sesión y lleva al login al aceptar la confirmación', async () => {
+    it('cierra la sesión, lleva al login y «atrás» regresa a la landing, no al panel', async () => {
       mockearConfirmacion(true)
-      const router = pagina()
+      const router = pagina(['/', '/resumen', '/configuracion'], 2)
       await userEvent.click(within(tarjeta('Cuenta')).getByRole('button', { name: 'Cerrar sesión' }))
       expect(swalFireMock).toHaveBeenCalledTimes(1)
       expect(sesion.cerrarSesion).toHaveBeenCalledTimes(1)
       expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeVisible()
       expect(router.state.location.pathname).toBe('/login')
+      await act(async () => { await router.navigate(-1) })
+      expect(router.state.location.pathname).toBe('/')
+      expect(await screen.findByRole('heading', { name: 'Landing' })).toBeVisible()
     })
   })
 

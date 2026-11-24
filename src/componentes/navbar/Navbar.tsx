@@ -1,17 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../contextos/AuthContext';
+import { useSalirDeSesion } from '../../utilidades/useSalirDeSesion';
 import './Navbar.css';
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const { usuario, cerrarSesion } = useAuth();
+  const { usuario } = useAuth();
+  const salirDeSesion = useSalirDeSesion();
 
   const handleLogout = async () => {
-    await cerrarSesion();
-    navigate('/login');
+    await salirDeSesion();
   };
 
   const handleLoginClick = (e: React.MouseEvent) => {
