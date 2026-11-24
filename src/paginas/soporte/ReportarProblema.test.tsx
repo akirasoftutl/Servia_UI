@@ -1,7 +1,8 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ReportarProblema } from './ReportarProblema';
 import { api, ErrorApi } from '../../servicios/api';
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
+import { ultimaAlerta } from '../../pruebas/mockAlertas';
 vi.mock('../../servicios/api', async original => ({ ...await original<typeof import('../../servicios/api')>(), api: vi.fn() }));
 const apiMock = vi.mocked(api);
 const reporte = { id: 'r1', asunto: 'Error del panel', estado: 'abierto', creadaEn: '2026-11-20T02:00:00Z' };
@@ -19,11 +20,14 @@ const enviar = () => fireEvent.click(screen.getByRole('button', { name: 'Enviar 
 it.each([
   ['abcd', 'd'.repeat(20)], ['a'.repeat(101), 'd'.repeat(20)], ['abcde', 'd'.repeat(19)], ['abcde', 'd'.repeat(1001)],
   ['  abcd  ', 'd'.repeat(20)], ['abcde', ' '.repeat(20)], ['', ''],
-])('C1 no envía fuera de rango (%s)', async (asunto, descripcion) => {
+])('C1 no envía fuera de rango (%s), enfoca el primer error y muestra aviso', async (asunto, descripcion) => {
   await montar(); llenar(asunto, descripcion); enviar();
   expect(apiMock).toHaveBeenCalledTimes(1);
   expect(apiMock).not.toHaveBeenCalledWith('/soporte/reportes', expect.anything());
-  expect(document.querySelector('[aria-invalid="true"]')).toBeInTheDocument();
+  const invalido = document.querySelector('[aria-invalid="true"]');
+  expect(invalido).toBeInTheDocument();
+  expect(document.activeElement).toBe(invalido);
+  expect(ultimaAlerta()).toMatchObject({ icon: 'warning' });
 });
 it.each([[5,20],[100,1000]])('C1/C2 envía límites %i/%i recortados, sin uid, muestra éxito y lista con fecha de México', async (a, d) => {
   await montar();
@@ -32,7 +36,7 @@ it.each([[5,20],[100,1000]])('C1/C2 envía límites %i/%i recortados, sin uid, m
   llenar(`  ${asunto}  `, `  ${descripcion}  `);
   expect(screen.getByText(`${a}/100 caracteres. El asunto debe tener entre 5 y 100 caracteres.`)).toBeInTheDocument();
   enviar();
-  expect(await screen.findByText('Tu reporte se envió correctamente.')).toHaveClass('panel-alerta--exito');
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Tu reporte se envió correctamente.' }));
   expect(apiMock).toHaveBeenLastCalledWith('/soporte/reportes', { method: 'POST', body: JSON.stringify({ asunto, descripcion }) });
   const item = screen.getByRole('article');
   expect(within(item).getByRole('heading')).toHaveTextContent(asunto);
@@ -46,13 +50,12 @@ it.each([
   [new ErrorApi(429, 'Enviaste demasiados reportes; inténtalo más tarde.'), 'Enviaste demasiados reportes; inténtalo más tarde.'],
   [new ErrorApi(500, 'Internal server error'), MENSAJE_ERROR_SERVIDOR],
   [new TypeError('Failed to fetch'), 'No pudimos enviar tu reporte. Revisa tu conexión e intenta de nuevo.'],
-])('C3 error de API/red distingue 4xx, 5xx y red sin alert', async (error, esperado) => {
+])('C3 error de API/red distingue 4xx, 5xx y red con alerta estándar', async (error, esperado) => {
   const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {});
   await montar(); apiMock.mockRejectedValueOnce(error); llenar(); enviar();
-  const aviso = await screen.findByRole('alert');
-  expect(aviso).toHaveTextContent(esperado);
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: esperado }));
   if (error instanceof ErrorApi) {
-    expect(aviso).not.toHaveTextContent('Revisa tu conexión');
+    expect(String(ultimaAlerta()?.text)).not.toContain('Revisa tu conexión');
   }
   expect(screen.getByLabelText('Asunto')).toHaveValue(reporte.asunto);
   expect(screen.queryByRole('article')).not.toBeInTheDocument();
