@@ -179,3 +179,35 @@
 .perfil-calle-nota {
   margin: var(--sv-esp-1) 0 0;
 }
+
+/* Mapa de la ubicación del negocio (HU-N103) */
+.perfil-mapa {
+  margin-top: var(--sv-esp-5);
+  padding: var(--sv-esp-4);
+  border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-xs);
+  background: var(--sv-superficie-suave);
+}
+
+.perfil-mapa-titulo {
+  margin: 0 0 var(--sv-esp-3);
+  font-family: var(--sv-fuente-titulos);
+  font-size: var(--sv-texto-lg);
+  color: var(--sv-titulo);
+}
+
+.perfil-mapa-marco {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  overflow: hidden;
+  border-radius: var(--sv-radio-xs);
+  background: var(--sv-superficie-hundida);
+}
+
+.perfil-mapa-imagen {
+  display: block;
+  width: 100%;
+  height: auto;
+}

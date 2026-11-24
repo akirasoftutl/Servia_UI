@@ -222,7 +222,7 @@ describe('useAutocompletarDomicilio: detalle del lugar (#93)', () => {
     apiMock.mockResolvedValueOnce(detalle)
     let resultado: Awaited<ReturnType<typeof result.current.elegir>> | undefined
     await act(async () => { resultado = await result.current.elegir(result.current.sugerencias[1]) })
-    expect(resultado).toEqual({ vigente: true, detalle })
+    expect(resultado).toEqual({ vigente: true, detalle: { ...detalle, ubicacion: null } })
     const { camino, parametros } = parametrosDe(1)
     expect(camino).toBe('/lugares/detalle')
     expect(parametros.get('lugarId')).toBe('lugar-2')
@@ -233,6 +233,24 @@ describe('useAutocompletarDomicilio: detalle del lugar (#93)', () => {
     act(() => result.current.buscar('Blvd López'))
     await esperar(300)
     expect(parametrosDe(2).parametros.get('sesion')).not.toBe(parametros.get('sesion'))
+  })
+
+  it('lee la ubicación del detalle y descarta una ubicación mal formada (Servia_BE#109)', async () => {
+    const base = { calle: 'Blvd. López Mateos', numeroExterior: '1', colonia: 'Centro', codigoPostal: '37000', municipio: 'León', estado: 'Guanajuato' }
+    const { result } = renderHook(() => useAutocompletarDomicilio())
+    const ubicacionElegida = async (detalle: unknown) => {
+      apiMock.mockResolvedValueOnce(sugerencias(1))
+      act(() => result.current.buscar('Blvd López'))
+      await esperar(300)
+      apiMock.mockResolvedValueOnce(detalle)
+      let resultado: Awaited<ReturnType<typeof result.current.elegir>> | undefined
+      await act(async () => { resultado = await result.current.elegir(result.current.sugerencias[0]) })
+      return resultado?.detalle?.ubicacion
+    }
+    expect(await ubicacionElegida({ ...base, ubicacion: { lat: 21.12, lng: -101.68 } })).toEqual({ lat: 21.12, lng: -101.68 })
+    expect(await ubicacionElegida({ ...base, ubicacion: { lat: '21.12', lng: -101.68 } })).toBeNull()
+    expect(await ubicacionElegida({ ...base, ubicacion: null })).toBeNull()
+    expect(await ubicacionElegida(base)).toBeNull()
   })
 
   it('sin lugarId no pide el detalle y devuelve detalle nulo', async () => {

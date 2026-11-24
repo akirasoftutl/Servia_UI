@@ -74,21 +74,38 @@ export function subirFotoNegocio(archivo: File, tipo: TipoFotoNegocio): Promise<
 export function eliminarFotoNegocio(fotoId: string): Promise<void> {
   return api<void>(`/negocios/mio/fotos/${encodeURIComponent(fotoId)}`, { method: 'DELETE' })
 }
-// Descarga el mapa del negocio como imagen (Blob) y devuelve una URL temporal.
-// El llamador debe hacer URL.revokeObjectURL() cuando ya no la use.
+
+// Sube una imagen a un servicio del negocio autenticado (multipart/form-data, campo `archivo`).
+export function subirImagenServicio(servicioId: string, archivo: File): Promise<ImagenServicio> {
+  const cuerpo = new FormData()
+  cuerpo.append('archivo', archivo)
+  return api<ImagenServicio>(`/negocios/mio/servicios/${encodeURIComponent(servicioId)}/imagenes`, {
+    method: 'POST',
+    body: cuerpo,
+  })
+}
+
+// Quita una imagen de un servicio del negocio autenticado.
+export function eliminarImagenServicio(servicioId: string, imagenId: string): Promise<void> {
+  return api<void>(
+    `/negocios/mio/servicios/${encodeURIComponent(servicioId)}/imagenes/${encodeURIComponent(imagenId)}`,
+    { method: 'DELETE' },
+  )
+}
+
+// Descarga la imagen del mapa del negocio (`GET /negocios/mio/mapa`, Servia_BE#119)
+// y devuelve una URL temporal. Un `<img src>` no manda el token de Firebase, por eso
+// se pide con `fetch`. Quien la use debe llamar a `URL.revokeObjectURL()` al soltarla.
 export async function descargarMapaNegocio(): Promise<string> {
-  const token = await auth?.currentUser?.getIdToken();
-  const cabeceras = new Headers();
+  const cabeceras = new Headers()
+  const token = await auth?.currentUser?.getIdToken()
   if (token) {
-    cabeceras.set('Authorization', `Bearer ${token}`);
+    cabeceras.set('Authorization', `Bearer ${token}`)
   }
 
-  const respuesta = await fetch(`${URL_API}/negocios/mio/mapa`, { headers: cabeceras });
-
+  const respuesta = await fetch(`${URL_API}/negocios/mio/mapa`, { headers: cabeceras, cache: 'no-store' })
   if (!respuesta.ok) {
-    throw new ErrorApi(respuesta.status, 'No se pudo cargar el mapa.');
+    throw new ErrorApi(respuesta.status, 'No se pudo cargar el mapa.')
   }
-
-  const blob = await respuesta.blob();
-  return URL.createObjectURL(blob);
+  return URL.createObjectURL(await respuesta.blob())
 }
