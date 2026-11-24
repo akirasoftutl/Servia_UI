@@ -473,12 +473,14 @@ describe('cerrar sesión con confirmación (SweetAlert2)', () => {
     expect(router.state.location.pathname).toBe('/resumen')
   })
 
-  it('cierra sesión y navega a /login al aceptar la confirmación', async () => {
+  it('cierra sesión, navega a /login y «atrás» lleva a la landing, no al panel', async () => {
     mockearConfirmacion(true)
     const router = createMemoryRouter([
+      { path: '/', element: <h1>Landing</h1> },
       { path: '/resumen', element: <Sidebar /> },
+      { path: '/configuracion', element: <Sidebar /> },
       { path: '/login', element: <h1>Iniciar sesión</h1> },
-    ], { initialEntries: ['/resumen'] })
+    ], { initialEntries: ['/', '/resumen', '/configuracion'], initialIndex: 2 })
     render(<RouterProvider router={router} />)
 
     await userEvent.click(screen.getByRole('button', { name: 'Menú de la cuenta' }))
@@ -488,5 +490,9 @@ describe('cerrar sesión con confirmación (SweetAlert2)', () => {
     expect(sesion.cerrarSesion).toHaveBeenCalledTimes(1)
     expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeVisible()
     expect(router.state.location.pathname).toBe('/login')
+
+    await act(async () => { await router.navigate(-1) })
+    expect(router.state.location.pathname).toBe('/')
+    expect(await screen.findByRole('heading', { name: 'Landing' })).toBeVisible()
   })
 })

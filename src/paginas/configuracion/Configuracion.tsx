@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CircleAlert, CircleHelp, LogOut, MessageSquareWarning, Settings, UserRound } from 'lucide-react';
-import { useNavigate } from 'react-router';
 import { useAuth } from '../../contextos/AuthContext';
+import { useSalirDeSesion } from '../../utilidades/useSalirDeSesion';
 import { api } from '../../servicios/api';
 import { confirmar } from '../../servicios/alertas';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
@@ -20,8 +20,8 @@ const ULTIMOS_REPORTES = 3;
 const fecha = new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'medium', timeStyle: 'short' });
 
 function TarjetaCuenta() {
-  const { usuario, cerrarSesion } = useAuth();
-  const navigate = useNavigate();
+  const { usuario } = useAuth();
+  const salirDeSesion = useSalirDeSesion();
   return (
     <TarjetaPanel id="cuenta" titulo="Cuenta" tituloId="configuracion-cuenta" subtitulo="Con este correo entras a Servia.">
       <div className="panel-item">
@@ -44,8 +44,7 @@ function TarjetaCuenta() {
               peligro: true,
             });
             if (!aceptado) return;
-            await cerrarSesion();
-            navigate('/login');
+            await salirDeSesion();
           }}
         >
           <LogOut aria-hidden="true" />Cerrar sesión
