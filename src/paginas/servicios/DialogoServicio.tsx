@@ -1,12 +1,13 @@
 import { useEffect, useId, useRef } from 'react';
 import { Power, Trash2 } from 'lucide-react';
 
-export function DialogoServicio({ texto, accion, ocupado, alConfirmar, alCancelar }: {
-  texto: string; accion: string; ocupado: boolean; alConfirmar: () => void;
+export function DialogoServicio({ texto, accion, titulo: tituloVisible, ocupado, alConfirmar, alCancelar }: {
+  texto: string; accion: string; titulo?: string; ocupado: boolean; alConfirmar: () => void;
   alCancelar: () => void;
 }) {
   const titulo = useId();
   const descripcion = useId();
+  const peligro = accion === 'Eliminar' || accion === 'Quitar';
   const aceptar = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const anterior = document.activeElement as HTMLElement | null;
@@ -24,13 +25,13 @@ export function DialogoServicio({ texto, accion, ocupado, alConfirmar, alCancela
       }
     }}>
     <div className="panel-dialogo">
-      <div className={`panel-dialogo-icono ${accion === 'Eliminar' ? 'panel-dialogo-icono--peligro' : 'panel-dialogo-icono--aviso'}`} aria-hidden="true">
-        {accion === 'Eliminar' ? <Trash2 aria-hidden="true" /> : <Power aria-hidden="true" />}
+      <div className={`panel-dialogo-icono ${peligro ? 'panel-dialogo-icono--peligro' : 'panel-dialogo-icono--aviso'}`} aria-hidden="true">
+        {peligro ? <Trash2 aria-hidden="true" /> : <Power aria-hidden="true" />}
       </div>
-      <h2 id={titulo} className="panel-dialogo-titulo">{accion} servicio</h2>
+      <h2 id={titulo} className="panel-dialogo-titulo">{tituloVisible ?? `${accion} servicio`}</h2>
       <p id={descripcion} className="panel-dialogo-texto">{texto}</p>
       <div className="panel-dialogo-acciones">
-        <button className={accion === 'Eliminar' ? 'btn-servia-danger' : 'btn-servia-primary'} ref={aceptar} type="button" disabled={ocupado} onClick={alConfirmar}>{accion}</button>
+        <button className={peligro ? 'btn-servia-danger' : 'btn-servia-primary'} ref={aceptar} type="button" disabled={ocupado} onClick={alConfirmar}>{accion}</button>
         <button className="btn-servia-secondary" type="button" disabled={ocupado} onClick={alCancelar}>Cancelar</button>
       </div>
     </div>

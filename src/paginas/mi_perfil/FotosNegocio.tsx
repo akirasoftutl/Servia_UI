@@ -47,23 +47,25 @@ function crearUrlPrevia(archivo: File): { url: string; revocable: boolean } {
 
 // Si la URL de la foto no responde, el navegador solo mostraría el texto alternativo:
 // se cambia por un aviso claro con el mismo tamaño que la imagen.
-function ImagenConFallo({
+export function ImagenConFallo({
   src,
   alt,
   className,
   variante,
+  mensaje = 'No se pudo cargar la foto',
 }: {
   src: string;
   alt: string;
   className: string;
   variante: 'portada' | 'galeria';
+  mensaje?: string;
 }) {
   const [fallo, setFallo] = useState(false);
   if (fallo) {
     return (
       <div className={`panel-fotos-error panel-fotos-error--${variante}`} role="status">
         <ImageOff aria-hidden="true" />
-        <span>No se pudo cargar la foto</span>
+        <span>{mensaje}</span>
       </div>
     );
   }
