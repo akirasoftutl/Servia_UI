@@ -70,7 +70,7 @@
   --sv-info-borde: #f0c2a8;
 
   /* Foco y velos */
-  --sv-foco: 0 0 0 2px #ffffff, 0 0 0 4px rgba(176, 74, 34, 0.55);
+  --sv-foco: 0 0 0 2px #ffffff, 0 0 0 4px var(--sv-primario);
   --sv-foco-campo: 0 0 0 3px rgba(176, 74, 34, 0.16);
   --sv-foco-peligro: 0 0 0 3px rgba(180, 47, 62, 0.16);
   --sv-velo: rgba(36, 26, 20, 0.48);
@@ -618,6 +618,7 @@ fieldset:disabled .btn-servia-secondary {
 
 .panel-pagina .form-control.is-invalid:focus,
 .panel-pagina .form-control[aria-invalid='true']:focus {
+  border-color: var(--sv-peligro);
   box-shadow: var(--sv-foco-peligro);
 }
 

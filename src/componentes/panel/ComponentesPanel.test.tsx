@@ -98,4 +98,19 @@ describe('componentes compartidos del panel (unificación con app móvil)', () =
     expect(sidebarCss).toMatch(/--bg-sidebar:\s*var\(--sv-superficie\)/);
     expect(sidebarCss).toMatch(/--active-bg:\s*var\(--sv-primario-suave\)/);
   });
+
+  it('--sv-foco usa color sólido (contraste ≥ 3:1) y los elementos interactivos aplican foco visible', () => {
+    const panelCss = readFileSync('src/estilos/panel.css', 'utf8');
+    expect(panelCss).toMatch(/--sv-foco:\s*0 0 0 2px #ffffff,\s*0 0 0 4px var\(--sv-primario\)/);
+
+    const resumenCss = readFileSync('src/paginas/resumen/Resumen.css', 'utf8');
+    expect(resumenCss).toMatch(/\.resumen-kpi-card--enlace:focus-visible\s*\{[^}]*box-shadow:\s*var\(--sv-foco\)/);
+    expect(resumenCss).toMatch(/\.resumen-acceso:focus-visible\s*\{[^}]*box-shadow:\s*var\(--sv-foco\)/);
+
+    const reservasCss = readFileSync('src/paginas/reservas/Reservas.css', 'utf8');
+    expect(reservasCss).toMatch(/\.reserva-card:focus-visible\s*\{[^}]*box-shadow:\s*var\(--sv-foco\)/);
+
+    const sidebarCss = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8');
+    expect(sidebarCss).toMatch(/\.dropdown-item:focus-visible\s*\{[^}]*box-shadow:\s*var\(--sv-foco\)/);
+  });
 });

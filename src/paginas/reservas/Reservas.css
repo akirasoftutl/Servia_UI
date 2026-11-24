@@ -20,6 +20,11 @@
   cursor: pointer;
 }
 
+.reserva-card:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
+}
+
 .reserva-info-principal {
   min-width: 0;
 }

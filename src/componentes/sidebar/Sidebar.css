@@ -73,6 +73,11 @@
   background-color: var(--bg-hover);
 }
 
+.dropdown-item:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
+}
+
 .dropdown-item.danger {
   color: var(--sv-peligro);
 }
