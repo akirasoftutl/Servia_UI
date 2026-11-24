@@ -16,10 +16,20 @@ const resultadoCancelado = (): SweetAlertResult => ({
 })
 
 export const swalFireMock = vi.fn<(opciones?: SweetAlertOptions) => Promise<SweetAlertResult>>()
+export const swalIsVisibleMock = vi.fn<() => boolean>()
+
+let alertaVisible = false
 
 export function reiniciarMockAlertas() {
+  alertaVisible = false
+  swalIsVisibleMock.mockReset()
+  swalIsVisibleMock.mockImplementation(() => alertaVisible)
   swalFireMock.mockReset()
   swalFireMock.mockResolvedValue(resultadoConfirmado())
+}
+
+export function mockearAlertaVisible(visible: boolean) {
+  alertaVisible = visible
 }
 
 export function mockearConfirmacion(confirmada: boolean) {

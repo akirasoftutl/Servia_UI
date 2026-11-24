@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../contextos/AuthContext';
 import { api, ErrorApi } from '../../servicios/api';
-import { alertaDeError, confirmar, error as alertaError, exito } from '../../servicios/alertas';
+import { alertaDeError, confirmar, error as alertaError, exito, hayAlertaAbierta } from '../../servicios/alertas';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { ESTADOS_CONFIG, formatearFecha, formatearHora, calcularTiempoRestante } from './estados';
 import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
@@ -222,13 +222,14 @@ export function DetalleReserva() {
     }
   };
 
-  // Cerrar los modales de motivo con Escape.
+  // Cerrar los modales de motivo con Escape solo si no hay una alerta abierta de SweetAlert2.
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !procesando) {
-        setMostrarRechazar(false);
-        setMostrarModal(false);
+      if (e.key !== 'Escape' || e.defaultPrevented || procesando || hayAlertaAbierta()) {
+        return;
       }
+      setMostrarRechazar(false);
+      setMostrarModal(false);
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);

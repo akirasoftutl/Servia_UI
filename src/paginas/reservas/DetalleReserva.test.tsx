@@ -6,7 +6,7 @@ import { api, ErrorApi } from '../../servicios/api';
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError';
 import { DetalleReserva } from './DetalleReserva';
 import { calcularTiempoRestante, formatearFecha, formatearHora } from './estados';
-import { mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas';
+import { mockearAlertaVisible, mockearConfirmacion, ultimaAlerta } from '../../pruebas/mockAlertas';
 
 vi.mock('../../servicios/api', () => ({
   api: vi.fn(),
@@ -380,6 +380,26 @@ describe('DetalleReserva', () => {
     await usuario.keyboard('{Escape}');
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(llamadas('/reservas/negocio/r1/cancelar')).toHaveLength(0);
+  });
+
+  it('no cierra el modal de motivo con Escape si hay una alerta de SweetAlert2 visible o el evento ya fue prevenido', async () => {
+    const usuario = userEvent.setup();
+    await listo(reserva({ estado: 'confirmada', segundosRestantes: null }));
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar reserva' }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+    mockearAlertaVisible(true);
+    await usuario.keyboard('{Escape}');
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+    mockearAlertaVisible(false);
+    const eventoPrevenido = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    eventoPrevenido.preventDefault();
+    act(() => { window.dispatchEvent(eventoPrevenido); });
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+    await usuario.keyboard('{Escape}');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
   it('permite volver al listado de reservas', async () => {

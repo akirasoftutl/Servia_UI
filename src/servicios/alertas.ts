@@ -28,6 +28,10 @@ const OPCIONES_BASE: SweetAlertOptions = {
   reverseButtons: true,
 }
 
+export function hayAlertaAbierta(): boolean {
+  return typeof Swal.isVisible === 'function' && Swal.isVisible()
+}
+
 export async function exito(mensaje: string, titulo = 'Listo'): Promise<void> {
   await Swal.fire({
     ...OPCIONES_BASE,

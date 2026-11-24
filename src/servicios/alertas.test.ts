@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { ErrorAccionPendiente, ErrorApi, ErrorSinConexion, MENSAJE_ACCION_PENDIENTE } from './api'
 import { MENSAJE_ERROR_SERVIDOR } from './mensajeDeError'
-import { alertaDeError, aviso, confirmar, error, exito } from './alertas'
+import { alertaDeError, aviso, confirmar, error, exito, hayAlertaAbierta } from './alertas'
 import {
   llamadasAlertas,
+  mockearAlertaVisible,
   mockearConfirmacion,
   swalFireMock,
   ultimaAlerta,
@@ -139,5 +140,13 @@ describe('servicio de alertas (SweetAlert2)', () => {
     expect(ultimaAlerta()?.customClass).toMatchObject({
       popup: 'servia-swal-popup servia-swal-popup--aviso',
     })
+  })
+
+  it('hayAlertaAbierta refleja el estado de visibilidad de SweetAlert2', () => {
+    expect(hayAlertaAbierta()).toBe(false)
+    mockearAlertaVisible(true)
+    expect(hayAlertaAbierta()).toBe(true)
+    mockearAlertaVisible(false)
+    expect(hayAlertaAbierta()).toBe(false)
   })
 })
