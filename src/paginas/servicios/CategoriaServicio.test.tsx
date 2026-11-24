@@ -249,6 +249,7 @@ describe('Categoría del servicio: editar', () => {
     abrir();
     await userEvent.selectOptions(await campo(), 'Uñas');
     await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await screen.findByRole('heading', { name: 'Mis servicios' });
     expect(await screen.findByText('Uñas')).toBeInTheDocument();
     expect(cuerpoDe('PUT')).toMatchObject({ categoriaServicioId: 'cs2', categoriaPersonalizada: null });
   });
@@ -283,6 +284,7 @@ describe('Categoría del servicio: editar', () => {
     await userEvent.selectOptions(await campo(), 'Otra (escribir la mía)');
     await userEvent.type(screen.getByLabelText('Tu categoría'), 'Novias');
     await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await screen.findByRole('heading', { name: 'Mis servicios' });
     expect(await screen.findByText('Novias')).toBeInTheDocument();
     expect(cuerpoDe('PUT')).toMatchObject({ categoriaPersonalizada: 'Novias', categoriaServicioId: null });
   });
