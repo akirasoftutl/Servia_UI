@@ -3,6 +3,7 @@ import { CircleAlert, CircleHelp, LogOut, MessageSquareWarning, Settings, UserRo
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../contextos/AuthContext';
 import { api } from '../../servicios/api';
+import { confirmar } from '../../servicios/alertas';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EsqueletoLista } from '../../componentes/panel/EstadosPanel';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
@@ -33,7 +34,20 @@ function TarjetaCuenta() {
       <CambiarContrasena incrustada />
       <div className="panel-formulario-acciones panel-formulario-acciones--separado">
         <p className="panel-ayuda">Cierra la sesión en este dispositivo.</p>
-        <BotonPanel variante="peligro" onClick={async () => { await cerrarSesion(); navigate('/login'); }}>
+        <BotonPanel
+          variante="peligro"
+          onClick={async () => {
+            const aceptado = await confirmar({
+              titulo: '¿Cerrar sesión?',
+              texto: 'Tendrás que iniciar sesión de nuevo para administrar tu negocio.',
+              confirmar: 'Cerrar sesión',
+              peligro: true,
+            });
+            if (!aceptado) return;
+            await cerrarSesion();
+            navigate('/login');
+          }}
+        >
           <LogOut aria-hidden="true" />Cerrar sesión
         </BotonPanel>
       </div>

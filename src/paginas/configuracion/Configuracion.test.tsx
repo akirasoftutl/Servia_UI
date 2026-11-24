@@ -6,6 +6,7 @@ import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 
 import { api, ErrorApi } from '../../servicios/api'
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import { Configuracion } from './Configuracion'
+import { mockearConfirmacion, swalFireMock, ultimaAlerta } from '../../pruebas/mockAlertas'
 
 const sesion = vi.hoisted(() => ({ usuario: null as unknown, cerrarSesion: vi.fn() }))
 vi.mock('../../contextos/AuthContext', () => ({ useAuth: () => sesion }))
@@ -109,9 +110,20 @@ describe('UI109 página Configuración', () => {
       expect(await within(cuenta).findByRole('alert')).toHaveTextContent(/al menos 8 caracteres/)
       expect(updatePassword).not.toHaveBeenCalled()
     })
-    it('cierra la sesión y lleva al login', async () => {
+    it('pide confirmación antes de cerrar sesión y no cierra si se cancela', async () => {
+      mockearConfirmacion(false)
       const router = pagina()
       await userEvent.click(within(tarjeta('Cuenta')).getByRole('button', { name: 'Cerrar sesión' }))
+      expect(swalFireMock).toHaveBeenCalledTimes(1)
+      expect(ultimaAlerta()).toMatchObject({ title: '¿Cerrar sesión?', showCancelButton: true })
+      expect(sesion.cerrarSesion).not.toHaveBeenCalled()
+      expect(router.state.location.pathname).toBe('/configuracion')
+    })
+    it('cierra la sesión y lleva al login al aceptar la confirmación', async () => {
+      mockearConfirmacion(true)
+      const router = pagina()
+      await userEvent.click(within(tarjeta('Cuenta')).getByRole('button', { name: 'Cerrar sesión' }))
+      expect(swalFireMock).toHaveBeenCalledTimes(1)
       expect(sesion.cerrarSesion).toHaveBeenCalledTimes(1)
       expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeVisible()
       expect(router.state.location.pathname).toBe('/login')
