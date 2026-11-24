@@ -84,19 +84,28 @@ describe('componentes compartidos del panel (unificación con app móvil)', () =
     expect(reintentar).toHaveBeenCalledTimes(1);
   });
 
-  it('panel.css y Sidebar.css definen los tokens cálidos de ColoresServia y tipografía Plus Jakarta Sans', () => {
+  it('panel.css y Sidebar.css definen la paleta morada con neutros fríos, tipografía Plus Jakarta Sans y barra lateral oscura', () => {
     const panelCss = readFileSync('src/estilos/panel.css', 'utf8');
-    expect(panelCss).toMatch(/--sv-marca:\s*#e27441/i);
-    expect(panelCss).toMatch(/--sv-primario:\s*#b04a22/i);
-    expect(panelCss).toMatch(/--sv-fondo:\s*#fbf8f5/i);
-    expect(panelCss).toMatch(/--sv-borde:\s*#e8ded6/i);
-    expect(panelCss).toMatch(/--sv-borde-campo:\s*#968579/i);
-    expect(panelCss).toMatch(/--sv-titulo:\s*#241a14/i);
+    expect(panelCss.match(/--sv-marca:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-marca: #7c3aed']);
+    expect(panelCss.match(/--sv-primario:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-primario: #7c3aed']);
+    expect(panelCss.match(/--sv-primario-suave:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-primario-suave: #f3e8ff']);
+    expect(panelCss.match(/--sv-en-primario-suave:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-en-primario-suave: #5b21b6']);
+    expect(panelCss.match(/--sv-fondo:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-fondo: #f9fafb']);
+    expect(panelCss.match(/--sv-superficie-hundida:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-superficie-hundida: #f3f4f6']);
+    expect(panelCss.match(/--sv-borde:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-borde: #e5e7eb']);
+    expect(panelCss.match(/--sv-borde-fuerte:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-borde-fuerte: #d1d5db']);
+    expect(panelCss.match(/--sv-borde-campo:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-borde-campo: #848d9a']);
+    expect(panelCss.match(/--sv-titulo:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-titulo: #111827']);
+    expect(panelCss.match(/--sv-texto-suave:\s*#[0-9a-f]{6}/gi)).toEqual(['--sv-texto-suave: #6b7280']);
     expect(panelCss).toMatch(/--sv-fuente:\s*'Plus Jakarta Sans'/);
 
     const sidebarCss = readFileSync('src/componentes/sidebar/Sidebar.css', 'utf8');
-    expect(sidebarCss).toMatch(/--bg-sidebar:\s*var\(--sv-superficie\)/);
-    expect(sidebarCss).toMatch(/--active-bg:\s*var\(--sv-primario-suave\)/);
+    expect(sidebarCss).toMatch(/--bg-sidebar:\s*#0f0f12/i);
+    expect(sidebarCss).toMatch(/--text-main:\s*#ffffff/i);
+    expect(sidebarCss).toMatch(/--active-border:\s*#a855f7/i);
+    expect(sidebarCss).toMatch(/--active-bg:\s*rgba\(168,\s*85,\s*247,\s*0\.15\)/);
+    expect(sidebarCss).toMatch(/--active-text:\s*#e9d5ff/i);
+    expect(sidebarCss).not.toMatch(/\.brand-title::before/);
   });
 
   it('--sv-foco usa color sólido (contraste ≥ 3:1) y los elementos interactivos aplican foco visible', () => {
