@@ -6,23 +6,39 @@ import {
   type ChangeEvent
 } from 'react';
 
-import { CircleAlert, ImagePlus, PackagePlus, ShieldAlert } from 'lucide-react';
+import { CircleAlert, PackagePlus, ShieldAlert } from 'lucide-react';
 import { EsqueletoEncabezado, EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
-import { Link, useNavigate, useParams } from 'react-router'; // <-- Agregamos useParams
-import { api, ErrorApi } from '../../servicios/api';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { api, ErrorApi, subirImagenServicio, type ImagenServicio } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
+import { ImagenesServicio } from './ImagenesServicio';
+import { AVISO_IMAGENES_FALLIDAS, liberarPendiente, type ArchivoPendiente } from './imagenes';
+import { CategoriaServicio } from './CategoriaServicio';
+import {
+  SIN_CATEGORIA, camposDeCategoria, categoriaDelServicio, errorDeCategoria, useCatalogoCategorias,
+  type CategoriaDeServicio, type CategoriaElegida,
+} from './categorias';
 
 interface PerfilNegocio {
   perfilCompleto: boolean;
   camposFaltantes: string[];
+  categoriaId?: string | null;
 }
 
+// Al pasar de /servicios/nuevo a /servicios/:id (p. ej. si fallan las imágenes al crear) el
+// formulario se vuelve a montar desde cero con los datos del servicio ya creado.
 export function NuevoServicio() {
+  const { id } = useParams();
+  return <FormularioServicio key={id ?? 'nuevo'} />;
+}
+
+function FormularioServicio() {
   const navigate = useNavigate();
-  const { id } = useParams(); // <-- Atrapamos el ID de la URL
+  const { id } = useParams();
+  const { state } = useLocation();
   const esEdicion = Boolean(id);
 
   const [form, setForm] = useState({
@@ -33,7 +49,7 @@ export function NuevoServicio() {
   });
 
   const [activo, setActivo] = useState(true);
-  const [aviso, setAviso] = useState('');
+  const [aviso, setAviso] = useState<string>(state?.aviso ?? '');
   const [errorGuardar, setErrorGuardar] = useState('');
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [cargando, setCargando] = useState(true);
@@ -41,7 +57,18 @@ export function NuevoServicio() {
   const [servicioPublicado, setServicioPublicado] = useState(false);
   const [perfilCompleto, setPerfilCompleto] = useState(true);
   const [camposFaltantes, setCamposFaltantes] = useState<string[]>([]);
-  const [fotosPreview, setFotosPreview] = useState<string[]>([]);
+  // Categoría del servicio (HU-N28, HU-N31 a HU-N34): lo elegido, lo que había al abrir y lo guardado.
+  const [categoria, setCategoria] = useState<CategoriaElegida>(SIN_CATEGORIA);
+  const [categoriaInicial, setCategoriaInicial] = useState<CategoriaElegida>(SIN_CATEGORIA);
+  const [categoriaGuardada, setCategoriaGuardada] = useState<{ id: string; nombre: string } | null>(null);
+  const [categoriaNegocioId, setCategoriaNegocioId] = useState<string | null | undefined>(undefined);
+  // Imágenes (HU-N27): las guardadas en edición y, al crear, las elegidas que se suben tras crear el servicio.
+  const [imagenes, setImagenes] = useState<ImagenServicio[]>([]);
+  const [pendientes, setPendientes] = useState<ArchivoPendiente[]>([]);
+  const pendientesRef = useRef(pendientes);
+  useEffect(() => { pendientesRef.current = pendientes; }, [pendientes]);
+  useEffect(() => () => pendientesRef.current.forEach(liberarPendiente), []);
+  const [subiendoImagenes, setSubiendoImagenes] = useState(false);
   const [errorCarga, setErrorCarga] = useState('');
   const [intento, setIntento] = useState(0);
   const botonExito = useRef<HTMLButtonElement>(null);
@@ -49,17 +76,8 @@ export function NuevoServicio() {
     if (servicioPublicado) botonExito.current?.focus();
   }, [servicioPublicado]);
   const [mensajeExito, setMensajeExito] = useState('');
-
-  const handleFotosChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const archivos = Array.from(e.target.files || []);
-    const archivosValidos = archivos.filter((archivo) => archivo.type.startsWith('image/'));
-    const nuevasFotos = archivosValidos.map((archivo) => URL.createObjectURL(archivo));
-    setFotosPreview((prev) => {
-      prev.forEach((url) => URL.revokeObjectURL(url));
-      return nuevasFotos;
-    });
-    e.target.value = '';
-  };
+  // Al editar, la categoría del negocio no viene en la carga del servicio: el hook consulta el perfil.
+  const catalogo = useCatalogoCategorias(!cargando && !errorCarga, categoriaNegocioId, esEdicion);
 
   useEffect(() => {
     let vigente = true;
@@ -67,9 +85,13 @@ export function NuevoServicio() {
       try {
         if (esEdicion && id) {
           // La edición no depende de la disponibilidad del perfil.
-          const servicio = await api<{ nombre: string; descripcion: string; precio: number; duracionMin: number; activo: boolean }>(`/negocios/mio/servicios/${id}`);
+          const servicio = await api<{ nombre: string; descripcion: string; precio: number; duracionMin: number; activo: boolean; imagenes?: ImagenServicio[] } & CategoriaDeServicio>(`/negocios/mio/servicios/${id}`);
           if (!vigente) return;
           setActivo(servicio.activo);
+          setImagenes(servicio.imagenes ?? []);
+          const guardada = categoriaDelServicio(servicio);
+          setCategoria(guardada); setCategoriaInicial(guardada);
+          setCategoriaGuardada(servicio.categoriaServicio ?? null);
           setForm({ nombre: servicio.nombre, descripcion: servicio.descripcion,
             precio: String(servicio.precio), duracion: String(servicio.duracionMin) });
         } else {
@@ -77,6 +99,7 @@ export function NuevoServicio() {
           if (!vigente) return;
           setPerfilCompleto(perfil.perfilCompleto);
           setCamposFaltantes(perfil.camposFaltantes || []);
+          setCategoriaNegocioId(perfil.categoriaId ?? null);
         }
       } catch (error) {
         if (vigente) setErrorCarga(error instanceof ErrorApi && error.estado === 404 && esEdicion
@@ -110,8 +133,26 @@ export function NuevoServicio() {
       nuevosErrores.duracion = 'La duración debe ser de al menos 1 minuto.';
     }
 
+    const errorCategoria = catalogo.estado === 'listo' ? errorDeCategoria(categoria) : '';
+    if (errorCategoria) nuevosErrores.categoria = errorCategoria;
+
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
+  };
+
+  // Sube una por una las imágenes elegidas al crear. Devuelve false si alguna falla.
+  const subirPendientes = async (servicioId: string): Promise<boolean> => {
+    setSubiendoImagenes(true);
+    let todas = true;
+    for (const pendiente of pendientes) {
+      try {
+        await subirImagenServicio(servicioId, pendiente.archivo);
+      } catch {
+        todas = false;
+      }
+    }
+    setSubiendoImagenes(false);
+    return todas;
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -120,20 +161,29 @@ export function NuevoServicio() {
 
     setPublicando(true);
     setErrorGuardar('');
+    let payloadEnviado: object = {};
     try {
       const payload = {
         nombre: form.nombre,
         descripcion: form.descripcion,
         precio: Number(form.precio),
         duracionMin: Number(form.duracion),
+        // Con el catálogo caído no se toca la categoría: al editar se conserva la que ya tenía.
+        ...(catalogo.estado === 'listo' ? camposDeCategoria(categoria, categoriaInicial, esEdicion) : {}),
       };
 
+      payloadEnviado = payload;
       if (esEdicion) {
         await api(`/negocios/mio/servicios/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
         navigate('/servicios', { state: { mensaje: 'Cambios guardados.' } });
         return;
       } else {
-        await api('/negocios/mio/servicios', { method: 'POST', body: JSON.stringify(payload) });
+        const creado = await api<{ id: string }>('/negocios/mio/servicios', { method: 'POST', body: JSON.stringify(payload) });
+        if (pendientes.length > 0 && !(await subirPendientes(creado.id))) {
+          // El servicio ya existe: se edita ahí para agregar las imágenes que faltan.
+          navigate(`/servicios/${creado.id}`, { replace: true, state: { aviso: AVISO_IMAGENES_FALLIDAS } });
+          return;
+        }
         setMensajeExito('Servicio publicado.');
       }
       setServicioPublicado(true);
@@ -142,6 +192,9 @@ export function NuevoServicio() {
       if (!esEdicion && error instanceof ErrorApi && error.estado === 409) {
         setPerfilCompleto(false);
         setCamposFaltantes([error.message]);
+      } else if (error instanceof ErrorApi && error.estado === 400 && ('categoriaServicioId' in payloadEnviado || 'categoriaPersonalizada' in payloadEnviado)) {
+        // 400 de validación con categoría de por medio: se muestra junto al campo.
+        setErrores(prev => ({ ...prev, categoria: error.message }));
       } else {
         setErrorGuardar(mensajeDeError(error, esEdicion
           ? 'No pudimos guardar los cambios. Intenta de nuevo.'
@@ -156,10 +209,9 @@ export function NuevoServicio() {
     setServicioPublicado(false);
     setForm({ nombre: '', descripcion: '', precio: '', duracion: '' });
     setErrores({});
-    setFotosPreview((prev) => {
-      prev.forEach((url) => URL.revokeObjectURL(url));
-      return [];
-    });
+    setCategoria(SIN_CATEGORIA);
+    pendientes.forEach(liberarPendiente);
+    setPendientes([]);
   };
 
   if (cargando) {
@@ -290,47 +342,23 @@ export function NuevoServicio() {
                   </div>
                 </section>
 
-                {esEdicion && <p className="panel-alerta panel-alerta--info">Los cambios de precio o duración no afectan las reservas que ya existen.</p>}
-                <section className="servicio-seccion servicio-seccion--ultima">
-                  <div>
-                    <h2 className="panel-tarjeta-titulo">Fotografías del servicio</h2>
-                    <p className="panel-tarjeta-subtitulo servicio-seccion-subtitulo">Muestra imágenes de tus trabajos para que tus clientes conozcan la calidad de tus servicios.</p>
-                  </div>
-                  <div className="servicio-fotos">
-                    <input type="file" id="fotos-servicio" accept="image/*" multiple className="d-none" onChange={handleFotosChange} />
-                    {fotosPreview.length === 0 ? (
-                      <label htmlFor="fotos-servicio" className="servicio-fotos-vacio">
-                        <div className="servicio-fotos-icono" aria-hidden="true"><ImagePlus aria-hidden="true" /></div>
-                        <strong>Agrega fotografías de tu servicio</strong>
-                        <span className="panel-ayuda">Haz clic para seleccionar imágenes de tu dispositivo.</span>
-                        <span className="servicio-fotos-enlace">Seleccionar fotografías</span>
-                      </label>
-                    ) : (
-                      <div>
-                        <div className="row g-3">
-                          {fotosPreview.map((foto, index) => (
-                            <div className="col-6 col-md-4 col-lg-3" key={foto}>
-                              <div className="servicio-foto">
-                                <img src={foto} alt={`Fotografía del servicio ${index + 1}`} />
-                              </div>
-                              <p className="panel-ayuda mt-2 mb-0">Fotografía {index + 1}</p>
-                            </div>
-                          ))}
-                        </div>
-                        <label htmlFor="fotos-servicio" className="btn-servia-secondary mt-4"><span>+</span> Cambiar fotografías</label>
-                      </div>
-                    )}
-                    <div className="text-center mt-3">
-                      <small className="panel-ayuda">Las fotografías son únicamente una vista previa y no se guardarán ni enviarán al servidor.</small>
-                    </div>
-                  </div>
+                <section className="servicio-seccion">
+                  <h2 className="panel-tarjeta-titulo">Categoría</h2>
+                  <p className="panel-tarjeta-subtitulo servicio-seccion-subtitulo">Elige una categoría o escribe la tuya.</p>
+                  <CategoriaServicio valor={categoria} catalogo={catalogo} error={errores.categoria ?? ''}
+                    actual={categoriaGuardada}
+                    alCambiar={nueva => { setCategoria(nueva); setErrores(prev => ({ ...prev, categoria: '' })); }} />
                 </section>
+
+                {esEdicion && <p className="panel-alerta panel-alerta--info">Los cambios de precio o duración no afectan las reservas que ya existen.</p>}
+                <ImagenesServicio servicioId={id} imagenes={imagenes} alCambiarImagenes={setImagenes}
+                  pendientes={pendientes} alCambiarPendientes={setPendientes} />
               </fieldset>
 
               <div className="panel-formulario-acciones">
                 <Link to="/servicios" className="btn-servia-secondary">Cancelar</Link>
                 <button type="submit" className="btn-servia-primary" disabled={(!perfilCompleto && !esEdicion) || publicando}>
-                  {publicando ? (<><span className="spinner-border spinner-border-sm me-2" />Guardando...</>) : (<>{esEdicion ? 'Guardar cambios' : 'Publicar servicio'}</>)}
+                  {publicando ? (<><span className="spinner-border spinner-border-sm me-2" />{subiendoImagenes ? 'Subiendo imágenes...' : 'Guardando...'}</>) : (<>{esEdicion ? 'Guardar cambios' : 'Publicar servicio'}</>)}
                 </button>
               </div>
             </form>

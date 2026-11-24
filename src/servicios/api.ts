@@ -29,6 +29,12 @@ export interface FotosNegocio {
   galeria: FotoNegocio[]
 }
 
+// Imagen de un servicio tal como la devuelve la API (HU-N27, RN-15).
+export interface ImagenServicio {
+  id: string
+  url: string
+}
+
 // Llama a la API de Servia. Si hay sesión, agrega el token de Firebase.
 // Ejemplo: `const perfil = await api<Perfil>('/negocios/mio')`.
 export async function api<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
