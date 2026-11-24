@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
 import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import type { PaginaClientes } from './clientes';
@@ -7,7 +6,9 @@ import { TarjetaCliente } from './TarjetaCliente';
 import { EstadoClientes } from './EstadoClientes';
 import './Clientes.css';
 import { CalendarCheck, Search, Users } from 'lucide-react';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 
 export function Clientes() {
   const [busqueda, setBusqueda] = useState('');
@@ -44,27 +45,23 @@ export function Clientes() {
   const cargados = pagina.items.length > 0 && !buscando;
   const textoCargados = `${pagina.items.length}${mas} ${pagina.items.length === 1 && !mas ? 'cliente cargado' : 'clientes cargados'}`;
   return <div className="panel-pagina"><div className="panel-contenedor">
-    <header className="panel-encabezado">
-      <div className="panel-encabezado-textos">
-        <EyebrowPanel grupo="operacion" icono={Users} />
-        <h1 className="panel-titulo">Clientes</h1>
-        <p className="panel-subtitulo">Consulta a quienes han reservado con tu negocio.</p>
-        {cargados && <dl className="panel-metricas" aria-label="Resumen de clientes">
-          <div className="panel-metrica"><dt>{pagina.items.length === 1 && !mas ? 'cliente cargado' : 'clientes cargados'}</dt><dd>{pagina.items.length}{mas}</dd></div>
-        </dl>}
-      </div>
-      <div className="panel-encabezado-acciones">
-        <Link to="/reservas" className="btn-servia-secondary"><CalendarCheck aria-hidden="true" />Ver reservas</Link>
-      </div>
-    </header>
-    <section className="panel-tarjeta" aria-label="Clientes del negocio">
-      <div className="panel-tarjeta-encabezado">
-        <div>
-          <h2 className="panel-tarjeta-titulo">Directorio de clientes</h2>
-          <p className="panel-tarjeta-subtitulo">Selecciona un cliente para revisar su historial de reservas.</p>
-        </div>
-        {cargados && <span className="panel-contador">{textoCargados}</span>}
-      </div>
+    <EncabezadoPanel
+      grupo="operacion"
+      icono={Users}
+      titulo="Clientes"
+      subtitulo="Consulta a quienes han reservado con tu negocio."
+      acciones={<BotonPanel variante="secundario" to="/reservas"><CalendarCheck aria-hidden="true" />Ver reservas</BotonPanel>}
+    >
+      {cargados && <dl className="panel-metricas" aria-label="Resumen de clientes">
+        <div className="panel-metrica"><dt>{pagina.items.length === 1 && !mas ? 'cliente cargado' : 'clientes cargados'}</dt><dd>{pagina.items.length}{mas}</dd></div>
+      </dl>}
+    </EncabezadoPanel>
+    <TarjetaPanel
+      ariaLabel="Clientes del negocio"
+      titulo="Directorio de clientes"
+      subtitulo="Selecciona un cliente para revisar su historial de reservas."
+      derecha={cargados ? <span className="panel-contador">{textoCargados}</span> : undefined}
+    >
       <div className="clientes-buscador-bloque">
         <label htmlFor="clientes-busqueda" className="form-label">Buscar por nombre</label>
         <div className="clientes-buscador-campo">
@@ -82,10 +79,10 @@ export function Clientes() {
         <div className="panel-lista">
           {pagina.items.map((cliente) => <TarjetaCliente cliente={cliente} key={cliente.clienteUid} />)}
         </div>
-        {!cargando && !error && pagina.siguiente && <button className="btn-servia-secondary btn-servia-sm clientes-mas" onClick={() => {
+        {!cargando && !error && pagina.siguiente && <BotonPanel variante="secundario" tamano="sm" className="clientes-mas" onClick={() => {
           setCursor(pagina.siguiente!); setCargando(true); setError('');
-        }}>Cargar más</button>}
+        }}>Cargar más</BotonPanel>}
       </div>
-    </section>
+    </TarjetaPanel>
   </div></div>;
 }

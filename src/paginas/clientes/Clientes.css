@@ -28,10 +28,10 @@
   place-items: center;
   width: var(--sv-esp-7);
   height: var(--sv-esp-7);
-  border: calc(var(--sv-esp-1) / 4) solid var(--sv-acento-borde);
+  border: calc(var(--sv-esp-1) / 4) solid var(--sv-primario-borde);
   border-radius: var(--sv-radio-md);
-  background: var(--sv-acento-suave);
-  color: var(--sv-acento);
+  background: var(--sv-primario-suave);
+  color: var(--sv-en-primario-suave);
   font-family: var(--sv-fuente-titulos);
   font-size: var(--sv-texto-lg);
   font-weight: 700;
@@ -112,7 +112,7 @@
   line-height: 1.1;
 }
 .clientes-kpi--exito dt, .clientes-kpi--exito dd { color: var(--sv-exito); }
-.clientes-kpi--peligro dt, .clientes-kpi--peligro dd { color: var(--sv-peligro); }
+.clientes-kpi--peligro dt, .clientes-kpi--peligro dd { color: var(--sv-peligro-texto); }
 .clientes-flecha {
   display: inline-flex;
   align-items: center;
@@ -135,10 +135,10 @@
   place-items: center;
   width: calc(var(--sv-esp-7) + var(--sv-esp-3));
   height: calc(var(--sv-esp-7) + var(--sv-esp-3));
-  border: calc(var(--sv-esp-1) / 4) solid var(--sv-acento-borde);
+  border: calc(var(--sv-esp-1) / 4) solid var(--sv-primario-borde);
   border-radius: var(--sv-radio-lg);
-  background: var(--sv-acento-suave);
-  color: var(--sv-acento);
+  background: var(--sv-primario-suave);
+  color: var(--sv-en-primario-suave);
   font-family: var(--sv-fuente-titulos);
   font-size: var(--sv-titulo-seccion);
   font-weight: 700;
