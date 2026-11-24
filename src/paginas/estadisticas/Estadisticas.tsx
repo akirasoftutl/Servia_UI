@@ -3,6 +3,7 @@ import { CalendarDays, CalendarX, ChartColumn, CircleCheck, Clock, UserX, Users,
 import { EstadoCargando, EstadoError, EstadoVacio } from '../../componentes/panel/EstadosPanel';
 import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
 import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
+import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
 import { api, ErrorApi } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { periodoPredefinido, validarPeriodo, type Periodo } from './fechas';
@@ -106,7 +107,7 @@ export function Estadisticas() {
           <input id="hasta" type="date" className="form-control" value={periodo.hasta}
             aria-invalid={!!validacion} aria-describedby={validacion ? 'error-periodo' : undefined}
             onChange={e => limpiar({ ...periodo, hasta: e.target.value })} />
-          {validacion && <p id="error-periodo" className="panel-error-campo" role="alert">{validacion}</p>}
+          <ErrorCampo id="error-periodo" mensaje={validacion} />
         </div>
       </div>}
     </TarjetaPanel>
