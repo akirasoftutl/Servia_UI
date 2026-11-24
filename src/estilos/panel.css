@@ -1,27 +1,27 @@
 /*
- * Sistema visual compartido del panel del negocio, unificado con la app móvil
- * (ColoresServia, temaServia y tokens.dart).
+ * Sistema visual compartido del panel del negocio, alineado con el rediseño
+ * de la app móvil (neutros fríos y acento morado #7C3AED) conservando la
+ * barra lateral oscura del panel.
  *
- * Paleta cálida sobre marfil (#FBF8F5), tarjetas blancas con borde suave
- * (#E8DED6) y radio de 16 px, tipografía Plus Jakarta Sans en títulos y cuerpo,
- * marca naranja (#E27441) y primario naranja tostado (#B04A22, contraste 5.46:1
- * con blanco) para acciones y enlaces.
+ * Superficies frías (#F9FAFB/#F3F4F6), tarjetas blancas con borde (#E5E7EB)
+ * y radio de 16 px, tipografía Plus Jakarta Sans en títulos y cuerpo, y
+ * morado (#7C3AED, contraste 5.70:1 con blanco) para acciones, foco y enlaces.
  *
  * Cada módulo conserva su CSS solo para la disposición propia de su pantalla.
  */
 
 :root {
-  /* Marca y acciones (ColoresServia) */
-  --sv-marca: #e27441;
-  --sv-primario: #b04a22;
-  --sv-primario-hover: #963d1b;
+  /* Marca y acciones (morado #7C3AED del rediseño móvil) */
+  --sv-marca: #7c3aed;
+  --sv-primario: #7c3aed;
+  --sv-primario-hover: #6d28d9;
   --sv-en-primario: #ffffff;
-  --sv-primario-suave: #fce6da;
-  --sv-en-primario-suave: #5c2410;
-  --sv-primario-borde: rgba(176, 74, 34, 0.28);
-  --sv-secundario: #6e5a4e;
-  --sv-secundario-suave: #f1e4da;
-  --sv-en-secundario-suave: #3a2c23;
+  --sv-primario-suave: #f3e8ff;
+  --sv-en-primario-suave: #5b21b6;
+  --sv-primario-borde: rgba(124, 58, 237, 0.28);
+  --sv-secundario: #4b5563;
+  --sv-secundario-suave: #f3f4f6;
+  --sv-en-secundario-suave: #111827;
   --sv-morado-app: #7c3aed;
 
   /* Alias semánticos para los módulos existentes */
@@ -35,25 +35,25 @@
   --sv-acento-borde: var(--sv-primario-borde);
   --sv-degradado: var(--sv-primario);
 
-  /* Superficies cálidas */
-  --sv-fondo: #fbf8f5;
+  /* Superficies frías (pantallas de reserva de la app móvil) */
+  --sv-fondo: #f9fafb;
   --sv-superficie: #ffffff;
-  --sv-superficie-suave: #f6f1ec;
-  --sv-superficie-hundida: #f0e9e3;
-  --sv-superficie-mas-hundida: #eae1da;
-  --sv-borde: #e8ded6;
-  --sv-borde-fuerte: #d4c5b9;
-  --sv-borde-campo: #968579;
-  --sv-inverso: #2f2621;
-  --sv-en-inverso: #fbf1ea;
+  --sv-superficie-suave: #f9fafb;
+  --sv-superficie-hundida: #f3f4f6;
+  --sv-superficie-mas-hundida: #e5e7eb;
+  --sv-borde: #e5e7eb;
+  --sv-borde-fuerte: #d1d5db;
+  --sv-borde-campo: #848d9a;
+  --sv-inverso: #111827;
+  --sv-en-inverso: #f9fafb;
 
   /* Texto */
-  --sv-titulo: #241a14;
-  --sv-texto: #241a14;
-  --sv-texto-suave: #6b5e55;
-  --sv-texto-tenue: #6b5e55;
+  --sv-titulo: #111827;
+  --sv-texto: #111827;
+  --sv-texto-suave: #6b7280;
+  --sv-texto-tenue: #6b7280;
 
-  /* Semánticos (contraste ≥ 4.5:1 sobre su fondo) */
+  /* Semánticos (contraste ≥ 4.5:1 sobre su fondo; éxito/aviso/peligro de la app) */
   --sv-exito: #1f7a4a;
   --sv-exito-fondo: #e6f4ec;
   --sv-exito-borde: #b9e0ca;
@@ -65,15 +65,15 @@
   --sv-peligro-texto: #7a1724;
   --sv-peligro-borde: #f3c4ca;
   --sv-peligro-hover: #962230;
-  --sv-info: #5c2410;
-  --sv-info-fondo: #fce6da;
-  --sv-info-borde: #f0c2a8;
+  --sv-info: #33598a;
+  --sv-info-fondo: #eef3fb;
+  --sv-info-borde: #cbd9ef;
 
   /* Foco y velos */
   --sv-foco: 0 0 0 2px #ffffff, 0 0 0 4px var(--sv-primario);
-  --sv-foco-campo: 0 0 0 3px rgba(176, 74, 34, 0.16);
+  --sv-foco-campo: 0 0 0 3px rgba(124, 58, 237, 0.18);
   --sv-foco-peligro: 0 0 0 3px rgba(180, 47, 62, 0.16);
-  --sv-velo: rgba(36, 26, 20, 0.48);
+  --sv-velo: rgba(17, 24, 39, 0.48);
 
   /* Tipografía (Plus Jakarta Sans, escala de temaServia) */
   --sv-fuente: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
@@ -103,11 +103,11 @@
   --sv-radio-xl: 16px;
   --sv-radio-pill: 999px;
 
-  /* Sombras discretas (la app usa tarjetas planas con borde y elevación mínima en diálogos) */
-  --sv-sombra-panel: 0 1px 2px rgba(36, 26, 20, 0.04);
-  --sv-sombra-item: 0 4px 12px -4px rgba(36, 26, 20, 0.08);
+  /* Sombras discretas (tarjetas planas con borde y elevación mínima en diálogos) */
+  --sv-sombra-panel: 0 1px 2px rgba(17, 24, 39, 0.04);
+  --sv-sombra-item: 0 4px 12px -4px rgba(17, 24, 39, 0.08);
   --sv-sombra-boton: none;
-  --sv-sombra-dialogo: 0 12px 32px -8px rgba(36, 26, 20, 0.24);
+  --sv-sombra-dialogo: 0 12px 32px -8px rgba(17, 24, 39, 0.24);
 
   /* Movimiento */
   --sv-rapido: 160ms;
@@ -349,7 +349,7 @@
 
 .panel-etiqueta--neutro {
   background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
+  color: var(--sv-secundario);
 }
 
 /* ---------- Pestañas: control segmentado ---------- */
@@ -373,7 +373,7 @@
   border: 0;
   border-radius: var(--sv-radio-xs);
   background: transparent;
-  color: var(--sv-texto-suave);
+  color: var(--sv-secundario);
   font-family: inherit;
   font-size: var(--sv-texto-sm);
   font-weight: 600;
@@ -605,7 +605,7 @@ fieldset:disabled .btn-servia-secondary {
 .panel-pagina .form-select:disabled {
   border-color: var(--sv-borde);
   background-color: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
+  color: var(--sv-secundario);
   cursor: not-allowed;
 }
 
@@ -914,7 +914,7 @@ fieldset:disabled .btn-servia-secondary {
 
 .panel-estado-icono--error {
   background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
+  color: var(--sv-secundario);
 }
 
 /* Página que solo muestra un estado */
@@ -1352,7 +1352,7 @@ fieldset:disabled .btn-servia-secondary {
   }
 }
 
-/* Navegación angosta (móvil y tablet): barra superior clara (AppBar) y menú en cajón. */
+/* Navegación angosta (móvil y tablet): barra superior oscura y menú en cajón. */
 .panel-barra-movil { display: none; }
 .panel-barra-lateral .user-card { width: 100%; text-align: left; }
 .panel-barra-lateral .user-card:focus-visible { outline: none; box-shadow: var(--sv-foco); }
@@ -1425,7 +1425,7 @@ fieldset:disabled .btn-servia-secondary {
   height: var(--sv-esp-4);
   padding: calc(var(--sv-esp-1) / 2);
   border-radius: var(--sv-radio-pill);
-  background: var(--sv-borde-fuerte);
+  background: var(--sv-borde-campo);
 }
 .panel-interruptor-pista::before {
   content: '';
@@ -1645,7 +1645,7 @@ fieldset:disabled .btn-servia-secondary {
   width: 100%;
   padding: var(--sv-esp-4);
   background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
+  color: var(--sv-secundario);
   font-size: var(--sv-texto-sm);
   text-align: center;
 }
