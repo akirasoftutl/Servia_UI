@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ErrorAccionPendiente, ErrorApi, ErrorSinConexion, MENSAJE_ACCION_PENDIENTE } from './api'
 import { MENSAJE_ERROR_SERVIDOR } from './mensajeDeError'
@@ -154,5 +156,15 @@ describe('servicio de alertas (SweetAlert2)', () => {
     await expect(
       confirmar({ titulo: '¿Eliminar servicio?' }),
     ).rejects.toThrow(/Confirmación de SweetAlert2 sin configurar.*¿Eliminar servicio\?.*mockearConfirmacion/)
+  })
+
+  it('alertas.css usa solo variables --sv-* con primario morado y peligro rojo, sin colores fijos ni --sv-naranja', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/estilos/alertas.css'), 'utf8')
+    expect(css).toContain('var(--sv-primario)')
+    expect(css).toContain('var(--sv-primario-hover)')
+    expect(css).toContain('var(--sv-peligro)')
+    expect(css).toContain('var(--sv-peligro-hover)')
+    expect(css).not.toContain('--sv-naranja')
+    expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i)
   })
 })

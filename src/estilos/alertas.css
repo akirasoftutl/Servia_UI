@@ -33,7 +33,7 @@
 }
 
 .servia-swal-popup--confirmar {
-  border-top: 4px solid var(--sv-naranja);
+  border-top: 4px solid var(--sv-primario);
 }
 
 .servia-swal-titulo {
@@ -80,8 +80,8 @@
 }
 
 .servia-swal-icono.swal2-icon.swal2-question {
-  border-color: var(--sv-naranja);
-  color: var(--sv-naranja);
+  border-color: var(--sv-primario);
+  color: var(--sv-primario);
 }
 
 .servia-swal-acciones {
@@ -118,14 +118,15 @@
 }
 
 .servia-swal-btn--primario {
-  border: 1px solid var(--sv-naranja);
-  background: var(--sv-naranja);
-  color: var(--sv-superficie);
+  border: 1px solid var(--sv-primario);
+  background: var(--sv-primario);
+  color: var(--sv-en-primario);
   box-shadow: var(--sv-sombra-panel);
 }
 
 .servia-swal-btn--primario:hover {
-  filter: brightness(0.95);
+  border-color: var(--sv-primario-hover);
+  background: var(--sv-primario-hover);
   transform: translateY(-1px);
 }
 
@@ -144,10 +145,11 @@
 .servia-swal-btn--peligro {
   border: 1px solid var(--sv-peligro);
   background: var(--sv-peligro);
-  color: var(--sv-superficie);
+  color: var(--sv-en-primario);
 }
 
 .servia-swal-btn--peligro:hover {
-  filter: brightness(0.94);
+  border-color: var(--sv-peligro-hover);
+  background: var(--sv-peligro-hover);
   transform: translateY(-1px);
 }
