@@ -127,23 +127,21 @@ export function RecepcionReservas() {
       </div>
 
       <div className="panel-recepcion-cuerpo">
-        {aceptaReservas !== false && (
-          <div className="panel-recepcion-acciones">
-            <button
-              ref={interruptor}
-              type="button"
-              role="switch"
-              aria-label="Recibir reservas"
-              aria-checked={aceptaReservas === true}
-              aria-describedby="estadoRecepcion"
-              className="btn-servia-secondary"
-              onClick={handleToggleReservas}
-              disabled={cargandoRecepcion || aceptaReservas === null}
-            >
-              Pausar recepción
-            </button>
-          </div>
-        )}
+        <div className="panel-recepcion-acciones">
+          <button
+            ref={interruptor}
+            type="button"
+            role="switch"
+            aria-label="Recibir reservas"
+            aria-checked={aceptaReservas === true}
+            aria-describedby="estadoRecepcion"
+            className="btn-servia-secondary"
+            onClick={handleToggleReservas}
+            disabled={cargandoRecepcion || aceptaReservas === null}
+          >
+            {aceptaReservas === false ? 'Reanudar recepción' : 'Pausar recepción'}
+          </button>
+        </div>
 
         {mensajeReservas && !mostrarModalPausa && (
           <div
