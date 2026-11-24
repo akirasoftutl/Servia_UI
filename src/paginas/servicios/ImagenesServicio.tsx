@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { ImagePlus, Plus, Trash2 } from 'lucide-react';
-import { eliminarImagenServicio, subirImagenServicio, type ImagenServicio } from '../../servicios/api';
-import { aviso as alertaAviso, confirmar, error as alertaError, exito as alertaExito } from '../../servicios/alertas';
+import { ErrorApi, eliminarImagenServicio, subirImagenServicio, type ImagenServicio } from '../../servicios/api';
+import { alertaDeError, aviso as alertaAviso, confirmar, error as alertaError, exito as alertaExito } from '../../servicios/alertas';
 import { ACCEPT_FOTOS, validarArchivoFoto } from '../mi_perfil/fotos';
 import { ImagenConFallo } from '../mi_perfil/FotosNegocio';
 import { BotonPanel } from '../../componentes/panel/BotonPanel';
@@ -43,6 +43,14 @@ export function ImagenesServicio({ servicioId, imagenes, alCambiarImagenes, pend
   const lleno = total >= MAX_IMAGENES_SERVICIO;
   const ocupado = subiendo !== null || quitando;
 
+  const mostrarErrorImagen = async (causa: unknown, respaldoRed: string) => {
+    if (causa instanceof ErrorApi && (causa.estado === 401 || causa.estado === 403)) {
+      await alertaError(mensajeErrorImagen(causa, respaldoRed));
+      return;
+    }
+    await alertaDeError(causa, respaldoRed);
+  };
+
   const subirLote = async (id: string, archivos: File[], avisoCupo: string) => {
     bloqueo.current = true;
     let actuales = imagenes;
@@ -57,7 +65,7 @@ export function ImagenesServicio({ servicioId, imagenes, alCambiarImagenes, pend
         agregadas += 1;
         if (montado.current) alCambiarImagenes(actuales);
       } catch (causa) {
-        if (montado.current) await alertaError(mensajeErrorImagen(causa, MENSAJE_FALLO_SUBIDA));
+        if (montado.current) await mostrarErrorImagen(causa, MENSAJE_FALLO_SUBIDA);
         fallo = true;
       } finally {
         liberarPendiente(previa);
@@ -119,7 +127,7 @@ export function ImagenesServicio({ servicioId, imagenes, alCambiarImagenes, pend
       alCambiarImagenes(imagenes.filter(item => item.id !== imagen.id));
       await alertaExito('Imagen quitada.');
     } catch (causa) {
-      if (montado.current) await alertaError(mensajeErrorImagen(causa, MENSAJE_FALLO_QUITAR));
+      if (montado.current) await mostrarErrorImagen(causa, MENSAJE_FALLO_QUITAR);
     } finally {
       bloqueo.current = false;
       if (montado.current) setQuitando(false);

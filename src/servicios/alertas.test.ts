@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ErrorApi, ErrorSinConexion } from './api'
+import { ErrorAccionPendiente, ErrorApi, ErrorSinConexion, MENSAJE_ACCION_PENDIENTE } from './api'
 import { MENSAJE_ERROR_SERVIDOR } from './mensajeDeError'
 import { alertaDeError, aviso, confirmar, error, exito } from './alertas'
 import {
@@ -120,6 +120,24 @@ describe('servicio de alertas (SweetAlert2)', () => {
 
     const mRed = await alertaDeError(new TypeError('Failed to fetch'), 'Revisa tu conexión.')
     expect(mRed).toBe('Revisa tu conexión.')
-    expect(ultimaAlerta()?.text).toBe('Revisa tu conexión.')
+    expect(ultimaAlerta()).toMatchObject({
+      icon: 'error',
+      title: 'Ocurrió un error',
+      text: 'Revisa tu conexión.',
+    })
+  })
+
+  it('alertaDeError muestra ErrorAccionPendiente como aviso y no como error', async () => {
+    const mensaje = await alertaDeError(new ErrorAccionPendiente(), 'Error de red')
+    expect(mensaje).toBe(MENSAJE_ACCION_PENDIENTE)
+    expect(ultimaAlerta()).toMatchObject({
+      icon: 'warning',
+      title: 'Acción pendiente',
+      text: MENSAJE_ACCION_PENDIENTE,
+    })
+    expect(ultimaAlerta()?.title).not.toBe('Ocurrió un error')
+    expect(ultimaAlerta()?.customClass).toMatchObject({
+      popup: 'servia-swal-popup servia-swal-popup--aviso',
+    })
   })
 })

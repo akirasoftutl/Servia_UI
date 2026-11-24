@@ -100,12 +100,24 @@ export async function confirmar({
   return Boolean(resultado.isConfirmed)
 }
 
+function esErrorAccionPendiente(causa: unknown): boolean {
+  if (!(causa instanceof Error)) return false
+  return (
+    causa.name === 'ErrorAccionPendiente' ||
+    ('pendiente' in causa && Boolean((causa as { pendiente?: unknown }).pendiente))
+  )
+}
+
 export async function alertaDeError(
   causa: unknown,
   textoRed: string,
   titulo?: string,
 ): Promise<string> {
   const mensaje = mensajeDeError(causa, textoRed)
-  await error(mensaje, titulo)
+  if (esErrorAccionPendiente(causa)) {
+    await aviso(mensaje, titulo ?? 'Acción pendiente')
+  } else {
+    await error(mensaje, titulo)
+  }
   return mensaje
 }

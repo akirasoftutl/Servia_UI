@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../contextos/AuthContext';
 import { api, ErrorApi } from '../../servicios/api';
-import { confirmar, error as alertaError, exito } from '../../servicios/alertas';
+import { alertaDeError, confirmar, error as alertaError, exito } from '../../servicios/alertas';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { ESTADOS_CONFIG, formatearFecha, formatearHora, calcularTiempoRestante } from './estados';
 import { ErrorCampo } from '../../componentes/panel/ErrorCampo';
@@ -96,14 +96,6 @@ export function DetalleReserva() {
   };
 
   const mostrarErrorAccion = async (err: unknown, completando = false) => {
-    const mensaje = completando && err instanceof ErrorApi && err.estado === 404
-      ? 'La reserva no existe.'
-      : mensajeDeError(
-        err,
-        completando
-          ? 'No se pudo conectar. Inténtalo de nuevo.'
-          : 'No pudimos guardar tu respuesta. Intenta de nuevo.',
-      );
     if (err instanceof ErrorApi && (err.estado === 409 || err.estado === 400)) {
       if (err.estado === 409) {
         setMostrarRechazar(false);
@@ -111,7 +103,16 @@ export function DetalleReserva() {
       }
       void cargarDetalle();
     }
-    await alertaError(mensaje);
+    if (completando && err instanceof ErrorApi && err.estado === 404) {
+      await alertaError('La reserva no existe.');
+      return;
+    }
+    await alertaDeError(
+      err,
+      completando
+        ? 'No se pudo conectar. Inténtalo de nuevo.'
+        : 'No pudimos guardar tu respuesta. Intenta de nuevo.',
+    );
   };
 
   const handleCompletar = async () => {

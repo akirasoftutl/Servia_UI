@@ -53,14 +53,18 @@ it('si la API responde 400, revierte el recordatorio y muestra el mensaje en esp
   expect(screen.getByRole('switch', { name: 'Recordatorio de cita' })).toHaveAttribute('aria-checked', 'true');
 });
 
-it('sin red al guardar revierte el recordatorio y muestra el error de conexión', async () => {
+it('sin red al guardar revierte el recordatorio y avisa que la acción quedó pendiente', async () => {
   fetchMock.mockImplementation(async (_url: string, o?: RequestInit) => {
     if (o?.method === 'PUT') throw new TypeError('Failed to fetch');
     return json(200, porOmision);
   });
   render(<PreferenciasNotificaciones />);
   await userEvent.click(await screen.findByRole('switch', { name: 'Recordatorio de cita' }));
-  await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: MENSAJE_ACCION_PENDIENTE }));
+  await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+    icon: 'warning',
+    title: 'Acción pendiente',
+    text: MENSAJE_ACCION_PENDIENTE,
+  }));
   expect(screen.getByRole('switch', { name: 'Recordatorio de cita' })).toHaveAttribute('aria-checked', 'true');
 });
 

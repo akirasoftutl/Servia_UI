@@ -251,12 +251,16 @@ describe('Imágenes del servicio: edición (/servicios/:id)', () => {
     }));
   });
 
-  it('sin red guarda la subida pendiente y lo explica en español', async () => {
+  it('sin red guarda la subida pendiente y lo explica como aviso en español', async () => {
     falloSubida = [new TypeError('Failed to fetch')];
     abrir();
     await screen.findByLabelText('Nombre del servicio *');
     elegir(archivo('corte.jpg'));
-    await waitFor(() => expect(ultimaAlerta()).toMatchObject({ icon: 'error', text: MENSAJE_ACCION_PENDIENTE }));
+    await waitFor(() => expect(ultimaAlerta()).toMatchObject({
+      icon: 'warning',
+      title: 'Acción pendiente',
+      text: MENSAJE_ACCION_PENDIENTE,
+    }));
   });
 
   it('pide confirmación antes de quitar: cancelar no llama a la API', async () => {
