@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { Bell, CalendarCheck, CalendarClock, ChartColumn, ChevronRight, Clock, LayoutDashboard, Pause, Plus, Scissors, Users, type LucideIcon } from 'lucide-react';
-import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import { EstadoCargando, EstadoError, EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
+import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { ESTADOS_CONFIG } from '../reservas/estados';
 import { etiquetaDia } from './citas';
 import '../reservas/Reservas.css';
 import './Resumen.css';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 // Contrato de GET /negocios/mio/resumen (Servia_BE#89). Los números se calculan en la API
 // (T14); aquí solo se muestran, sin recalcular.
@@ -113,13 +116,12 @@ export function Resumen() {
 
   return (
     <div className="panel-pagina"><div className="panel-contenedor">
-      <header className="panel-encabezado">
-        <div>
-          <EyebrowPanel grupo="operacion" icono={LayoutDashboard} />
-          <h1 className="panel-titulo">Resumen</h1>
-          <p className="panel-subtitulo">La actividad de tu negocio de un vistazo.</p>
-        </div>
-      </header>
+      <EncabezadoPanel
+        grupo="operacion"
+        icono={LayoutDashboard}
+        titulo="Resumen"
+        subtitulo="La actividad de tu negocio de un vistazo."
+      />
 
       {perfil?.aceptaReservas === false && (
         <div className="panel-alerta panel-alerta--aviso">
@@ -128,7 +130,7 @@ export function Resumen() {
             <strong>Pausaste las reservas</strong>
             <p>Los clientes no pueden pedir reservas nuevas.</p>
           </div>
-          <Link to="/reservas" className="btn-servia-secondary btn-servia-sm panel-alerta-accion">Reanudar en Reservas</Link>
+          <BotonPanel variante="secundario" tamano="sm" to="/reservas" className="panel-alerta-accion">Reanudar en Reservas</BotonPanel>
         </div>
       )}
 
@@ -140,30 +142,23 @@ export function Resumen() {
             <p>Revisa tu perfil y tus servicios.</p>
           </div>
           <div className="resumen-alerta-acciones panel-alerta-accion">
-            <Link to="/mi-perfil" className="btn-servia-secondary btn-servia-sm">Mi perfil</Link>
-            <Link to="/servicios" className="btn-servia-secondary btn-servia-sm">Servicios</Link>
+            <BotonPanel variante="secundario" tamano="sm" to="/mi-perfil">Mi perfil</BotonPanel>
+            <BotonPanel variante="secundario" tamano="sm" to="/servicios">Servicios</BotonPanel>
           </div>
         </div>
       )}
 
       <div aria-busy={cargando}>
-        {cargando && <div className="panel-estado">
-          <div className="spinner-border" aria-hidden="true" />
-          <p className="panel-estado-texto" role="status">Cargando resumen...</p>
-        </div>}
+        {cargando && <EstadoCargando mensaje="Cargando resumen..." />}
 
-        {!cargando && error && <div className="panel-estado">
-          <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
-          <p className="panel-estado-texto" role="alert">{error}</p>
-          <button className="btn-servia-primary" onClick={reintentar}>Reintentar</button>
-        </div>}
+        {!cargando && error && <EstadoError mensaje={error} onReintentar={reintentar} />}
 
         {!cargando && !error && datos && <>
           <ul className="resumen-tarjetas" aria-label="Números de tu negocio">
             <li className="resumen-hero">
               <span className="resumen-hero-cabecera">
                 <span className="resumen-icono-ficha" aria-hidden="true"><Bell /></span>
-                {datos.pendientes > 0 && <span className="panel-insignia panel-insignia--aviso">Requiere atención</span>}
+                {datos.pendientes > 0 && <EtiquetaEstado texto="Requiere atención" tono="aviso" />}
               </span>
               <span className="resumen-hero-cifra">
                 <span className="resumen-numero resumen-hero-numero">{datos.pendientes}</span>
@@ -173,8 +168,8 @@ export function Resumen() {
               </span>
               <span className="resumen-hero-pie">
                 {datos.pendientes > 0
-                  ? <Link to="/reservas?estado=pendiente" className="btn-servia-primary btn-servia-sm">Atender solicitudes<ChevronRight aria-hidden="true" /></Link>
-                  : <Link to="/reservas" className="btn-servia-secondary btn-servia-sm">Ver reservas<ChevronRight aria-hidden="true" /></Link>}
+                  ? <BotonPanel variante="primario" tamano="sm" to="/reservas?estado=pendiente">Atender solicitudes<ChevronRight aria-hidden="true" /></BotonPanel>
+                  : <BotonPanel variante="secundario" tamano="sm" to="/reservas">Ver reservas<ChevronRight aria-hidden="true" /></BotonPanel>}
               </span>
             </li>
             <Cifra numero={datos.hoy} etiqueta="Reservas de hoy" icono={CalendarCheck} tono="info" nota="Agenda del día" />
@@ -195,20 +190,19 @@ export function Resumen() {
             ))}
           </nav>
 
-          <section className="panel-tarjeta resumen-proximas" aria-labelledby="resumen-proximas-titulo">
-            <div className="panel-tarjeta-encabezado">
-              <div>
-                <h2 id="resumen-proximas-titulo" className="panel-tarjeta-titulo">Próximas citas</h2>
-                <p className="panel-tarjeta-subtitulo">Tus siguientes reservas, ordenadas por fecha y hora.</p>
-              </div>
-              {datos.proximas.length > 0 && <span className="panel-contador">{datos.proximas.length} {datos.proximas.length === 1 ? 'cita' : 'citas'}</span>}
-            </div>
+          <TarjetaPanel
+            className="resumen-proximas"
+            titulo="Próximas citas"
+            tituloId="resumen-proximas-titulo"
+            subtitulo="Tus siguientes reservas, ordenadas por fecha y hora."
+            derecha={datos.proximas.length > 0 ? <span className="panel-contador">{datos.proximas.length} {datos.proximas.length === 1 ? 'cita' : 'citas'}</span> : undefined}
+          >
             {datos.proximas.length === 0 ? (
               <EstadoVacio
                 icono={CalendarClock}
                 titulo={sinReservas ? 'Tu agenda está libre' : 'Sin citas próximas'}
                 texto={sinReservas ? 'Todavía no tienes reservas.' : 'No tienes reservas próximas.'}
-                accion={datos.serviciosPublicados === 0 ? <Link to="/servicios/nuevo" className="btn-servia-primary">Crear servicio</Link> : undefined}
+                accion={datos.serviciosPublicados === 0 ? <BotonPanel variante="primario" to="/servicios/nuevo">Crear servicio</BotonPanel> : undefined}
               />
             ) : (
               <ul className="panel-lista resumen-lista">
@@ -231,7 +225,7 @@ export function Resumen() {
                           </span>
                         </span>
                         <span className={`resumen-cita-meta${pendiente ? '' : ' resumen-cita-meta--solo-flecha'}`}>
-                          {pendiente && <span className={`reserva-badge ${ESTADOS_CONFIG.pendiente.className}`}>{ESTADOS_CONFIG.pendiente.label}</span>}
+                          {pendiente && <EtiquetaEstado texto={ESTADOS_CONFIG.pendiente.label} tono="aviso" className={`reserva-badge ${ESTADOS_CONFIG.pendiente.className}`} />}
                           <ChevronRight className="resumen-cita-chevron" aria-hidden="true" />
                         </span>
                       </Link>
@@ -240,7 +234,7 @@ export function Resumen() {
                 })}
               </ul>
             )}
-          </section>
+          </TarjetaPanel>
         </>}
       </div>
     </div></div>

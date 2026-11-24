@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Check } from 'lucide-react';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { useAuth } from '../../contextos/AuthContext';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 
 type Campo = 'actual' | 'nueva' | 'confirmacion';
 type Errores = Partial<Record<Campo, string>>;
@@ -163,9 +164,9 @@ export function CambiarContrasena({ incrustada = false }: { incrustada?: boolean
             </div>
 
             <div className="panel-formulario-acciones perfil-contrasena-acciones">
-              <button type="submit" className="btn-servia-primary" disabled={guardando}>
+              <BotonPanel type="submit" variante="primario" disabled={guardando}>
                 {guardando ? 'Cambiando...' : 'Cambiar contraseña'}
-              </button>
+              </BotonPanel>
             </div>
           </form>
         </>

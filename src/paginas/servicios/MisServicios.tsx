@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
-import { EsqueletoLista, EstadoVacio, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
+import { EsqueletoLista, EstadoError, EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { nombreDeCategoria, type CategoriaDeServicio } from './categorias';
 import { CircleAlert, Clock, Info, Plus, Tags, X } from 'lucide-react';
 
@@ -82,37 +84,32 @@ export function MisServicios() {
           </div>
         )}
 
-        <header className="panel-encabezado">
-          <div className="panel-encabezado-textos">
-            <EyebrowPanel grupo="negocio" icono={Tags} />
-            <h1 className="panel-titulo">Mis servicios</h1>
-            <p className="panel-subtitulo">Organiza y administra los servicios de tu negocio.</p>
-            <dl className="panel-metricas">
-              <div className="panel-metrica">
-                <dt>En catálogo</dt>
-                <dd>{resumen?.total ?? '—'}</dd>
-              </div>
-              <div className="panel-metrica">
-                <dt>Activos</dt>
-                <dd>{resumen?.activos ?? '—'}</dd>
-              </div>
-            </dl>
-          </div>
-          <div className="panel-encabezado-acciones">
-            <Link to="/servicios/nuevo" className="btn-servia-primary"><Plus aria-hidden="true" />Crear servicio</Link>
-          </div>
-        </header>
-
-        <section className="panel-tarjeta">
-          <div className="panel-tarjeta-encabezado">
-            <div>
-              <h2 className="panel-tarjeta-titulo">Tu catálogo</h2>
-              <p className="panel-tarjeta-subtitulo">Consulta los servicios que tienes publicados.</p>
+        <EncabezadoPanel
+          grupo="negocio"
+          icono={Tags}
+          titulo="Mis servicios"
+          subtitulo="Organiza y administra los servicios de tu negocio."
+          acciones={<BotonPanel variante="primario" to="/servicios/nuevo"><Plus aria-hidden="true" />Crear servicio</BotonPanel>}
+        >
+          <dl className="panel-metricas">
+            <div className="panel-metrica">
+              <dt>En catálogo</dt>
+              <dd>{resumen?.total ?? '—'}</dd>
             </div>
-            {!cargando && !error && (
-              <span className="panel-contador">{servicios.length} {servicios.length === 1 ? 'servicio' : 'servicios'}</span>
-            )}
-          </div>
+            <div className="panel-metrica">
+              <dt>Activos</dt>
+              <dd>{resumen?.activos ?? '—'}</dd>
+            </div>
+          </dl>
+        </EncabezadoPanel>
+
+        <TarjetaPanel
+          titulo="Tu catálogo"
+          subtitulo="Consulta los servicios que tienes publicados."
+          derecha={!cargando && !error ? (
+            <span className="panel-contador">{servicios.length} {servicios.length === 1 ? 'servicio' : 'servicios'}</span>
+          ) : undefined}
+        >
 
           <div className="panel-pestanas">
             <button className={filtro === 'todos' ? 'active' : ''} onClick={() => cambiarFiltro('todos')}>Todos</button>
@@ -131,14 +128,13 @@ export function MisServicios() {
           )}
 
           {!cargando && error && (
-            <div className="panel-estado panel-estado--error">
-              <IlustracionEstado icono={CircleAlert} error />
-              <div className="panel-estado-cuerpo">
-                <h3 className="panel-estado-titulo">Algo salió mal</h3>
-                <p className="panel-estado-texto">{error}</p>
-                <button className="btn-servia-secondary" onClick={() => { setCargando(true); setError(''); void cargarServicios(); }}>Intentar de nuevo</button>
-              </div>
-            </div>
+            <EstadoError
+              icono={CircleAlert}
+              titulo="Algo salió mal"
+              mensaje={error}
+              textoReintentar="Intentar de nuevo"
+              onReintentar={() => { setCargando(true); setError(''); void cargarServicios(); }}
+            />
           )}
 
           {!cargando && !error && servicios.length === 0 && (
@@ -176,7 +172,7 @@ export function MisServicios() {
 
                   {/* Botones de acción */}
                   <div className="servicio-acciones">
-                    <button onClick={() => navigate(`/servicios/${srv.id}`)} className="btn-servia-secondary btn-servia-sm">Editar</button>
+                    <BotonPanel variante="secundario" tamano="sm" onClick={() => navigate(`/servicios/${srv.id}`)}>Editar</BotonPanel>
                     <AccionesServicio id={srv.id} nombre={srv.nombre} activo={srv.activo}
                       alMensaje={setAlerta}
                       alCambiarEstado={activo => {
@@ -190,7 +186,7 @@ export function MisServicios() {
               ))}
             </div>
           )}
-        </section>
+        </TarjetaPanel>
       </div>
     </div>
   );

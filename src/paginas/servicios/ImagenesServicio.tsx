@@ -3,6 +3,7 @@ import { CheckCircle2, CircleAlert, ImagePlus, Plus, Trash2 } from 'lucide-react
 import { eliminarImagenServicio, subirImagenServicio, type ImagenServicio } from '../../servicios/api';
 import { ACCEPT_FOTOS, validarArchivoFoto } from '../mi_perfil/fotos';
 import { ImagenConFallo } from '../mi_perfil/FotosNegocio';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import { DialogoServicio } from './DialogoServicio';
 import {
   MAX_IMAGENES_SERVICIO,
@@ -167,10 +168,10 @@ export function ImagenesServicio({ servicioId, imagenes, alCambiarImagenes, pend
                   className="panel-fotos-imagen-galeria" variante="galeria" mensaje="No se pudo cargar la imagen" />
                 <div className="panel-fotos-tarjeta-pie">
                   <span className="panel-ayuda">Imagen {indice + 1}</span>
-                  <button type="button" className="btn-servia-danger btn-servia-sm" disabled={ocupado}
+                  <BotonPanel variante="peligro" tamano="sm" disabled={ocupado}
                     aria-label={`Quitar imagen ${indice + 1}`} onClick={() => setPorQuitar({ imagen, numero: indice + 1 })}>
                     <Trash2 aria-hidden="true" />Quitar
-                  </button>
+                  </BotonPanel>
                 </div>
               </li>
             ))}
@@ -179,10 +180,10 @@ export function ImagenesServicio({ servicioId, imagenes, alCambiarImagenes, pend
                 <img src={pendiente.url} alt={`Vista previa de la imagen ${indice + 1}`} className="panel-fotos-imagen-galeria" />
                 <div className="panel-fotos-tarjeta-pie">
                   <span className="panel-ayuda">Imagen {indice + 1}</span>
-                  <button type="button" className="btn-servia-danger btn-servia-sm"
+                  <BotonPanel variante="peligro" tamano="sm"
                     aria-label={`Quitar imagen ${indice + 1}`} onClick={() => quitarPendiente(pendiente)}>
                     <Trash2 aria-hidden="true" />Quitar
-                  </button>
+                  </BotonPanel>
                 </div>
               </li>
             ))}
@@ -199,9 +200,9 @@ export function ImagenesServicio({ servicioId, imagenes, alCambiarImagenes, pend
         )}
 
         <div className="servicio-imagenes-acciones">
-          <button type="button" className="btn-servia-secondary" disabled={ocupado || lleno} onClick={() => input.current?.click()}>
+          <BotonPanel variante="secundario" disabled={ocupado || lleno} onClick={() => input.current?.click()}>
             <Plus aria-hidden="true" />{lleno ? `Máximo ${MAX_IMAGENES_SERVICIO} imágenes` : 'Agregar imagen'}
-          </button>
+          </BotonPanel>
           {lleno && <p className="panel-ayuda mb-0">{MENSAJE_TOPE_IMAGENES}</p>}
           {!servicioId && total > 0 && <p className="panel-ayuda mb-0">Se subirán cuando publiques el servicio.</p>}
         </div>

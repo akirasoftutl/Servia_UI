@@ -10,6 +10,7 @@ import {
 } from '../servicios/notificaciones'
 import { useAuth } from './AuthContext'
 import { NotificacionesContext, type AvisoSeleccionado } from './notificacionesContexto'
+import { BotonPanel } from '../componentes/panel/BotonPanel'
 
 export function NotificacionesProvider({ children }: { children: ReactNode }) {
   const { usuario } = useAuth()
@@ -176,9 +177,9 @@ export function NotificacionesProvider({ children }: { children: ReactNode }) {
               {avisoEnPantalla.cuerpo && <p>{avisoEnPantalla.cuerpo}</p>}
             </div>
             <div className="panel-aviso-acciones panel-alerta-accion">
-              <button
-                type="button"
-                className="btn-servia-primary btn-servia-sm"
+              <BotonPanel
+                variante="primario"
+                tamano="sm"
                 onClick={() => {
                   const actual = avisoEnPantalla
                   setAvisoEnPantalla(null)
@@ -190,15 +191,15 @@ export function NotificacionesProvider({ children }: { children: ReactNode }) {
                 }}
               >
                 Ver
-              </button>
-              <button
-                type="button"
-                className="btn-servia-secondary btn-servia-sm"
+              </BotonPanel>
+              <BotonPanel
+                variante="secundario"
+                tamano="sm"
                 aria-label="Cerrar aviso"
                 onClick={() => setAvisoEnPantalla(null)}
               >
                 Cerrar
-              </button>
+              </BotonPanel>
             </div>
           </div>
         </div>

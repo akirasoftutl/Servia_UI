@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, CalendarX, ChartColumn, CircleCheck, Clock, UserX, Users, type LucideIcon } from 'lucide-react';
-import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import { EstadoCargando, EstadoError, EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
 import { api, ErrorApi } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { periodoPredefinido, validarPeriodo, type Periodo } from './fechas';
 import { GraficaReservas, LeyendaGrafica } from './GraficaReservas';
 import { porcentaje } from './grafica';
 import './Estadisticas.css';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 interface EstadisticasNegocio {
   periodo: Periodo;
@@ -72,14 +73,16 @@ export function Estadisticas() {
   ] : [];
 
   return <div className="panel-pagina"><div className="panel-contenedor">
-    <header className="panel-encabezado"><div className="panel-encabezado-textos">
-      <EyebrowPanel grupo="negocio" icono={ChartColumn} />
-      <h1 className="panel-titulo">Estadísticas</h1>
-      <p className="panel-subtitulo">Consulta las reservas y la actividad de tu negocio por periodo.</p>
-    </div>{!validacion && <div className="panel-encabezado-acciones">
-      <span className="estadisticas-periodo-rango"><CalendarDays aria-hidden="true" />{fechaLegible(periodo.desde)} – {fechaLegible(periodo.hasta)}</span>
-    </div>}</header>
-    <section className="panel-tarjeta" aria-labelledby="titulo-periodo">
+    <EncabezadoPanel
+      grupo="negocio"
+      icono={ChartColumn}
+      titulo="Estadísticas"
+      subtitulo="Consulta las reservas y la actividad de tu negocio por periodo."
+      acciones={!validacion ? (
+        <span className="estadisticas-periodo-rango"><CalendarDays aria-hidden="true" />{fechaLegible(periodo.desde)} – {fechaLegible(periodo.hasta)}</span>
+      ) : undefined}
+    />
+    <TarjetaPanel tituloId="titulo-periodo">
       <div className="estadisticas-periodo-barra">
         <div>
           <h2 id="titulo-periodo" className="panel-tarjeta-titulo">Periodo de consulta</h2>
@@ -106,20 +109,13 @@ export function Estadisticas() {
           {validacion && <p id="error-periodo" className="panel-error-campo" role="alert">{validacion}</p>}
         </div>
       </div>}
-    </section>
-    <section className="panel-tarjeta" aria-label="Estadísticas del periodo" aria-busy={cargando}>
-      {cargando && <div className="panel-estado">
-        <div className="spinner-border" aria-hidden="true" />
-        <p className="panel-estado-texto" role="status">Cargando estadísticas...</p>
-      </div>}
-      {!cargando && error && <div className="panel-estado">
-        <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
-        <p className="panel-estado-texto" role="alert">{error}</p>
-        <button className="btn-servia-primary" onClick={() => {
-          limpiar({ ...periodo });
-          setRevision(r => r + 1);
-        }}>Reintentar</button>
-      </div>}
+    </TarjetaPanel>
+    <TarjetaPanel ariaLabel="Estadísticas del periodo" ariaBusy={cargando}>
+      {cargando && <EstadoCargando mensaje="Cargando estadísticas..." />}
+      {!cargando && error && <EstadoError mensaje={error} onReintentar={() => {
+        limpiar({ ...periodo });
+        setRevision(r => r + 1);
+      }} />}
       {!cargando && !error && datos && <>
         {datos.totalReservas === 0 && <EstadoVacio
           icono={ChartColumn}
@@ -164,6 +160,6 @@ export function Estadisticas() {
             })}</ul>}
         </div>
       </>}
-    </section>
+    </TarjetaPanel>
   </div></div>;
 }

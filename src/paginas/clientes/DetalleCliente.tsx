@@ -9,7 +9,10 @@ import { EstadoClientes } from './EstadoClientes';
 import '../reservas/Reservas.css';
 import './Clientes.css';
 import { ArrowLeft, ChevronRight, Users } from 'lucide-react';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
+import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado';
 
 // La clave reinicia el historial al navegar a otro cliente sin desmontar la ruta.
 export function DetalleCliente() {
@@ -41,33 +44,33 @@ function Historial({ clienteUid }: { clienteUid: string }) {
   }, [clienteUid, cursor, revision]);
 
   return <div className="panel-pagina"><div className="panel-contenedor">
-    <header className="panel-encabezado"><div className="panel-encabezado-textos">
-      <EyebrowPanel grupo="operacion" icono={Users} />
-      <h1 className="panel-titulo">Detalle del cliente</h1>
-      <p className="panel-subtitulo">Su historial de reservas con tu negocio.</p>
-    </div><div className="panel-encabezado-acciones"><Link className="btn-servia-secondary btn-servia-sm clientes-volver" to="/clientes"><ArrowLeft aria-hidden="true" />Volver a clientes</Link></div></header>
-    {datos && <section className="panel-tarjeta" aria-label="Datos del cliente">
+    <EncabezadoPanel
+      grupo="operacion"
+      icono={Users}
+      titulo="Detalle del cliente"
+      subtitulo="Su historial de reservas con tu negocio."
+      acciones={<BotonPanel variante="secundario" tamano="sm" className="clientes-volver" to="/clientes"><ArrowLeft aria-hidden="true" />Volver a clientes</BotonPanel>}
+    />
+    {datos && <TarjetaPanel ariaLabel="Datos del cliente">
       <FichaCliente cliente={datos.cliente} />
-    </section>}
-    <section className="panel-tarjeta" aria-label="Historial de reservas">
-      <div className="panel-tarjeta-encabezado">
-        <div>
-          <h2 className="panel-tarjeta-titulo">Historial de reservas</h2>
-          <p className="panel-tarjeta-subtitulo">De la reserva más reciente a la más antigua.</p>
-        </div>
-        {datos && datos.items.length > 0 && <span className="panel-contador">{datos.items.length}{datos.siguiente ? '+' : ''} {datos.items.length === 1 && !datos.siguiente ? 'reserva' : 'reservas'}</span>}
-      </div>
+    </TarjetaPanel>}
+    <TarjetaPanel
+      ariaLabel="Historial de reservas"
+      titulo="Historial de reservas"
+      subtitulo="De la reserva más reciente a la más antigua."
+      derecha={datos && datos.items.length > 0 ? <span className="panel-contador">{datos.items.length}{datos.siguiente ? '+' : ''} {datos.items.length === 1 && !datos.siguiente ? 'reserva' : 'reservas'}</span> : undefined}
+    >
       <div aria-busy={cargando}>
         <EstadoClientes carga="historial" titulo="Sin reservas todavía" cargando={cargando} error={error} vacio={datos && !datos.items.length ? 'No hay reservas en este historial.' : ''}
           reintentar={() => { setCargando(true); setError(''); setRevision((r) => r + 1); }} />
         <div className="panel-lista">
           {datos?.items.map((reserva) => <ItemReserva reserva={reserva} key={reserva.id} />)}
         </div>
-        {!cargando && !error && datos?.siguiente && <button className="btn-servia-secondary btn-servia-sm clientes-mas" onClick={() => {
+        {!cargando && !error && datos?.siguiente && <BotonPanel variante="secundario" tamano="sm" className="clientes-mas" onClick={() => {
           setCursor(datos.siguiente!); setCargando(true); setError('');
-        }}>Cargar más</button>}
+        }}>Cargar más</BotonPanel>}
       </div>
-    </section>
+    </TarjetaPanel>
   </div></div>;
 }
 
@@ -91,7 +94,11 @@ function ItemReserva({ reserva }: { reserva: ReservaCliente }) {
       </div>
     </div>
     <div className="cliente-reserva-estado">
-      <span className={`reserva-badge ${estado?.className ?? ''}`}>{estado?.label ?? reserva.estado}</span>
+      <EtiquetaEstado
+        texto={estado?.label ?? reserva.estado}
+        tono={estado?.tono ?? 'neutro'}
+        className={`reserva-badge ${estado?.className ?? ''}`.trim()}
+      />
       <ChevronRight className="cliente-reserva-chevron" aria-hidden="true" />
     </div>
   </article>;

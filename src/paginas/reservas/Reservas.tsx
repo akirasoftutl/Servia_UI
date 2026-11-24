@@ -3,11 +3,14 @@ import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import './Reservas.css';
 import { RecepcionReservas } from '../../componentes/panel/RecepcionReservas';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { CalendarClock, Timer, CalendarCheck } from 'lucide-react';
-import { EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import { EstadoCargando, EstadoError, EstadoVacio } from '../../componentes/panel/EstadosPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
+import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado';
 import { ESTADOS_CONFIG } from './estados';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 
 const estados = {
   pendiente: 'Pendiente',
@@ -123,17 +126,16 @@ export function Reservas() {
   return (
     <>
     <div className="panel-pagina"><div className="panel-contenedor">
-      <header className="panel-encabezado">
-        <div>
-          <EyebrowPanel grupo="operacion" icono={CalendarCheck} />
-          <h1 className="panel-titulo">Reservas</h1>
-          <p className="panel-subtitulo">Administra las solicitudes de tus clientes.</p>
-        </div>
-      </header>
+      <EncabezadoPanel
+        grupo="operacion"
+        icono={CalendarCheck}
+        titulo="Reservas"
+        subtitulo="Administra las solicitudes de tus clientes."
+      />
 
       <RecepcionReservas />
 
-      <section className="panel-tarjeta">
+      <TarjetaPanel>
         <div className="reservas-filtros">
           <div>
             <label htmlFor="reservas-fecha" className="form-label">Fecha</label>
@@ -164,20 +166,13 @@ export function Reservas() {
           ))}
         </div>
         <div id="panel-reservas" role="tabpanel" aria-labelledby={`tab-${pestana}`} aria-busy={cargando}>
-          {cargando && <div className="panel-estado">
-            <div className="spinner-border" aria-hidden="true" />
-            <p className="panel-estado-texto" role="status">Cargando reservas...</p>
-          </div>}
-          {!cargando && error && <div className="panel-estado">
-            <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
-            <p className="panel-estado-texto" role="alert">{error}</p>
-            <button className="btn-servia-primary" onClick={() => setRevision((r) => r + 1)}>Reintentar</button>
-          </div>}
+          {cargando && <EstadoCargando mensaje="Cargando reservas..." />}
+          {!cargando && error && <EstadoError mensaje={error} onReintentar={() => setRevision((r) => r + 1)} />}
           {!cargando && !error && pagina.items.length === 0 && <EstadoVacio
             icono={CalendarClock}
             titulo={pestana === 'pendientes' ? 'Sin solicitudes por ahora' : 'Sin citas próximas'}
             texto={pestana === 'pendientes' ? 'Cuando un cliente solicite una cita, la verás aquí para aceptarla o rechazarla.' : 'Las citas que confirmes aparecerán aquí.'}
-            accion={<Link to="/mi-perfil/vista-previa" className="btn-servia-secondary">Ver cómo te ven tus clientes</Link>}
+            accion={<BotonPanel variante="secundario" to="/mi-perfil/vista-previa">Ver cómo te ven tus clientes</BotonPanel>}
           />}
           {!cargando && !error && <div className="panel-lista">
             {pagina.items.map((r) => (
@@ -198,7 +193,11 @@ export function Reservas() {
                   <p className="panel-item-texto">{r.servicio.nombre} · {fecha.format(new Date(r.inicio))} de {hora.format(new Date(r.inicio))} a {hora.format(new Date(r.fin))}</p>
                 </div>
                 <div className="reserva-estado-container">
-                  <span className={`reserva-badge ${r.estado}`}>{estados[r.estado]}</span>
+                  <EtiquetaEstado
+                    texto={estados[r.estado]}
+                    tono={ESTADOS_CONFIG[r.estado]?.tono ?? 'neutro'}
+                    className={`reserva-badge ${r.estado}`}
+                  />
                   {r.estado === 'pendiente' && r.venceEn && Date.parse(r.venceEn) > ahora &&
                     <span className="reserva-tiempo"><Timer aria-hidden="true" /> {tiempoRestante(r.venceEn, ahora)}</span>}
                 </div>
@@ -206,12 +205,12 @@ export function Reservas() {
             ))}
           </div>}
           {!cargando && !error && (cursores.length > 1 || pagina.siguiente) && <nav aria-label="Páginas de reservas" className="panel-paginacion">
-            <button className="btn-servia-secondary btn-servia-sm" disabled={cursores.length === 1} onClick={() => setConsulta({ ...consulta, cursores: cursores.slice(0, -1) })}>Anterior</button>
+            <BotonPanel variante="secundario" tamano="sm" disabled={cursores.length === 1} onClick={() => setConsulta({ ...consulta, cursores: cursores.slice(0, -1) })}>Anterior</BotonPanel>
             <span>Página {cursores.length}</span>
-            <button className="btn-servia-secondary btn-servia-sm" disabled={!pagina.siguiente} onClick={() => setConsulta({ ...consulta, cursores: [...cursores, pagina.siguiente!] })}>Siguiente</button>
+            <BotonPanel variante="secundario" tamano="sm" disabled={!pagina.siguiente} onClick={() => setConsulta({ ...consulta, cursores: [...cursores, pagina.siguiente!] })}>Siguiente</BotonPanel>
           </nav>}
         </div>
-      </section>
+      </TarjetaPanel>
     </div></div>
 
     </>

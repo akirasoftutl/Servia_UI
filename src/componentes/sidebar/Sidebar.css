@@ -1,20 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Fondo Negro y Tonos Oscuros */
-  --bg-sidebar: #0f0f12;          /* Negro profundo para el Sidebar */
-  --bg-card: #18181b;             /* Gris oscuro para cards/inputs */
-  --bg-hover: #27272a;            /* Hover suave para enlaces */
-  
-  /* Textos y Bordes */
-  --text-main: #ffffff;           /* Blanco para títulos y textos principales */
-  --text-muted: #9ca3af;          /* Gris medio para etiquetas e íconos inactivos */
-  --border-color: #27272a;        /* Bordes sutiles oscuros */
-  
-  /* Pestaña Activa: Borde Morado Fuerte + Interior Translúcido */
-  --active-border: #a855f7;       /* Morado vivo para el borde */
-  --active-bg: rgba(168, 85, 247, 0.15); /* Morado translúcido para el fondo */
-  --active-text: #e9d5ff;         /* Morado muy claro / blanco purpúreo para el texto */
+  /* Barra lateral oscura de origin/dev ajustada a tokens del panel */
+  --bg-sidebar: #0f0f12;
+  --bg-card: #18181b;
+  --bg-hover: #27272a;
+
+  /* Textos y bordes oscuros */
+  --text-main: #ffffff;
+  --text-muted: #9ca3af;
+  --border-color: #27272a;
+
+  /* Elemento activo: borde morado vivo + interior translúcido */
+  --active-border: #a855f7;
+  --active-bg: rgba(168, 85, 247, 0.15);
+  --active-text: #e9d5ff;
 }
 
 .user-profile {
@@ -22,21 +22,20 @@
   margin-top: auto;
 }
 
-/* Estilos para el contenedor desplegable */
 .user-dropdown-menu {
   position: absolute;
-  bottom: 100%; /* Se posiciona justo arriba de la card de usuario */
+  bottom: 100%;
   left: 0;
   right: 0;
-  margin-bottom: 8px;
-  background-color: #18181b; /* O el tono exacto de fondo oscuro de tu app */
-  border: 1px solid #27272a;
-  border-radius: 12px;
-  padding: 6px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  margin-bottom: var(--sv-esp-2);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--sv-radio-md);
+  padding: var(--sv-esp-2);
+  box-shadow: var(--sv-sombra-dialogo);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--sv-esp-1);
   z-index: 50;
   animation: fadeIn 0.15s ease-out;
 }
@@ -52,39 +51,46 @@
   }
 }
 
-/* Estilos de las opciones */
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--sv-esp-3);
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--sv-esp-2) var(--sv-esp-3);
   border: none;
   background: transparent;
-  color: #e4e4e7;
-  font-size: 14px;
-  border-radius: 8px;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: var(--sv-texto-md);
+  font-weight: 500;
+  border-radius: var(--sv-radio-xs);
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color var(--sv-rapido) ease;
   text-align: left;
 }
 
 .dropdown-item:hover {
-  background-color: #27272a;
+  background-color: var(--bg-hover);
+}
+
+.dropdown-item:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
 }
 
 .dropdown-item.danger {
-  color: #ef4444;
+  color: #f87171;
 }
 
 .dropdown-item.danger:hover {
-  background-color: rgba(239, 68, 68, 0.1);
+  background-color: rgba(248, 113, 113, 0.14);
+  color: #fecaca;
 }
 
 .dropdown-divider {
   height: 1px;
-  background-color: #27272a;
-  margin: 4px 0;
+  background-color: var(--border-color);
+  margin: var(--sv-esp-1) 0;
 }
 
 .dropdown-item svg,
@@ -94,18 +100,16 @@
   flex: none;
 }
 
-/* Rotación de la flecha al estar abierto */
 .chevron-icon {
-  transition: transform 0.2s ease;
+  color: var(--text-muted);
+  transition: transform var(--sv-rapido) ease;
 }
 
 .chevron-icon.rotated {
-  transform: rotate(-90deg); /* O rotate(90deg) según la dirección inicial de tu flecha */
+  transform: rotate(-90deg);
 }
 
-/* Reinicio de márgenes solo dentro de la barra y de la barra móvil (antes era global
-   y afectaba a todas las pantallas). :where() lo deja sin especificidad, como el
-   selector universal, para que sus reglas por clase sigan mandando. */
+/* Reinicio de márgenes acotado solo a la barra lateral y la barra móvil. */
 :where(.sidebar, .sidebar *, .panel-barra-movil, .panel-barra-movil *) {
   box-sizing: border-box;
   margin: 0;
@@ -114,7 +118,6 @@
 
 .sidebar {
   width: 280px;
-  /* Alto de la ventana: el menú se desplaza por dentro y la cuenta queda siempre a la vista. */
   height: 100vh;
   height: 100dvh;
   min-height: 0;
@@ -122,8 +125,8 @@
   color: var(--text-main);
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 1.15rem;
-  font-family: 'Inter', system-ui, sans-serif;
+  padding: var(--sv-esp-5) var(--sv-esp-4);
+  font-family: var(--sv-fuente);
   border-right: 1px solid var(--border-color);
   position: sticky;
   top: 0;
@@ -134,19 +137,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.75rem;
-  padding: 0 0.25rem;
+  margin-bottom: var(--sv-esp-5);
+  padding: 0 var(--sv-esp-1);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--sv-esp-2);
 }
 
 .brand-title {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.35rem;
+  font-family: var(--sv-fuente-titulos);
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text-main);
@@ -159,12 +162,12 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  font-size: 0.85rem;
+  padding: var(--sv-esp-2) var(--sv-esp-3);
+  border-radius: var(--sv-radio-pill);
+  font-size: var(--sv-texto-sm);
   font-weight: 600;
-  gap: 6px;
-  transition: all 0.2s ease;
+  gap: var(--sv-esp-2);
+  transition: background-color var(--sv-rapido) ease;
 }
 
 .menu-toggle-btn:hover {
@@ -180,7 +183,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: var(--sv-esp-1);
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -189,21 +192,22 @@
 
 .sidebar-nav::-webkit-scrollbar-thumb {
   background: var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--sv-radio-pill);
 }
 
 .nav-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--sv-esp-5);
 }
 
 .group-title {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-family: var(--sv-fuente-titulos);
+  font-size: var(--sv-texto-xs);
+  font-weight: 600;
   text-transform: uppercase;
   color: var(--text-muted);
-  letter-spacing: 0.08em;
-  margin-bottom: 0.6rem;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--sv-esp-2);
+  padding: 0 var(--sv-esp-3);
 }
 
 .sidebar-config {
@@ -217,7 +221,7 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--sv-esp-1);
   padding: 0;
   margin: 0;
 }
@@ -229,10 +233,10 @@
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--sv-esp-3);
   min-height: var(--sv-objetivo-tactil);
-  padding: 0.6rem 0.8rem;
-  border-radius: 12px;
+  padding: var(--sv-esp-2) var(--sv-esp-3);
+  border-radius: var(--sv-radio-md);
   color: var(--text-muted);
   text-decoration: none;
   font-size: var(--sv-texto-md);
@@ -242,7 +246,7 @@
   background: transparent;
   width: 100%;
   text-align: left;
-  transition: all 0.2s ease;
+  transition: background-color var(--sv-rapido) ease, color var(--sv-rapido) ease, border-color var(--sv-rapido) ease;
 }
 
 .nav-link:hover {
@@ -250,7 +254,12 @@
   color: var(--text-main);
 }
 
-/* Botón solo de ícono para la barra y el cajón oscuros (abrir y cerrar el menú). */
+.nav-link:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
+}
+
+/* Botón solo de ícono para la barra móvil y el cajón. */
 .panel-boton-icono {
   display: inline-flex;
   align-items: center;
@@ -260,7 +269,7 @@
   height: var(--sv-objetivo-tactil);
   padding: 0;
   border: 1px solid transparent;
-  border-radius: var(--sv-radio-sm);
+  border-radius: var(--sv-radio-md);
   background: transparent;
   color: var(--text-main);
   cursor: pointer;
@@ -281,14 +290,13 @@
   height: var(--sv-icono-nav);
 }
 
-/* Todos los íconos del menú comparten tamaño; el trazo lo pone lucide. */
 .nav-link svg {
   width: var(--sv-icono-nav);
   height: var(--sv-icono-nav);
   flex: none;
 }
 
-/* Estado Activo: Borde Morado Fuerte + Interior Translúcido */
+/* Estado activo: borde morado vivo + interior translúcido (origin/dev) */
 .nav-link.active {
   background-color: var(--active-bg);
   border-color: var(--active-border);
@@ -302,24 +310,25 @@
 
 .nav-link.active:hover {
   background-color: rgba(168, 85, 247, 0.25);
+  color: var(--active-text);
 }
 
 .user-profile {
   margin-top: auto;
-  padding-top: 1rem;
+  padding-top: var(--sv-esp-4);
   border-top: 1px solid var(--border-color);
 }
 
 .user-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--sv-esp-3);
   background-color: var(--bg-card);
-  padding: 0.75rem 0.85rem;
-  border-radius: 16px;
+  padding: var(--sv-esp-3);
+  border-radius: var(--sv-radio-lg);
   border: 1px solid var(--border-color);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color var(--sv-rapido) ease, border-color var(--sv-rapido) ease;
 }
 
 .user-card:hover {
@@ -330,14 +339,14 @@
 .avatar {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
-  background-color: #27272a;
+  border-radius: var(--sv-radio-pill);
+  background-color: var(--bg-hover);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-main);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--sv-texto-md);
   flex-shrink: 0;
 }
 
@@ -349,7 +358,7 @@
 }
 
 .user-name {
-  font-size: 0.85rem;
+  font-size: var(--sv-texto-md);
   font-weight: 600;
   color: var(--text-main);
   white-space: nowrap;
@@ -358,13 +367,9 @@
 }
 
 .user-email {
-  font-size: 0.725rem;
+  font-size: var(--sv-texto-xs);
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.chevron-icon {
-  color: var(--text-muted);
 }

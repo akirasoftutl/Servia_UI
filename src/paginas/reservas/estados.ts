@@ -1,11 +1,13 @@
 // src/paginas/reservas/estados.ts
-export const ESTADOS_CONFIG: Record<string, { label: string; className: string }> = {
-  pendiente: { label: 'Pendiente', className: 'pendiente' },
-  confirmada: { label: 'Confirmada', className: 'confirmada' },
-  cancelada: { label: 'Cancelada', className: 'cancelada' },
-  completada: { label: 'Completada', className: 'completada' },
-  rechazada: { label: 'Rechazada', className: 'rechazada' },
-  rechazada_vencimiento: { label: 'Rechazada por vencimiento', className: 'rechazada_vencimiento' },
+import type { TonoEstado } from '../../componentes/panel/EtiquetaEstado';
+
+export const ESTADOS_CONFIG: Record<string, { label: string; className: string; tono: TonoEstado }> = {
+  pendiente: { label: 'Pendiente', className: 'pendiente', tono: 'aviso' },
+  confirmada: { label: 'Confirmada', className: 'confirmada', tono: 'exito' },
+  cancelada: { label: 'Cancelada', className: 'cancelada', tono: 'neutro' },
+  completada: { label: 'Completada', className: 'completada', tono: 'info' },
+  rechazada: { label: 'Rechazada', className: 'rechazada', tono: 'peligro' },
+  rechazada_vencimiento: { label: 'Rechazada por vencimiento', className: 'rechazada_vencimiento', tono: 'peligro' },
 };
 
 export const formatearFecha = (fechaISO: string) => {

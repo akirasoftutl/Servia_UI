@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { Power, Trash2 } from 'lucide-react';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 
 export function DialogoServicio({ texto, accion, titulo: tituloVisible, ocupado, alConfirmar, alCancelar }: {
   texto: string; accion: string; titulo?: string; ocupado: boolean; alConfirmar: () => void;
@@ -31,8 +32,8 @@ export function DialogoServicio({ texto, accion, titulo: tituloVisible, ocupado,
       <h2 id={titulo} className="panel-dialogo-titulo">{tituloVisible ?? `${accion} servicio`}</h2>
       <p id={descripcion} className="panel-dialogo-texto">{texto}</p>
       <div className="panel-dialogo-acciones">
-        <button className={peligro ? 'btn-servia-danger' : 'btn-servia-primary'} ref={aceptar} type="button" disabled={ocupado} onClick={alConfirmar}>{accion}</button>
-        <button className="btn-servia-secondary" type="button" disabled={ocupado} onClick={alCancelar}>Cancelar</button>
+        <BotonPanel variante={peligro ? 'peligro' : 'primario'} ref={aceptar} disabled={ocupado} onClick={alConfirmar}>{accion}</BotonPanel>
+        <BotonPanel variante="secundario" disabled={ocupado} onClick={alCancelar}>Cancelar</BotonPanel>
       </div>
     </div>
   </div>;

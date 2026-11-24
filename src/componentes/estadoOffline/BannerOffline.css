@@ -9,12 +9,13 @@
 .banner-offline-fila {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 16px;
-  border-bottom: 1px solid #f3c9ae;
-  background: #fff4ec;
-  color: #8a3d13;
-  font-size: 14px;
+  gap: var(--sv-esp-3);
+  padding: var(--sv-esp-2) var(--sv-esp-4);
+  border-bottom: 1px solid var(--sv-info-borde);
+  background: var(--sv-info-fondo);
+  color: var(--sv-info);
+  font-family: var(--sv-fuente);
+  font-size: var(--sv-texto-md);
   line-height: 1.4;
 }
 
@@ -29,15 +30,15 @@
 }
 
 .banner-offline-fila--aviso {
-  background: #fff8e8;
-  border-bottom-color: #f0dcaa;
-  color: #7a5611;
+  background: var(--sv-aviso-fondo);
+  border-bottom-color: var(--sv-aviso-borde);
+  color: var(--sv-aviso);
 }
 
 .banner-offline-fila--error {
-  background: #fdecec;
-  border-bottom-color: #f3c2c2;
-  color: #9b2c2c;
+  background: var(--sv-peligro-fondo);
+  border-bottom-color: var(--sv-peligro-borde);
+  color: var(--sv-peligro-texto);
 }
 
 .banner-offline-fila button {
@@ -45,14 +46,14 @@
   flex: none;
   place-items: center;
   margin-left: auto;
-  padding: 4px;
+  padding: var(--sv-esp-1);
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--sv-radio-xs);
   background: transparent;
   color: inherit;
   cursor: pointer;
 }
 
 .banner-offline-fila button:hover {
-  background: rgb(0 0 0 / 6%);
+  background: var(--sv-superficie-hundida);
 }

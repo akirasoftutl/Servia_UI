@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, ErrorApi } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import { DialogoServicio } from './DialogoServicio';
 
 const AVISO = 'Ya no tienes servicios activos: tu negocio no aparece para los clientes hasta que actives uno.';
@@ -68,11 +69,11 @@ export function AccionesServicio({ id, nombre, activo, alCambiarEstado, alElimin
 
   return <div>
     <div className="servicio-acciones-botones" inert={dialogo !== null}>
-      <button className="btn-servia-secondary btn-servia-sm" type="button" disabled={ocupado || eliminado} onClick={() => activo ? setDialogo('desactivar') : void cambiarEstado()}>{activo ? 'Desactivar' : 'Activar'}</button>
-      <button className="btn-servia-danger btn-servia-sm" type="button" disabled={ocupado || eliminado} onClick={() => setDialogo('eliminar')}>Eliminar</button>
+      <BotonPanel variante="secundario" tamano="sm" disabled={ocupado || eliminado} onClick={() => activo ? setDialogo('desactivar') : void cambiarEstado()}>{activo ? 'Desactivar' : 'Activar'}</BotonPanel>
+      <BotonPanel variante="peligro" tamano="sm" disabled={ocupado || eliminado} onClick={() => setDialogo('eliminar')}>Eliminar</BotonPanel>
     </div>
     {error && <p role="alert" className="panel-error-campo">{error}</p>}
-    {eliminado && error && <button type="button" className="btn-servia-secondary btn-servia-sm" disabled={ocupado} onClick={reintentarVisibilidad}>Consultar visibilidad de nuevo</button>}
+    {eliminado && error && <BotonPanel variante="secundario" tamano="sm" disabled={ocupado} onClick={reintentarVisibilidad}>Consultar visibilidad de nuevo</BotonPanel>}
     {dialogo && <DialogoServicio ocupado={ocupado} accion={dialogo === 'eliminar' ? 'Eliminar' : 'Desactivar'}
       texto={dialogo === 'eliminar' ? `¿Eliminar «${nombre}»? Esta acción no se puede deshacer.`
         : dialogo === 'reservas' ? 'Este servicio ya tuvo reservas, así que no se puede eliminar. Puedes desactivarlo para que deje de ofrecerse.'

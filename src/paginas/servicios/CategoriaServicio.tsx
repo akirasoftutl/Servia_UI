@@ -1,4 +1,5 @@
 import type { ChangeEvent } from 'react';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import {
   MAX_CATEGORIA_PERSONALIZADA, VALOR_OTRA,
   type CatalogoCategorias, type CategoriaElegida,
@@ -23,7 +24,7 @@ export function CategoriaServicio({ valor, alCambiar, catalogo, error, actual }:
         <p className="form-label">Categoría del servicio (opcional)</p>
         <p aria-live="polite" className="panel-alerta panel-alerta--error">No se pudieron cargar las categorías.</p>
         {actual && <p className="panel-ayuda">Categoría actual: {actual.nombre}. Se conserva si no la cambias.</p>}
-        <button type="button" className="btn-servia-secondary btn-servia-sm" onClick={catalogo.reintentar}>Reintentar</button>
+        <BotonPanel variante="secundario" tamano="sm" onClick={catalogo.reintentar}>Reintentar</BotonPanel>
         <small className="panel-ayuda mt-2 d-block">Puedes guardar el servicio sin cambiar su categoría.</small>
       </div>
     );

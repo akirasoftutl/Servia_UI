@@ -90,7 +90,10 @@ it('mantiene las Pendientes primero según el orden entregado por la API', async
   await screen.findByRole('heading', { name: 'Pendiente' });
   expect(parametros().has('estado')).toBe(false);
   expect(parametros().has('vista')).toBe(false);
-  expect(screen.getAllByRole('article').map((r) => within(r).getByRole('heading').textContent)).toEqual(['Pendiente', 'Confirmada']);
+  const tarjetas = screen.getAllByRole('article');
+  expect(tarjetas.map((r) => within(r).getByRole('heading').textContent)).toEqual(['Pendiente', 'Confirmada']);
+  expect(within(tarjetas[0]).getByText('Pendiente', { selector: 'span' })).toHaveClass('panel-etiqueta', 'panel-etiqueta--aviso', 'reserva-badge', 'pendiente');
+  expect(within(tarjetas[1]).getByText('Confirmada', { selector: 'span' })).toHaveClass('panel-etiqueta', 'panel-etiqueta--exito', 'reserva-badge', 'confirmada');
 });
 
 it('normaliza Pendiente al abrir Próximas y conserva la fecha y el orden de BE', async () => {

@@ -1,5 +1,4 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import { Link } from 'react-router';
 import { Check, ShieldAlert, Store } from 'lucide-react'
 import './MiPerfil.css';
 import { api, type FotosNegocio as FotosNegocioDatos } from '../../servicios/api';
@@ -16,7 +15,9 @@ import {
 } from './direccion';
 import { CampoCalle, type EleccionCalle } from './CampoCalle';
 import { MapaNegocio } from './MapaNegocio';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { EstadoCargando } from '../../componentes/panel/EstadosPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 import { FotosNegocio } from './FotosNegocio';
 import { FOTOS_VACIAS, normalizarFotosNegocio } from './fotos';
 import { normalizarTelefono, validarTelefono } from './telefono';
@@ -247,14 +248,7 @@ export function MiPerfil() {
   if (cargando) {
     return (
       <div className="panel-pagina panel-pagina--centrada">
-        <div className="panel-estado">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-          <p className="panel-estado-texto">
-            Cargando información del negocio...
-          </p>
-        </div>
+        <EstadoCargando mensaje="Cargando información del negocio..." />
       </div>
     );
   }
@@ -302,21 +296,13 @@ export function MiPerfil() {
         <form onSubmit={handleSubmit} noValidate>
 
           {/* Encabezado */}
-          <header className="panel-encabezado">
-            <div>
-              <EyebrowPanel grupo="negocio" icono={Store} />
-
-              <h1 className="panel-titulo">
-                Perfil del negocio
-              </h1>
-
-              <p className="panel-subtitulo">
-                Administra la información de tu establecimiento
-                y haz que más clientes te encuentren en Servia.
-              </p>
-            </div>
-            <Link to="/mi-perfil/vista-previa" className="btn-servia-secondary">Ver como cliente</Link>
-          </header>
+          <EncabezadoPanel
+            grupo="negocio"
+            icono={Store}
+            titulo="Perfil del negocio"
+            subtitulo="Administra la información de tu establecimiento y haz que más clientes te encuentren en Servia."
+            acciones={<BotonPanel variante="secundario" to="/mi-perfil/vista-previa">Ver como cliente</BotonPanel>}
+          />
 
           {/* Tarjeta principal */}
           <div className="panel-tarjeta">
@@ -508,11 +494,13 @@ export function MiPerfil() {
 
                     {direccionVieja && (
                       <div className="col-12">
-                        <div className="alert alert-warning border-0 rounded-4 p-3 mb-0" role="status">
-                          <strong className="d-block mb-1">
-                            Tu dirección está guardada como texto. Captúrala por campos para actualizarla
-                          </strong>
-                          <span className="small text-secondary">{direccionVieja}</span>
+                        <div className="panel-alerta panel-alerta--aviso mb-0" role="status">
+                          <div className="panel-alerta-contenido">
+                            <strong className="d-block">
+                              Tu dirección está guardada como texto. Captúrala por campos para actualizarla
+                            </strong>
+                            <p>{direccionVieja}</p>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -722,7 +710,7 @@ export function MiPerfil() {
                               className={`perfil-category w-100 text-start ${seleccionada ? 'selected' : ''
                                 }`}
                               style={{
-                                backgroundImage: `linear-gradient(to top, rgba(20, 15, 30, 0.88), rgba(20, 15, 30, 0.08)), url('${imagenCategoria}')`,
+                                backgroundImage: `linear-gradient(to top, rgba(17, 24, 39, 0.85), rgba(17, 24, 39, 0.12)), url('${imagenCategoria}')`,
                               }}
                               onClick={() =>
                                 handleCategoriaChange(cat.id)
@@ -750,37 +738,35 @@ export function MiPerfil() {
               )}
 
               {errorApi && (
-                <div className="alert alert-danger py-2 small mt-3" role="alert">
-                  {errorApi}
+                <div className="panel-alerta panel-alerta--error mt-3 mb-0" role="alert">
+                  <div className="panel-alerta-contenido">{errorApi}</div>
                 </div>
               )}
 
               <div className="perfil-actions">
                 <div>
                   {pasoActual > 1 && (
-                    <button
-                      type="button"
+                    <BotonPanel
+                      variante="secundario"
                       onClick={handleAnterior}
-                      className="btn-servia-secondary"
                     >
                        Anterior
-                    </button>
+                    </BotonPanel>
                   )}
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
                   {pasoActual < 3 ? (
-                    <button
-                      type="button"
+                    <BotonPanel
+                      variante="primario"
                       onClick={handleSiguiente}
-                      className="btn-servia-primary"
                     >
                       Continuar
-                    </button>
+                    </BotonPanel>
                   ) : (
-                    <button
+                    <BotonPanel
                       type="submit"
-                      className="btn-servia-primary"
+                      variante="primario"
                       disabled={guardando}
                     >
                       {guardando ? (
@@ -797,15 +783,15 @@ export function MiPerfil() {
                           Guardar cambios
                         </>
                       )}
-                    </button>
+                    </BotonPanel>
                   )}
 
-                  <Link
+                  <BotonPanel
+                    variante="secundario"
                     to="/servicios"
-                    className="btn-servia-secondary"
                   >
                     Salir
-                  </Link>
+                  </BotonPanel>
                 </div>
               </div>
 

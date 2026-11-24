@@ -7,13 +7,14 @@ import {
 } from 'react';
 
 import { CircleAlert, PackagePlus, ShieldAlert } from 'lucide-react';
-import { EsqueletoEncabezado, EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { EsqueletoEncabezado, EsqueletoLista, EstadoError } from '../../componentes/panel/EstadosPanel';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { api, ErrorApi, subirImagenServicio, type ImagenServicio } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { ImagenesServicio } from './ImagenesServicio';
 import { AVISO_IMAGENES_FALLIDAS, liberarPendiente, type ArchivoPendiente } from './imagenes';
 import { CategoriaServicio } from './CategoriaServicio';
@@ -235,16 +236,13 @@ function FormularioServicio() {
 
   if (errorCarga) return <div className="panel-pagina">
     <div className="panel-contenedor">
-      <div className="panel-estado panel-estado--error">
-        <IlustracionEstado icono={CircleAlert} error />
-        <div className="panel-estado-cuerpo">
-        <p role="alert" className="panel-estado-texto">{errorCarga}</p>
-        <div className="panel-estado-acciones">
-          {errorCarga !== 'Este servicio no existe.' && <button className="btn-servia-primary" onClick={() => { setCargando(true); setErrorCarga(''); setIntento(intento + 1); }}>Intentar de nuevo</button>}
-          <Link to="/servicios" className="btn-servia-secondary">Volver a Mis servicios</Link>
-        </div>
-        </div>
-      </div>
+      <EstadoError
+        icono={CircleAlert}
+        mensaje={errorCarga}
+        textoReintentar="Intentar de nuevo"
+        onReintentar={errorCarga !== 'Este servicio no existe.' ? () => { setCargando(true); setErrorCarga(''); setIntento(intento + 1); } : undefined}
+        accionSecundaria={<BotonPanel variante="secundario" to="/servicios">Volver a Mis servicios</BotonPanel>}
+      />
     </div>
   </div>;
 
@@ -261,29 +259,29 @@ function FormularioServicio() {
               <strong className="d-block">Completa tu perfil para publicar servicios.</strong>
               <p>Campos pendientes: <strong>{camposFaltantes.join(', ')}</strong></p>
             </div>
-            <Link to="/mi-perfil" className="btn-servia-primary btn-servia-sm panel-alerta-accion">Completar mi perfil</Link>
+            <BotonPanel variante="primario" tamano="sm" to="/mi-perfil" className="panel-alerta-accion">Completar mi perfil</BotonPanel>
           </div>
         )}
 
         <div inert={servicioPublicado}>
-            <header className="panel-encabezado">
-              <div className="panel-encabezado-textos">
-                <EyebrowPanel grupo="negocio" icono={PackagePlus} />
-                <h1 className="panel-titulo">{esEdicion ? 'Editar servicio' : 'Nuevo servicio'}</h1>
-                <p className="panel-subtitulo">{esEdicion ? 'Actualiza la información de tu servicio.' : 'Agrega un nuevo servicio a tu negocio y permite que más clientes conozcan lo que ofreces.'}</p>
-                {/* Vista previa de cómo se verá el servicio en el catálogo */}
-                {(form.precio !== '' || form.duracion !== '') && <dl className="panel-metricas">
-                  {form.precio !== '' && Number(form.precio) >= 0 && <div className="panel-metrica">
-                    <dt>precio</dt>
-                    <dd>{`$${Number(form.precio).toFixed(2)}`}</dd>
-                  </div>}
-                  {form.duracion !== '' && <div className="panel-metrica">
-                    <dt>min</dt>
-                    <dd>{form.duracion}</dd>
-                  </div>}
-                </dl>}
-              </div>
-            </header>
+            <EncabezadoPanel
+              grupo="negocio"
+              icono={PackagePlus}
+              titulo={esEdicion ? 'Editar servicio' : 'Nuevo servicio'}
+              subtitulo={esEdicion ? 'Actualiza la información de tu servicio.' : 'Agrega un nuevo servicio a tu negocio y permite que más clientes conozcan lo que ofreces.'}
+            >
+              {/* Vista previa de cómo se verá el servicio en el catálogo */}
+              {(form.precio !== '' || form.duracion !== '') && <dl className="panel-metricas">
+                {form.precio !== '' && Number(form.precio) >= 0 && <div className="panel-metrica">
+                  <dt>precio</dt>
+                  <dd>{`$${Number(form.precio).toFixed(2)}`}</dd>
+                </div>}
+                {form.duracion !== '' && <div className="panel-metrica">
+                  <dt>min</dt>
+                  <dd>{form.duracion}</dd>
+                </div>}
+              </dl>}
+            </EncabezadoPanel>
 
           <div className="panel-tarjeta">
             {aviso && <p role="status" className="panel-alerta panel-alerta--info">{aviso}</p>}
@@ -356,10 +354,10 @@ function FormularioServicio() {
               </fieldset>
 
               <div className="panel-formulario-acciones">
-                <Link to="/servicios" className="btn-servia-secondary">Cancelar</Link>
-                <button type="submit" className="btn-servia-primary" disabled={(!perfilCompleto && !esEdicion) || publicando}>
+                <BotonPanel variante="secundario" to="/servicios">Cancelar</BotonPanel>
+                <BotonPanel type="submit" variante="primario" disabled={(!perfilCompleto && !esEdicion) || publicando}>
                   {publicando ? (<><span className="spinner-border spinner-border-sm me-2" />{subiendoImagenes ? 'Subiendo imágenes...' : 'Guardando...'}</>) : (<>{esEdicion ? 'Guardar cambios' : 'Publicar servicio'}</>)}
-                </button>
+                </BotonPanel>
               </div>
             </form>
 
@@ -386,8 +384,8 @@ function FormularioServicio() {
               <h2 id="servicio-alerta-titulo" className="panel-dialogo-titulo">{mensajeExito}</h2>
               <p id="servicio-alerta-texto" className="panel-dialogo-texto"><strong>{form.nombre}</strong> ya forma parte de tu catálogo. Tus clientes podrán encontrarlo y reservarlo.</p>
               <div className="panel-dialogo-acciones panel-dialogo-acciones--columna">
-                <button ref={botonExito} type="button" className="btn-servia-primary" onClick={() => navigate('/servicios')}>Ver mis servicios</button>
-                {!esEdicion && <button type="button" className="btn-servia-secondary" onClick={crearOtroServicio}>Crear otro servicio</button>}
+                <BotonPanel ref={botonExito} variante="primario" onClick={() => navigate('/servicios')}>Ver mis servicios</BotonPanel>
+                {!esEdicion && <BotonPanel variante="secundario" onClick={crearOtroServicio}>Crear otro servicio</BotonPanel>}
               </div>
             </div>
           </div>

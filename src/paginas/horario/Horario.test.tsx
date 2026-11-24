@@ -402,7 +402,8 @@ describe('Horario', () => {
   it('la insignia de estado no dibuja un segundo punto', async () => {
     apiMock.mockResolvedValueOnce({ configurado: true, dias: diasConfigurados })
     renderizarHorario()
-    const insignia = (await screen.findByText('Horario configurado')).closest('.panel-insignia') as HTMLElement
+    const insignia = (await screen.findByText('Horario configurado')).closest('.panel-etiqueta') as HTMLElement
+    expect(insignia).toHaveClass('panel-etiqueta--exito')
     expect(insignia.querySelector('span')).toBeNull()
   })
 })
