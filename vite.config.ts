@@ -17,7 +17,6 @@ export default defineConfig({
           '**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,avif,json,woff,woff2}'
         ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        // Rutas profundas (/reservas/:id, etc.) también abren sin red.
         navigateFallback: '/index.html',
       },
 

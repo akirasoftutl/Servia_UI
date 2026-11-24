@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
-import { CircleAlert, Clock, Plus, Tags } from 'lucide-react';
 import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { EsqueletoLista, EstadoVacio, IlustracionEstado } from '../../componentes/panel/EstadosPanel';
@@ -8,8 +7,8 @@ import './Servicios.css';
 import { AccionesServicio } from './AccionesServicio';
 import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
 import { nombreDeCategoria, type CategoriaDeServicio } from './categorias';
+import { CircleAlert, Clock, Info, Plus, Tags, X } from 'lucide-react';
 
-// Iniciales del servicio para la ficha decorativa de cada tarjeta.
 function iniciales(nombre: string) {
   const palabras = nombre.trim().split(/\s+/);
   const importantes = palabras.filter((palabra) => palabra.length > 2);
@@ -63,8 +62,25 @@ export function MisServicios() {
   return (
     <div className="panel-pagina">
       <div className="panel-contenedor">
-        
-        {alerta && <div role="status" className="panel-alerta panel-alerta--info">{alerta}</div>}
+
+        {alerta && (
+          <div role="status" className="panel-alerta panel-alerta--info panel-servicio-alerta">
+            <span className="panel-alerta-icono" aria-hidden="true">
+              <Info />
+            </span>
+            <div className="panel-alerta-contenido">
+              <p>{alerta}</p>
+            </div>
+            <button
+              type="button"
+              className="panel-servicio-alerta-cerrar"
+              aria-label="Cerrar aviso"
+              onClick={() => setAlerta('')}
+            >
+              <X aria-hidden="true" />
+            </button>
+          </div>
+        )}
 
         <header className="panel-encabezado">
           <div className="panel-encabezado-textos">
@@ -137,7 +153,7 @@ export function MisServicios() {
             <div className="panel-lista">
               {servicios.map((srv) => (
                 <article key={srv.id} className="panel-item servicio-card">
-                  
+
                   {/* Hacemos clic en el área principal para editar */}
                   <Link className="servicio-card-principal" to={`/servicios/${srv.id}`}>
                     <div className={`servicio-icono ${srv.activo ? '' : 'servicio-icono--inactivo'}`} aria-hidden="true">{iniciales(srv.nombre)}</div>

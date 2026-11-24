@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../servicios/firebase';
 import { useLocation, useNavigate } from 'react-router';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import '../../estilos/panel.css';
@@ -113,24 +114,49 @@ export function RecepcionReservas() {
   };
 
   return (<>
-      <section id="recepcion-reservas" className="panel-tarjeta" inert={mostrarModalPausa} aria-labelledby="titulo-recepcion">
-        <div className="panel-tarjeta-encabezado">
-          <div>
-            <h2 id="titulo-recepcion" className="panel-tarjeta-titulo">Recepción de reservas</h2>
-            <p id="estadoRecepcion" className="panel-tarjeta-subtitulo">
-              {aceptaReservas === null
-                ? (errorCargaRecepcion ? 'Estado de recepción desconocido.' : 'Cargando recepción de reservas...')
-                : aceptaReservas ? 'Tus clientes pueden agendar citas contigo.' : 'Los clientes ven tu perfil, pero no pueden agendar.'}
-            </p>
-          </div>
+    <section id="recepcion-reservas" className="panel-tarjeta" inert={mostrarModalPausa} aria-labelledby="titulo-recepcion">
+      <div className="panel-tarjeta-encabezado">
+        <div>
+          <h2 id="titulo-recepcion" className="panel-tarjeta-titulo">Recepción de reservas</h2>
+          <p id="estadoRecepcion" className="panel-tarjeta-subtitulo">
+            {aceptaReservas === null
+              ? (errorCargaRecepcion ? 'Estado de recepción desconocido.' : 'Cargando recepción de reservas...')
+              : aceptaReservas ? 'Tus clientes pueden agendar citas contigo.' : 'Los clientes ven tu perfil, pero no pueden agendar.'}
+          </p>
         </div>
-        <button ref={interruptor} type="button" role="switch" aria-label="Recibir reservas" aria-checked={aceptaReservas === true}
-          aria-describedby="estadoRecepcion" className="btn-servia-secondary"
-          onClick={handleToggleReservas} disabled={cargandoRecepcion || aceptaReservas === null}>
-          {aceptaReservas === false ? 'Reanudar recepción' : 'Pausar recepción'}
-        </button>
-        {mensajeReservas && !mostrarModalPausa && <p role={errorCambio ? 'alert' : 'status'}
-          className={`panel-alerta panel-alerta--${errorCambio ? 'error' : 'exito'}`}>{mensajeReservas}</p>}
+      </div>
+
+      <div className="panel-recepcion-cuerpo">
+        {aceptaReservas !== false && (
+          <div className="panel-recepcion-acciones">
+            <button
+              ref={interruptor}
+              type="button"
+              role="switch"
+              aria-label="Recibir reservas"
+              aria-checked={aceptaReservas === true}
+              aria-describedby="estadoRecepcion"
+              className="btn-servia-secondary"
+              onClick={handleToggleReservas}
+              disabled={cargandoRecepcion || aceptaReservas === null}
+            >
+              Pausar recepción
+            </button>
+          </div>
+        )}
+
+        {mensajeReservas && !mostrarModalPausa && (
+          <div
+            role={errorCambio ? 'alert' : 'status'}
+            className={`panel-alerta panel-alerta--${errorCambio ? 'error' : 'exito'} panel-recepcion-estado`}
+          >
+            <span className="panel-alerta-icono" aria-hidden="true">
+              {errorCambio ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+            </span>
+            <p className="panel-alerta-contenido">{mensajeReservas}</p>
+          </div>
+        )}
+
         {errorCargaRecepcion && (
           <div role="alert" className="panel-alerta panel-alerta--error">
             <span className="panel-alerta-icono" aria-hidden="true">!</span>
@@ -138,10 +164,13 @@ export function RecepcionReservas() {
               <strong>No pudimos cargar la recepción de reservas.</strong>
               <p>{errorCargaRecepcion}</p>
             </div>
-            <button className="btn-servia-secondary btn-servia-sm panel-alerta-accion" onClick={() => {
-              setErrorCargaRecepcion('');
-              setReintentoRecepcion((valor) => valor + 1);
-            }}>
+            <button
+              className="btn-servia-secondary btn-servia-sm panel-alerta-accion"
+              onClick={() => {
+                setErrorCargaRecepcion('');
+                setReintentoRecepcion((valor) => valor + 1);
+              }}
+            >
               Reintentar
             </button>
           </div>
@@ -163,73 +192,74 @@ export function RecepcionReservas() {
             </button>
           </div>
         )}
-      </section>
+      </div>
+    </section>
 
-      {mostrarModalPausa && createPortal(
-        <div className="panel-dialogo-fondo">
-          <div
-            ref={dialogo}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="tituloPausa"
-            aria-describedby="descripcionPausa notaPausa"
-            tabIndex={-1}
-            onKeyDown={(evento) => {
-              if (evento.key === 'Escape' && !cargandoRecepcion) {
+    {mostrarModalPausa && createPortal(
+      <div className="panel-dialogo-fondo">
+        <div
+          ref={dialogo}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tituloPausa"
+          aria-describedby="descripcionPausa notaPausa"
+          tabIndex={-1}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Escape' && !cargandoRecepcion) {
+              evento.preventDefault();
+              setMostrarModalPausa(false);
+            }
+            if (evento.key === 'Tab') {
+              const botones = Array.from(dialogo.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
+              const primero = botones[0];
+              const ultimo = botones[botones.length - 1];
+              if (!primero || !botones.includes(document.activeElement as HTMLButtonElement)) {
                 evento.preventDefault();
-                setMostrarModalPausa(false);
+                (evento.shiftKey ? ultimo : primero)?.focus();
+              } else if (evento.shiftKey && document.activeElement === primero) {
+                evento.preventDefault();
+                ultimo.focus();
+              } else if (!evento.shiftKey && document.activeElement === ultimo) {
+                evento.preventDefault();
+                primero.focus();
               }
-              if (evento.key === 'Tab') {
-                const botones = Array.from(dialogo.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
-                const primero = botones[0];
-                const ultimo = botones[botones.length - 1];
-                if (!primero || !botones.includes(document.activeElement as HTMLButtonElement)) {
-                  evento.preventDefault();
-                  (evento.shiftKey ? ultimo : primero)?.focus();
-                } else if (evento.shiftKey && document.activeElement === primero) {
-                  evento.preventDefault();
-                  ultimo.focus();
-                } else if (!evento.shiftKey && document.activeElement === ultimo) {
-                  evento.preventDefault();
-                  primero.focus();
-                }
-              }
-            }}
-            className="panel-dialogo"
-          >
-            <div className="panel-dialogo-icono panel-dialogo-icono--aviso" aria-hidden="true"><Pause /></div>
-            <h2 id="tituloPausa" className="panel-dialogo-titulo">{aceptaReservas ? '¿Pausar las reservas?' : '¿Reanudar las reservas?'}</h2>
-            <p id="descripcionPausa" className="panel-dialogo-texto">
-              {aceptaReservas
-                ? 'Tu perfil seguirá visible. Los clientes no podrán solicitar nuevas reservas; verán «No acepta reservas por ahora» y no podrán pedir reservas nuevas.'
-                : 'Tu perfil seguirá visible y los clientes podrán solicitar nuevas reservas.'}
-            </p>
-            <div className="panel-alerta panel-alerta--aviso">
-              <span className="panel-alerta-icono" aria-hidden="true">!</span>
-              <div id="notaPausa" className="panel-alerta-contenido">
-                <strong>Nota:</strong> Las reservas que ya tienes no cambiarán.
-              </div>
-            </div>
-            {errorCambio && mensajeReservas && <p role="alert" className="panel-error-campo">{mensajeReservas}</p>}
-            <div className="panel-dialogo-acciones">
-              <button
-                ref={cancelar}
-                className="btn-servia-secondary"
-                onClick={() => setMostrarModalPausa(false)}
-                disabled={cargandoRecepcion || aceptaReservas === null}
-              >
-                Cancelar
-              </button>
-              <button
-                className="btn-servia-primary"
-                onClick={() => cambiarRecepcion(!aceptaReservas)}
-                disabled={cargandoRecepcion || aceptaReservas === null}
-              >
-                {cargandoRecepcion ? (aceptaReservas ? 'Pausando...' : 'Reanudando...') : (aceptaReservas ? 'Pausar' : 'Reanudar')}
-              </button>
+            }
+          }}
+          className="panel-dialogo"
+        >
+          <div className="panel-dialogo-icono panel-dialogo-icono--aviso" aria-hidden="true"><Pause /></div>
+          <h2 id="tituloPausa" className="panel-dialogo-titulo">{aceptaReservas ? '¿Pausar las reservas?' : '¿Reanudar las reservas?'}</h2>
+          <p id="descripcionPausa" className="panel-dialogo-texto">
+            {aceptaReservas
+              ? 'Tu perfil seguirá visible. Los clientes no podrán solicitar nuevas reservas; verán «No acepta reservas por ahora» y no podrán pedir reservas nuevas.'
+              : 'Tu perfil seguirá visible y los clientes podrán solicitar nuevas reservas.'}
+          </p>
+          <div className="panel-alerta panel-alerta--aviso">
+            <span className="panel-alerta-icono" aria-hidden="true">!</span>
+            <div id="notaPausa" className="panel-alerta-contenido">
+              <strong>Nota:</strong> Las reservas que ya tienes no cambiarán.
             </div>
           </div>
+          {errorCambio && mensajeReservas && <p role="alert" className="panel-error-campo">{mensajeReservas}</p>}
+          <div className="panel-dialogo-acciones">
+            <button
+              ref={cancelar}
+              className="btn-servia-secondary"
+              onClick={() => setMostrarModalPausa(false)}
+              disabled={cargandoRecepcion || aceptaReservas === null}
+            >
+              Cancelar
+            </button>
+            <button
+              className="btn-servia-primary"
+              onClick={() => cambiarRecepcion(!aceptaReservas)}
+              disabled={cargandoRecepcion || aceptaReservas === null}
+            >
+              {cargandoRecepcion ? (aceptaReservas ? 'Pausando...' : 'Reanudando...') : (aceptaReservas ? 'Pausar' : 'Reanudar')}
+            </button>
+          </div>
         </div>
+      </div>
       , document.body)}
   </>);
 }
