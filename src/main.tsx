@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router/dom'
 import { registerSW } from 'virtual:pwa-register'
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'sweetalert2/dist/sweetalert2.min.css';
 import './estilos/panel.css';
+import './estilos/alertas.css';
 import { AuthProvider } from './contextos/AuthContext';
 import { BannerOffline } from './componentes/estadoOffline/BannerOffline';
 import { iniciarSincronizacionOffline } from './servicios/sincronizacionOffline';
