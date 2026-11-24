@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bell, BellOff, CircleAlert, Inbox } from 'lucide-react'
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel'
-import { EsqueletoLista, IlustracionEstado } from '../../componentes/panel/EstadosPanel'
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel'
+import { TarjetaPanel } from '../../componentes/panel/TarjetaPanel'
+import { EtiquetaEstado } from '../../componentes/panel/EtiquetaEstado'
+import { BotonPanel } from '../../componentes/panel/BotonPanel'
+import { EsqueletoLista, EstadoError, EstadoVacio } from '../../componentes/panel/EstadosPanel'
 import { useNotificaciones } from '../../contextos/notificacionesContexto'
 import {
   activarNotificacionesPush,
@@ -142,20 +145,15 @@ export function Avisos() {
   return (
     <div className="panel-pagina">
       <div className="panel-contenedor">
-        <header className="panel-encabezado">
-          <div className="panel-encabezado-textos">
-            <EyebrowPanel grupo="operacion" icono={Inbox} />
-            <h1 className="panel-titulo">Avisos</h1>
-            <p className="panel-subtitulo">
-              Consulta tus solicitudes nuevas y cancelaciones de clientes.
-            </p>
-          </div>
-          {!cargando && !error && noLeidas > 0 && (
-            <div className="panel-encabezado-acciones">
-              <span className="panel-insignia">{noLeidas} sin leer</span>
-            </div>
-          )}
-        </header>
+        <EncabezadoPanel
+          grupo="operacion"
+          icono={Inbox}
+          titulo="Avisos"
+          subtitulo="Consulta tus solicitudes nuevas y cancelaciones de clientes."
+          acciones={!cargando && !error && noLeidas > 0 ? (
+            <EtiquetaEstado texto={`${noLeidas} sin leer`} tono="info" />
+          ) : undefined}
+        />
 
         {estadoPermiso === 'ios-sin-instalar' && (
           <div className="panel-alerta panel-alerta--info" role="status">
@@ -176,14 +174,15 @@ export function Avisos() {
             <div className="panel-alerta-contenido">
               Activa las notificaciones para enterarte de nuevas solicitudes aunque no tengas el panel abierto.
             </div>
-            <button
-              type="button"
-              className="btn-servia-primary btn-servia-sm panel-alerta-accion"
+            <BotonPanel
+              variante="primario"
+              tamano="sm"
+              className="panel-alerta-accion"
               disabled={activandoPush}
               onClick={() => void activarPush()}
             >
               {activandoPush ? 'Activando...' : 'Activar notificaciones'}
-            </button>
+            </BotonPanel>
           </div>
         )}
 
@@ -216,17 +215,12 @@ export function Avisos() {
           </div>
         )}
 
-        <section className="panel-tarjeta" aria-labelledby="avisos-lista-titulo" aria-busy={cargando}>
-          <div className="panel-tarjeta-encabezado">
-            <div>
-              <h2 id="avisos-lista-titulo" className="panel-tarjeta-titulo">
-                Bandeja de avisos
-              </h2>
-              <p className="panel-tarjeta-subtitulo">
-                Toca un aviso para abrir el detalle de la reserva.
-              </p>
-            </div>
-          </div>
+        <TarjetaPanel
+          titulo="Bandeja de avisos"
+          tituloId="avisos-lista-titulo"
+          subtitulo="Toca un aviso para abrir el detalle de la reserva."
+          ariaBusy={cargando}
+        >
 
           {cargando && (
             <div className="panel-cargando" role="status" aria-label="Cargando avisos">
@@ -236,31 +230,15 @@ export function Avisos() {
           )}
 
           {!cargando && error && (
-            <div className="panel-estado panel-estado--error">
-              <IlustracionEstado icono={CircleAlert} error />
-              <div className="panel-estado-cuerpo">
-                <p className="panel-estado-texto" role="alert">
-                  {error}
-                </p>
-                <div className="panel-estado-acciones">
-                  <button type="button" className="btn-servia-primary" onClick={reintentar}>
-                    Reintentar
-                  </button>
-                </div>
-              </div>
-            </div>
+            <EstadoError icono={CircleAlert} mensaje={error} onReintentar={reintentar} />
           )}
 
           {!cargando && !error && items.length === 0 && (
-            <div className="panel-estado">
-              <IlustracionEstado icono={Bell} />
-              <div className="panel-estado-cuerpo">
-                <h3 className="panel-estado-titulo">Todavía no tienes avisos.</h3>
-                <p className="panel-estado-texto">
-                  Cuando recibas una solicitud nueva o una cancelación, aparecerá aquí.
-                </p>
-              </div>
-            </div>
+            <EstadoVacio
+              icono={Bell}
+              titulo="Todavía no tienes avisos."
+              texto="Cuando recibas una solicitud nueva o una cancelación, aparecerá aquí."
+            />
           )}
 
           {!cargando && !error && items.length > 0 && (
@@ -278,7 +256,7 @@ export function Avisos() {
                         <span className="panel-item-texto panel-aviso-texto">{aviso.cuerpo}</span>
                       </span>
                       <span className="panel-aviso-meta">
-                        {!aviso.leida && <span className="panel-insignia">Sin leer</span>}
+                        {!aviso.leida && <EtiquetaEstado texto="Sin leer" tono="info" />}
                         <time className="panel-aviso-fecha" dateTime={aviso.creadaEn}>
                           {formatearFecha(aviso.creadaEn)}
                         </time>
@@ -300,19 +278,19 @@ export function Avisos() {
               {siguiente && (
                 <div className="panel-paginacion">
                   <span className="panel-ayuda">Mostrando {items.length} avisos</span>
-                  <button
-                    type="button"
-                    className="btn-servia-secondary btn-servia-sm"
+                  <BotonPanel
+                    variante="secundario"
+                    tamano="sm"
                     disabled={cargandoMas}
                     onClick={() => void cargarMas()}
                   >
                     {cargandoMas ? 'Cargando más...' : 'Cargar más'}
-                  </button>
+                  </BotonPanel>
                 </div>
               )}
             </>
           )}
-        </section>
+        </TarjetaPanel>
       </div>
     </div>
   )
