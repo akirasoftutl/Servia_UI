@@ -1,4 +1,11 @@
-import { api, eliminarFotoNegocio, ErrorApi, subirFotoNegocio } from './api'
+import {
+  api,
+  eliminarFotoNegocio,
+  eliminarImagenServicio,
+  ErrorApi,
+  subirFotoNegocio,
+  subirImagenServicio,
+} from './api'
 
 function respuesta(estado: number, cuerpo?: unknown) {
   return new Response(cuerpo === undefined ? '' : JSON.stringify(cuerpo), { status: estado })
@@ -68,6 +75,48 @@ describe('api', () => {
     await expect(eliminarFotoNegocio('foto/123')).resolves.toBeUndefined()
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3000/negocios/mio/fotos/foto%2F123',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
+  it('sube una imagen de servicio en POST /negocios/mio/servicios/{id}/imagenes con el campo archivo', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(respuesta(201, { id: 'img1', url: 'https://cdn.servia.test/servicios/s1/img1.jpg' }))
+    const archivo = new File(['abc'], 'corte.jpg', { type: 'image/jpeg' })
+    const resultado = await subirImagenServicio('s/1', archivo)
+
+    expect(resultado).toEqual({ id: 'img1', url: 'https://cdn.servia.test/servicios/s1/img1.jpg' })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/negocios/mio/servicios/s%2F1/imagenes',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    const opciones = fetchMock.mock.calls[0][1]!
+    expect((opciones.headers as Headers).has('Content-Type')).toBe(false)
+    expect(opciones.body).toBeInstanceOf(FormData)
+    expect((opciones.body as FormData).get('archivo')).toBe(archivo)
+  })
+
+  it('propaga el mensaje de la API cuando el servicio ya tiene 3 imágenes (409)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      respuesta(409, {
+        statusCode: 409,
+        message: 'El servicio ya tiene 3 imágenes. Elimina una antes de subir otra.',
+        error: 'Conflict',
+      }),
+    )
+    const archivo = new File(['abc'], 'corte.jpg', { type: 'image/jpeg' })
+    await expect(subirImagenServicio('s1', archivo)).rejects.toMatchObject({
+      estado: 409,
+      message: 'El servicio ya tiene 3 imágenes. Elimina una antes de subir otra.',
+    })
+  })
+
+  it('elimina una imagen de servicio en DELETE /negocios/mio/servicios/{id}/imagenes/{imagenId} con 204', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
+    await expect(eliminarImagenServicio('s1', 'img/1')).resolves.toBeUndefined()
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/negocios/mio/servicios/s1/imagenes/img%2F1',
       expect.objectContaining({ method: 'DELETE' }),
     )
   })

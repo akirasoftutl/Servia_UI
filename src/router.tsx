@@ -38,6 +38,7 @@ export const rutas: RouteObject[] = [
         children: [
           { path: 'registro-negocio', element: <RegistroNegocio /> },
           { path: 'login', element: <Login /> },
+          { path: 'precios', element: <Precios /> },
         ],
       },
 
