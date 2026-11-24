@@ -68,3 +68,21 @@ export function subirFotoNegocio(archivo: File, tipo: TipoFotoNegocio): Promise<
 export function eliminarFotoNegocio(fotoId: string): Promise<void> {
   return api<void>(`/negocios/mio/fotos/${encodeURIComponent(fotoId)}`, { method: 'DELETE' })
 }
+// Descarga el mapa del negocio como imagen (Blob) y devuelve una URL temporal.
+// El llamador debe hacer URL.revokeObjectURL() cuando ya no la use.
+export async function descargarMapaNegocio(): Promise<string> {
+  const token = await auth?.currentUser?.getIdToken();
+  const cabeceras = new Headers();
+  if (token) {
+    cabeceras.set('Authorization', `Bearer ${token}`);
+  }
+
+  const respuesta = await fetch(`${URL_API}/negocios/mio/mapa`, { headers: cabeceras });
+
+  if (!respuesta.ok) {
+    throw new ErrorApi(respuesta.status, 'No se pudo cargar el mapa.');
+  }
+
+  const blob = await respuesta.blob();
+  return URL.createObjectURL(blob);
+}
