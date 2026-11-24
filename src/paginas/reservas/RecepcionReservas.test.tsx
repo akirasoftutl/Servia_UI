@@ -112,15 +112,16 @@ describe('Recepción de reservas (MVP-12)', () => {
     expect(ultimaAlerta()).toMatchObject({ icon: 'success', text: 'Reservas pausadas.' });
   });
 
-  it('C2/C4 explica la visibilidad, bloqueo y que las reservas existentes no cambian en la confirmación', async () => {
+  it('C2/C4 explica la visibilidad, bloqueo y que las reservas existentes no cambian en la confirmación sin redundancia', async () => {
     await listo(true);
     mockearConfirmacion(false);
     await userEvent.click(screen.getByRole('switch'));
     const alerta = ultimaAlerta();
     expect(alerta?.title).toBe('¿Pausar las reservas?');
-    expect(String(alerta?.text)).toContain('Tu perfil seguirá visible.');
-    expect(String(alerta?.text)).toContain('«No acepta reservas por ahora» y no podrán pedir reservas nuevas.');
-    expect(String(alerta?.text)).toContain('Las reservas que ya tienes no cambiarán.');
+    expect(alerta?.text).toBe(
+      'Tu perfil seguirá visible. Los clientes verán «No acepta reservas por ahora» y no podrán pedir reservas nuevas. Nota: Las reservas que ya tienes no cambiarán.',
+    );
+    expect(String(alerta?.text)).not.toContain('no podrán solicitar nuevas reservas');
     expect(llamadas('/negocios/mio/recepcion-reservas')).toHaveLength(0);
   });
 

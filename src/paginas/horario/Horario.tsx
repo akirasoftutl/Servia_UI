@@ -308,6 +308,7 @@ export function Horario() {
         setFormulario(siguienteFormulario)
       }
       cerrarConflicto()
+      setGuardando(false)
       const activosGuardados = DIAS.filter(({ clave }) => siguienteFormulario[clave].laborable).length
       await exito(
         activosGuardados > 0
@@ -323,6 +324,7 @@ export function Horario() {
         setDialogoAbierto(true)
       } else {
         cerrarConflicto()
+        setGuardando(false)
         await alertaDeError(error, MENSAJE_ERROR_GUARDADO)
       }
     } finally {

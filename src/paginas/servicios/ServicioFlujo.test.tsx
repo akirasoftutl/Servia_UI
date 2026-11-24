@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { api, ErrorApi } from '../../servicios/api';
@@ -9,6 +9,7 @@ import {
   llamadasAlertas,
   mockearConfirmacion,
   mockearConfirmaciones,
+  swalFireMock,
   ultimaAlerta,
 } from '../../pruebas/mockAlertas';
 
@@ -231,4 +232,38 @@ it('cancelar eliminación conserva el servicio y no envía DELETE', async () => 
   await userEvent.click(await screen.findByRole('button', { name: 'Eliminar' }));
   expect(ultimaAlerta()).toMatchObject({ title: 'Eliminar servicio', showCancelButton: true });
   expect(mock.mock.calls.some(([, opciones]) => opciones?.method === 'DELETE')).toBe(false);
+});
+
+it('muestra Guardando... durante el PUT y restablece el botón mientras la alerta de éxito sigue abierta', async () => {
+  let resolverPut!: (valor: unknown) => void;
+  let cerrarAlerta!: () => void;
+  const implementacion = mock.getMockImplementation()!;
+  mock.mockImplementation(async (ruta, opciones) => {
+    if (opciones?.method === 'PUT') {
+      return new Promise((resolve) => { resolverPut = resolve; });
+    }
+    return implementacion(ruta, opciones);
+  });
+  swalFireMock.mockImplementationOnce(
+    () => new Promise((resolve) => {
+      cerrarAlerta = () => resolve({ isConfirmed: true, isDenied: false, isDismissed: false, value: true });
+    }),
+  );
+
+  abrir();
+  await userEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }));
+
+  // Control negativo: mientras la petición está en curso, el botón sí muestra Guardando...
+  expect(screen.getByRole('button', { name: 'Guardando...' })).toBeDisabled();
+
+  await act(async () => resolverPut(servicio));
+  await waitFor(() => expect(swalFireMock).toHaveBeenCalledTimes(1));
+
+  // Con la alerta abierta, el botón ya volvió a Guardar cambios y aún no navega
+  expect(screen.queryByRole('button', { name: 'Guardando...' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled();
+  expect(screen.queryByRole('heading', { name: 'Mis servicios' })).not.toBeInTheDocument();
+
+  await act(async () => cerrarAlerta());
+  expect(await screen.findByRole('heading', { name: 'Mis servicios' })).toBeInTheDocument();
 });

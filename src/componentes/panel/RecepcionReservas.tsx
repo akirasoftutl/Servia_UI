@@ -92,7 +92,7 @@ export function RecepcionReservas() {
       const aceptado = await confirmar({
         titulo: pausar ? '¿Pausar las reservas?' : '¿Reanudar las reservas?',
         texto: pausar
-          ? 'Tu perfil seguirá visible. Los clientes no podrán solicitar nuevas reservas; verán «No acepta reservas por ahora» y no podrán pedir reservas nuevas. Nota: Las reservas que ya tienes no cambiarán.'
+          ? 'Tu perfil seguirá visible. Los clientes verán «No acepta reservas por ahora» y no podrán pedir reservas nuevas. Nota: Las reservas que ya tienes no cambiarán.'
           : 'Tu perfil seguirá visible y los clientes podrán solicitar nuevas reservas. Nota: Las reservas que ya tienes no cambiarán.',
         confirmar: pausar ? 'Pausar' : 'Reanudar',
         cancelar: 'Cancelar',

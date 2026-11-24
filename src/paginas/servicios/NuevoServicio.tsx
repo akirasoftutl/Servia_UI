@@ -187,6 +187,7 @@ function FormularioServicio() {
       payloadEnviado = payload;
       if (esEdicion) {
         await api(`/negocios/mio/servicios/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        setPublicando(false);
         await alertaExito('Cambios guardados.');
         navigate('/servicios');
         return;
@@ -194,6 +195,7 @@ function FormularioServicio() {
         const creado = await api<{ id: string }>('/negocios/mio/servicios', { method: 'POST', body: JSON.stringify(payload) });
         if (pendientes.length > 0 && !(await subirPendientes(creado.id))) {
           // El servicio ya existe: se edita ahí para agregar las imágenes que faltan.
+          setPublicando(false);
           await alertaAviso(AVISO_IMAGENES_FALLIDAS);
           navigate(`/servicios/${creado.id}`, { replace: true });
           return;
@@ -210,6 +212,7 @@ function FormularioServicio() {
         // 400 de validación con categoría de por medio: se muestra junto al campo.
         setErrores(prev => ({ ...prev, categoria: error.message }));
       } else {
+        setPublicando(false);
         await alertaDeError(error, esEdicion
           ? 'No pudimos guardar los cambios. Intenta de nuevo.'
           : 'No pudimos guardar el servicio. Intenta de nuevo.');

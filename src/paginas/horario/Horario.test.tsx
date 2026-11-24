@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { api, ErrorApi } from '../../servicios/api'
 import { MENSAJE_ERROR_SERVIDOR } from '../../servicios/mensajeDeError'
 import { Horario } from './Horario'
-import { ultimaAlerta } from '../../pruebas/mockAlertas'
+import { swalFireMock, ultimaAlerta } from '../../pruebas/mockAlertas'
 
 vi.mock('../../servicios/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../servicios/api')>()
@@ -411,4 +411,48 @@ describe('Horario', () => {
     expect(insignia).toHaveClass('panel-etiqueta--exito')
     expect(insignia.querySelector('span')).toBeNull()
   })
+
+  it.each(['éxito', 'error'] as const)(
+    'muestra Guardando... durante el PUT y restablece el botón con la alerta de %s abierta',
+    async (resultado) => {
+      let resolverPut!: (valor: unknown) => void
+      let rechazarPut!: (error: Error) => void
+      let cerrarAlerta!: () => void
+
+      apiMock.mockResolvedValueOnce({ configurado: true, dias: diasConfigurados })
+      apiMock.mockImplementationOnce(
+        () => new Promise((resolve, reject) => {
+          resolverPut = resolve
+          rechazarPut = reject
+        }),
+      )
+      swalFireMock.mockImplementationOnce(
+        () => new Promise((resolve) => {
+          cerrarAlerta = () => resolve({ isConfirmed: true, isDenied: false, isDismissed: false, value: true })
+        }),
+      )
+
+      renderizarHorario()
+      const boton = await screen.findByRole('button', { name: 'Guardar horario' })
+      await userEvent.click(boton)
+
+      // Control negativo: mientras la petición está en curso, el botón sí muestra Guardando...
+      expect(screen.getByRole('button', { name: 'Guardando...' })).toBeDisabled()
+
+      await act(async () => {
+        if (resultado === 'éxito') {
+          resolverPut({ configurado: true, dias: diasConfigurados })
+        } else {
+          rechazarPut(new ErrorApi(500, 'Fallo'))
+        }
+      })
+
+      await waitFor(() => expect(swalFireMock).toHaveBeenCalledTimes(1))
+      // Con la alerta todavía abierta, el botón de fondo ya no debe quedarse en Guardando...
+      expect(screen.queryByRole('button', { name: 'Guardando...' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Guardar horario' })).toBeEnabled()
+
+      await act(async () => cerrarAlerta())
+    },
+  )
 })
