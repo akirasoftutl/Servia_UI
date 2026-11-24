@@ -1,9 +1,9 @@
 .pricing-container {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif;
-  background-color: #ffffff;
-  color: #111111;
+  font-family: var(--sv-fuente);
+  background-color: var(--sv-fondo);
+  color: var(--sv-texto);
   min-height: 100vh;
-  padding: 48px 48px;
+  padding: var(--sv-esp-7) var(--sv-esp-6);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -13,55 +13,53 @@
 .pricing-header {
   text-align: center;
   max-width: 720px;
-  margin-bottom: 40px;
+  margin-bottom: var(--sv-esp-6);
 }
 
 .pricing-title {
-  font-size: 4rem;
-  font-weight: 800;
+  font-family: var(--sv-fuente-titulos);
+  font-size: 3rem;
+  font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.025em;
-  color: #0d0d0d;
-  margin: 0 0 14px 0;
+  color: var(--sv-titulo);
+  margin: 0 0 var(--sv-esp-3) 0;
 }
 
 .pricing-subtitle {
-  font-size: 1rem;
+  font-size: var(--sv-texto-lg);
   line-height: 1.5;
-  color: #333333;
+  color: var(--sv-texto-suave);
   margin: 0;
 }
 
-/* Contenedor general de las filas */
 .pricing-cards {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: var(--sv-esp-6);
   width: 100%;
-  max-width: 1360px;
+  max-width: var(--sv-ancho-contenedor);
 }
 
-/* Estructura en fila de cada pareja (imagen + tarjeta) */
 .pricing-card-wrapper {
   display: flex;
   align-items: stretch;
-  gap: 32px;
+  gap: var(--sv-esp-5);
   width: 100%;
 }
 
-/* Invertir el orden para la segunda fila (imagen a la derecha) */
 .pricing-card-wrapper.image-right {
   flex-direction: row-reverse;
 }
 
-/* Caja de la imagen lateral (aprox. 60% del ancho) - Altura reducida */
 .card-image-box {
-  flex: 1.55;
-  min-width: 55%;
-  min-height: 440px;
-  height: 440px;
-  background-color: #f0f0f0;
-  border-radius: 24px;
+  flex: 1.4;
+  min-width: 50%;
+  min-height: 400px;
+  height: 400px;
+  background-color: var(--sv-superficie-hundida);
+  border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-lg);
   overflow: hidden;
 }
 
@@ -72,14 +70,15 @@
   display: block;
 }
 
-/* Tarjeta individual (aprox. 40% del ancho) - Padding y altura ajustados */
 .pricing-card {
   flex: 1;
-  min-width: 400px;
-  min-height: 440px;
-  background-color: #f4f4f4;
-  border-radius: 24px;
-  padding: 36px 38px;
+  min-width: 340px;
+  min-height: 400px;
+  background-color: var(--sv-superficie);
+  border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-lg);
+  padding: var(--sv-esp-6);
+  box-shadow: var(--sv-sombra-panel);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -88,53 +87,54 @@
 
 .card-title-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--sv-esp-3);
+  margin-bottom: var(--sv-esp-4);
 }
 
 .card-title {
-  font-size: 1.5rem;
+  font-family: var(--sv-fuente-titulos);
+  font-size: var(--sv-titulo-pagina);
   font-weight: 700;
-  color: #111111;
+  color: var(--sv-titulo);
   margin: 0;
 }
 
-/* Píldora "7 días de prueba" */
 .trial-badge {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #5b50d6;
-  background-color: #efeffe;
-  border: 1px solid #d5d2fa;
-  border-radius: 999px;
-  padding: 5px 14px;
+  font-size: var(--sv-texto-xs);
+  font-weight: 600;
+  color: var(--sv-en-primario-suave);
+  background-color: var(--sv-primario-suave);
+  border: 1px solid var(--sv-primario-borde);
+  border-radius: var(--sv-radio-pill);
+  padding: var(--sv-esp-1) var(--sv-esp-3);
   white-space: nowrap;
 }
 
-/* Precio y periodo */
 .card-price {
-  font-size: 2.25rem;
-  font-weight: 800;
+  font-family: var(--sv-fuente-titulos);
+  font-size: 2rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
-  color: #0d0d0d;
-  margin-bottom: 6px;
+  color: var(--sv-titulo);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: var(--sv-esp-1);
 }
 
 .card-period {
-  font-size: 0.95rem;
+  font-size: var(--sv-texto-md);
   font-weight: 500;
-  color: #222222;
-  margin: 0 0 24px 0;
+  color: var(--sv-texto-suave);
+  margin: 0 0 var(--sv-esp-5) 0;
 }
 
-/* Lista de características */
 .features-heading {
-  font-size: 0.9rem;
+  font-size: var(--sv-texto-md);
   font-weight: 700;
-  color: #111111;
-  margin: 0 0 12px 0;
+  color: var(--sv-titulo);
+  margin: 0 0 var(--sv-esp-3) 0;
 }
 
 .features-list {
@@ -143,45 +143,46 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--sv-esp-2);
 }
 
 .features-list li {
-  font-size: 0.9rem;
-  line-height: 1.4;
-  color: #6b6b6b;
+  font-size: var(--sv-texto-md);
+  line-height: 1.45;
+  color: var(--sv-texto-suave);
 }
 
-/* Botón inferior */
 .card-footer {
-  margin-top: 24px;
+  margin-top: var(--sv-esp-5);
 }
 
 .cta-button {
-  background-color: #111111;
-  color: #ffffff;
-  font-size: 0.9rem;
+  background-color: var(--sv-primario);
+  color: var(--sv-en-primario);
+  font-family: inherit;
+  font-size: var(--sv-texto-md);
   font-weight: 600;
-  border: none;
-  border-radius: 999px;
-  padding: 14px 28px;
+  border: 1px solid transparent;
+  border-radius: var(--sv-radio-md);
+  min-height: var(--sv-esp-7);
+  padding: var(--sv-esp-3) var(--sv-esp-5);
   cursor: pointer;
   width: 100%;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: background-color var(--sv-rapido) ease;
 }
 
 .cta-button:hover {
-  background-color: #2b2b2b;
+  background-color: var(--sv-primario-hover);
 }
 
-.cta-button:active {
-  transform: scale(0.98);
+.cta-button:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
 }
 
-/* Responsividad para pantallas medianas y móviles */
 @media (max-width: 1024px) {
   .pricing-container {
-    padding: 36px 20px;
+    padding: var(--sv-esp-6) var(--sv-esp-4);
   }
 
   .pricing-card-wrapper,
@@ -191,20 +192,20 @@
 
   .card-image-box {
     min-width: 100%;
-    height: 320px;
-    min-height: 320px;
+    height: 280px;
+    min-height: 280px;
   }
 
   .pricing-card {
     min-width: 100%;
     min-height: auto;
-    padding: 32px 24px;
+    padding: var(--sv-esp-5);
   }
 }
 
 @media (max-width: 640px) {
   .pricing-title {
-    font-size: 2rem;
+    font-size: var(--sv-titulo-pagina);
   }
 
   .pricing-title br,
@@ -213,18 +214,16 @@
   }
 
   .card-image-box {
-    height: 240px;
-    min-height: 240px;
+    height: 220px;
+    min-height: 220px;
   }
 }
 
-
 .cta-banner-container {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif;
+  font-family: var(--sv-fuente);
   width: 100%;
-  background: linear-gradient(135deg, #cc00ff 0%, #8811ff 50%, #5b00e5 100%);
-  padding: 96px 24px;
-  
+  background: var(--sv-inverso);
+  padding: var(--sv-esp-7) var(--sv-esp-5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -233,87 +232,61 @@
 
 .cta-banner-content {
   text-align: center;
-  color: #ffffff;
+  color: var(--sv-en-inverso);
   max-width: 700px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .cta-banner-title {
-  font-size: 3rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  margin: 0 0 16px 0;
-  line-height: 1.15;
+  font-family: var(--sv-fuente-titulos);
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--sv-esp-3) 0;
+  line-height: 1.2;
 }
 
 .cta-banner-subtitle {
-  font-size: 1.15rem;
+  font-size: var(--sv-texto-lg);
   font-weight: 400;
-  margin: 0 0 36px 0;
-  opacity: 0.95;
-  line-height: 1.4;
+  margin: 0 0 var(--sv-esp-5) 0;
+  opacity: 0.9;
+  line-height: 1.45;
 }
 
 .cta-banner-button {
-  background-color: #ffffff;
-  color: #111111;
-  font-size: 0.95rem;
+  background-color: var(--sv-marca);
+  color: var(--sv-en-primario);
+  font-family: inherit;
+  font-size: var(--sv-texto-md);
   font-weight: 600;
-  border: none;
-  border-radius: 999px;
-  padding: 16px 32px;
+  border: 1px solid transparent;
+  border-radius: var(--sv-radio-md);
+  min-height: var(--sv-esp-7);
+  padding: var(--sv-esp-3) var(--sv-esp-6);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  gap: var(--sv-esp-2);
+  transition: background-color var(--sv-rapido) ease;
 }
 
 .cta-banner-button:hover {
-  background-color: #f4f4f4;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  background-color: var(--sv-primario);
 }
 
-.cta-banner-button:active {
-  transform: translateY(0);
-}
-
-.arrow-icon {
-  font-size: 1.1rem;
-  font-weight: 400;
-  transition: transform 0.2s ease;
-}
-
-.cta-banner-button:hover .arrow-icon {
-  transform: translateX(4px);
-}
-
-/* Responsividad para móviles */
-@media (max-width: 768px) {
-  .cta-banner-container {
-    padding: 64px 20px;
-  }
-
-  .cta-banner-title {
-    font-size: 2.2rem;
-  }
-
-  .cta-banner-subtitle {
-    font-size: 1rem;
-    margin-bottom: 28px;
-  }
+.cta-banner-button:focus-visible {
+  outline: none;
+  box-shadow: var(--sv-foco);
 }
 
 .compare-container {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif;
-  background-color: #ffffff;
-  color: #111111;
-  padding: 40px 24px 80px 24px;
+  font-family: var(--sv-fuente);
+  background-color: var(--sv-fondo);
+  color: var(--sv-texto);
+  padding: var(--sv-esp-6) var(--sv-esp-4) var(--sv-esp-7);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -321,24 +294,25 @@
 }
 
 .compare-main-title {
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  color: #0d0d0d;
-  margin: 0 0 48px 0;
+  font-family: var(--sv-fuente-titulos);
+  font-size: var(--sv-titulo-pagina);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--sv-titulo);
+  margin: 0 0 var(--sv-esp-5) 0;
   text-align: center;
 }
 
 .compare-table-wrapper {
   width: 100%;
   max-width: 900px;
-  border: 1px solid #e5e5e5;
-  border-radius: 16px;
-  overflow: hidden; /* Asegura que los bordes respeten el border-radius */
-  background-color: #ffffff;
+  border: 1px solid var(--sv-borde);
+  border-radius: var(--sv-radio-lg);
+  overflow-x: auto;
+  background-color: var(--sv-superficie);
+  box-shadow: var(--sv-sombra-panel);
 }
 
-/* Estructura de la tabla */
 .compare-table {
   width: 100%;
   border-collapse: collapse;
@@ -347,19 +321,17 @@
 
 .compare-table th,
 .compare-table td {
-  padding: 24px;
-  border-bottom: 1px solid #e5e5e5;
+  padding: var(--sv-esp-4) var(--sv-esp-5);
+  border-bottom: 1px solid var(--sv-borde);
   vertical-align: middle;
 }
 
-/* Quitar la línea inferior de la última fila */
 .compare-table tr:last-child td {
   border-bottom: none;
 }
 
-/* Cabecera de la tabla */
 .compare-table th {
-  background-color: #ffffff;
+  background-color: var(--sv-superficie-suave);
 }
 
 .col-feature-header {
@@ -373,73 +345,71 @@
 
 .plan-name {
   display: block;
-  font-size: 1.25rem;
+  font-family: var(--sv-fuente-titulos);
+  font-size: var(--sv-titulo-seccion);
   font-weight: 700;
-  color: #111111;
-  margin-bottom: 4px;
+  color: var(--sv-titulo);
+  margin-bottom: var(--sv-esp-1);
 }
 
 .plan-desc {
   display: block;
-  font-size: 0.82rem;
+  font-size: var(--sv-texto-xs);
   font-weight: 400;
-  color: #666666;
+  color: var(--sv-texto-suave);
 }
 
-/* Celdas del cuerpo */
 .row-label {
-  font-size: 0.92rem;
+  font-size: var(--sv-texto-md);
   font-weight: 600;
-  color: #111111;
+  color: var(--sv-titulo);
 }
 
 .row-value {
-  font-size: 0.92rem;
-  color: #222222;
+  font-size: var(--sv-texto-md);
+  color: var(--sv-texto);
   text-align: center;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Texto secundario debajo del precio en Equipo */
 .sub-text {
   display: block;
-  font-size: 0.75rem;
-  color: #666666;
+  font-size: var(--sv-texto-xs);
+  color: var(--sv-texto-suave);
   font-weight: 400;
-  margin-top: 4px;
+  margin-top: var(--sv-esp-1);
 }
 
 .info-icon {
-  font-size: 0.8rem;
-  color: #666666;
+  font-size: var(--sv-texto-xs);
+  color: var(--sv-texto-suave);
   cursor: pointer;
-  margin-left: 2px;
+  margin-left: var(--sv-esp-1);
 }
 
-/* Símbolos de verificación (palomitas) */
 .check-mark {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #111111;
+  font-size: var(--sv-titulo-seccion);
+  font-weight: 700;
+  color: var(--sv-exito);
 }
 
-/* Adaptabilidad a dispositivos móviles */
 @media (max-width: 768px) {
-  .compare-main-title {
-    font-size: 2rem;
+  .cta-banner-container {
+    padding: var(--sv-esp-6) var(--sv-esp-4);
+  }
+
+  .cta-banner-title {
+    font-size: var(--sv-titulo-pagina);
   }
 
   .compare-table th,
   .compare-table td {
-    padding: 16px 12px;
-    font-size: 0.85rem;
+    padding: var(--sv-esp-3);
+    font-size: var(--sv-texto-sm);
   }
 
   .plan-name {
-    font-size: 1.05rem;
-  }
-
-  .plan-desc {
-    font-size: 0.75rem;
+    font-size: var(--sv-texto-lg);
   }
 }
