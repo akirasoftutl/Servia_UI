@@ -259,7 +259,7 @@
   border: calc(var(--sv-esp-1) / 4) solid var(--sv-borde);
   border-radius: var(--sv-radio-xs);
   background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
+  color: var(--sv-secundario);
   font-family: var(--sv-fuente);
   font-size: var(--sv-texto-2xs);
   font-weight: 700;

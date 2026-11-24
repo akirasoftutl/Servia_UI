@@ -81,7 +81,7 @@
 .servicio-icono--inactivo {
   border-color: var(--sv-borde);
   background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
+  color: var(--sv-secundario);
 }
 
 .servicio-informacion {
@@ -121,7 +121,7 @@
 
 .servicio-estado.inactivo {
   background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
+  color: var(--sv-secundario);
 }
 
 .servicio-estado-punto {

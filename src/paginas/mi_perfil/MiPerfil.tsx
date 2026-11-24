@@ -710,7 +710,7 @@ export function MiPerfil() {
                               className={`perfil-category w-100 text-start ${seleccionada ? 'selected' : ''
                                 }`}
                               style={{
-                                backgroundImage: `linear-gradient(to top, rgba(36, 26, 20, 0.85), rgba(36, 26, 20, 0.12)), url('${imagenCategoria}')`,
+                                backgroundImage: `linear-gradient(to top, rgba(17, 24, 39, 0.85), rgba(17, 24, 39, 0.12)), url('${imagenCategoria}')`,
                               }}
                               onClick={() =>
                                 handleCategoriaChange(cat.id)

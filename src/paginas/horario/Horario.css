@@ -119,7 +119,7 @@
 
 .horario-fila--descanso .horario-dia-badge {
   background: var(--sv-superficie-hundida);
-  color: var(--sv-texto-suave);
+  color: var(--sv-secundario);
 }
 
 .horario-dia-info {
@@ -249,7 +249,7 @@
   width: 38px;
   height: 22px;
   border-radius: var(--sv-radio-pill);
-  background: var(--sv-borde-fuerte);
+  background: var(--sv-borde-campo);
   transition: background var(--sv-rapido) ease;
 }
 
