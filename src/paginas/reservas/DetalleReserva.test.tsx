@@ -475,8 +475,10 @@ describe('criterios de motivo, avisos y diseño', () => {
     mostrar();
     const error = await screen.findByRole('alert');
     expect(error).toHaveClass('panel-estado-texto');
-    expect(error.parentElement).toHaveClass('panel-estado');
-    expect(error.parentElement?.querySelector('.panel-estado-icono--error')).toBeInTheDocument();
+    const estado = error.closest('.panel-estado');
+    expect(estado).toHaveClass('panel-estado--error');
+    expect(estado?.querySelector('.panel-ilustracion--error')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveClass('btn-servia-primary');
+    expect(screen.getByRole('link', { name: 'Volver a reservas' })).toHaveClass('btn-servia-secondary');
   });
 });

@@ -5,8 +5,10 @@ import { api, ErrorApi } from '../../servicios/api';
 import { mensajeDeError } from '../../servicios/mensajeDeError';
 import { ESTADOS_CONFIG, formatearFecha, formatearHora, calcularTiempoRestante } from './estados';
 import './Reservas.css';
-import { CalendarCheck } from 'lucide-react';
-import { EyebrowPanel } from '../../componentes/panel/EyebrowPanel';
+import { CalendarCheck, Clock } from 'lucide-react';
+import { EncabezadoPanel } from '../../componentes/panel/EncabezadoPanel';
+import { EstadoError } from '../../componentes/panel/EstadosPanel';
+import { BotonPanel } from '../../componentes/panel/BotonPanel';
 
 const MOTIVO_MIN = 20;
 const MOTIVO_MAX = 500;
@@ -223,12 +225,11 @@ export function DetalleReserva() {
   if (error) {
     return (
       <div className="panel-pagina"><div className="panel-contenedor">
-        <div className="panel-estado">
-          <div className="panel-estado-icono panel-estado-icono--error" aria-hidden="true">!</div>
-          <p className="panel-estado-texto" role="alert">{error}</p>
-          <button className="btn-servia-primary" onClick={cargarDetalle}>Reintentar</button>
-          <Link to="/reservas" className="btn-servia-secondary text-decoration-none">Volver a reservas</Link>
-        </div>
+        <EstadoError
+          mensaje={error}
+          onReintentar={cargarDetalle}
+          accionSecundaria={<BotonPanel variante="secundario" to="/reservas">Volver a reservas</BotonPanel>}
+        />
       </div></div>
     );
   }
@@ -260,10 +261,7 @@ export function DetalleReserva() {
         {reserva.estado === 'pendiente' && segundosRestantes !== null && segundosRestantes > 0 && (
           <div className="panel-alerta panel-alerta--aviso" role="status">
             <span className="panel-alerta-icono" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
+              <Clock aria-hidden="true" />
             </span>
             <div className="panel-alerta-contenido">
               <strong>Tiempo para responder</strong>
@@ -275,27 +273,28 @@ export function DetalleReserva() {
           </div>
         )}
 
-        <header className="panel-encabezado d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-          <div>
-            <EyebrowPanel grupo="operacion" icono={CalendarCheck} />
-            <h1 className="panel-titulo mb-0">Reserva {reserva.folio}</h1>
-            <p className="panel-subtitulo mt-1">Revisa la información de la solicitud del cliente.</p>
-          </div>
-          <span className={`reserva-badge ${estadoConfig.className}`}>
-            {estadoConfig.label}
-          </span>
-        </header>
+        <EncabezadoPanel
+          grupo="operacion"
+          icono={CalendarCheck}
+          titulo={`Reserva ${reserva.folio}`}
+          subtitulo="Revisa la información de la solicitud del cliente."
+          acciones={
+            <span className={`reserva-badge ${estadoConfig.className}`}>
+              {estadoConfig.label}
+            </span>
+          }
+        />
 
         {esPendienteVigente && (
-          <div className="d-flex gap-3 mb-4">
+          <div className="reserva-detalle-acciones">
             <button
-              className="btn-servia-primary flex-grow-1"
+              className="btn-servia-primary"
               onClick={() => { setErrorMotivo(''); setMostrarConfirmar(true); }}
             >
               Aceptar Reserva
             </button>
             <button
-              className="btn-servia-danger flex-grow-1"
+              className="btn-servia-danger"
               onClick={() => { setErrorMotivo(''); setMostrarRechazar(true); }}
             >
               Rechazar Solicitud
@@ -303,39 +302,63 @@ export function DetalleReserva() {
           </div>
         )}
 
-        <div className="panel-tarjeta p-0 overflow-hidden">
-          <div className="row g-0">
-            <div className="col-md-6 p-4 p-md-5 border-end">
-              <h5 className="fw-bold text-dark mb-4 d-flex align-items-center gap-2">Datos del cliente</h5>
-              <div className="mb-3"><span className="text-muted small d-block mb-1">Nombre completo</span><span className="fw-semibold fs-6 text-dark">{reserva.cliente.nombre || 'No especificado'}</span></div>
-              <div className="mb-3"><span className="text-muted small d-block mb-1">Teléfono</span>{reserva.cliente.telefono ? <a href={`tel:${reserva.cliente.telefono}`} className="text-decoration-none fw-semibold" style={{ color: 'var(--sv-acento)' }}>{reserva.cliente.telefono}</a> : <span className="text-muted">No especificado</span>}</div>
-              {reserva.cliente.correo && (<div className="mb-4"><span className="text-muted small d-block mb-1">Correo electrónico</span><a href={`mailto:${reserva.cliente.correo}`} className="text-decoration-none fw-semibold" style={{ color: 'var(--sv-acento)' }}>{reserva.cliente.correo}</a></div>)}
-              <div className="mt-4 pt-4 border-top">
-                <h6 className="fw-bold text-dark mb-2">Observaciones del cliente</h6>
-                <p className="text-muted small mb-0 p-3 rounded-3">{reserva.observaciones || 'Sin observaciones.'}</p>
+        <section className="panel-tarjeta reserva-detalle-tarjeta">
+          <div className="reserva-detalle-grid">
+            <div className="reserva-detalle-col reserva-detalle-col--inicio">
+              <h5 className="reserva-detalle-subtitulo">Datos del cliente</h5>
+              <div className="reserva-detalle-dato">
+                <span className="reserva-detalle-etiqueta">Nombre completo</span>
+                <span className="reserva-detalle-valor">{reserva.cliente.nombre || 'No especificado'}</span>
+              </div>
+              <div className="reserva-detalle-dato">
+                <span className="reserva-detalle-etiqueta">Teléfono</span>
+                {reserva.cliente.telefono ? <a href={`tel:${reserva.cliente.telefono}`} className="reserva-detalle-enlace">{reserva.cliente.telefono}</a> : <span className="panel-ayuda">No especificado</span>}
+              </div>
+              {reserva.cliente.correo && (
+                <div className="reserva-detalle-dato">
+                  <span className="reserva-detalle-etiqueta">Correo electrónico</span>
+                  <a href={`mailto:${reserva.cliente.correo}`} className="reserva-detalle-enlace">{reserva.cliente.correo}</a>
+                </div>
+              )}
+              <div className="reserva-detalle-seccion">
+                <h6 className="reserva-detalle-subtitulo">Observaciones del cliente</h6>
+                <p className="reserva-detalle-observaciones">{reserva.observaciones || 'Sin observaciones.'}</p>
               </div>
             </div>
-            <div className="col-md-6 p-4 p-md-5">
-              <h5 className="fw-bold text-dark mb-4">Detalles del servicio</h5>
-              <div className="mb-4 p-4 bg-white rounded-3 shadow-sm">
-                <span className="text-muted small d-block mb-1">Servicio contratado</span>
-                <span className="fw-bold fs-5 mb-3 d-block">{reserva.servicio.nombre}</span>
-                <div className="d-flex justify-content-between text-muted small pt-2 border-top">
-                  <span>Duración: <strong className="text-dark">{reserva.servicio.duracionMin} min</strong></span>
-                  <span>Precio: <strong className="text-dark">${reserva.servicio.precio?.toFixed(2)}</strong></span>
+            <div className="reserva-detalle-col">
+              <h5 className="reserva-detalle-subtitulo">Detalles del servicio</h5>
+              <div className="reserva-detalle-bloque">
+                <span className="reserva-detalle-etiqueta">Servicio contratado</span>
+                <span className="reserva-detalle-servicio-nombre">{reserva.servicio.nombre}</span>
+                <div className="reserva-detalle-servicio-meta">
+                  <span>Duración: <strong>{reserva.servicio.duracionMin} min</strong></span>
+                  <span>Precio: <strong>${reserva.servicio.precio?.toFixed(2)}</strong></span>
                 </div>
               </div>
-              <h5 className="fw-bold text-dark mb-3 mt-4">Fecha y hora</h5>
-              <div className="p-3 rounded-3">
-                <div className="mb-2"><span className="text-muted small d-block">Fecha</span><span className="fw-semibold text-dark">{formatearFecha(reserva.inicio)}</span></div>
-                <div><span className="text-muted small d-block">Horario</span><span className="fw-semibold text-dark">{formatearHora(reserva.inicio)} - {formatearHora(reserva.fin)}</span></div>
+              <div className="reserva-detalle-seccion">
+                <h5 className="reserva-detalle-subtitulo">Fecha y hora</h5>
+                <div className="reserva-detalle-bloque">
+                  <div className="reserva-detalle-dato">
+                    <span className="reserva-detalle-etiqueta">Fecha</span>
+                    <span className="reserva-detalle-valor">{formatearFecha(reserva.inicio)}</span>
+                  </div>
+                  <div>
+                    <span className="reserva-detalle-etiqueta">Horario</span>
+                    <span className="reserva-detalle-valor">{formatearHora(reserva.inicio)} - {formatearHora(reserva.fin)}</span>
+                  </div>
+                </div>
               </div>
-              {reserva.motivo && (<div className="mt-4"><h6 className="fw-bold text-danger mb-2">{reserva.estado === 'cancelada' ? 'Motivo de la cancelación' : 'Motivo del rechazo'}</h6><p className="text-danger small mb-0 p-3 rounded-3">{reserva.motivo}</p></div>)}
+              {reserva.motivo && (
+                <div className="reserva-detalle-motivo">
+                  <h6>{reserva.estado === 'cancelada' ? 'Motivo de la cancelación' : 'Motivo del rechazo'}</h6>
+                  <p>{reserva.motivo}</p>
+                </div>
+              )}
             </div>
           </div>
-          <div className="p-4 border-top d-flex flex-wrap justify-content-center gap-3">
+          <div className="reserva-detalle-pie">
 
-            <Link to="/reservas" className="btn-servia-secondary text-decoration-none">Volver a reservas</Link>
+            <Link to="/reservas" className="btn-servia-secondary">Volver a reservas</Link>
 
             {puedeCompletar && (
               <button
@@ -358,19 +381,19 @@ export function DetalleReserva() {
               </button>
             )}
           </div>
-        </div>
+        </section>
       </div>
 
       {mostrarModal && (
         <div className="panel-dialogo-fondo" role="alertdialog" aria-modal="true">
           <div className="panel-dialogo">
             <h3 className="panel-dialogo-titulo">Cancelar reserva</h3>
-            <p className="text-muted small mb-4">
+            <p className="panel-dialogo-texto">
               El cliente verá este motivo. La reserva quedará cancelada, el horario se liberará y ya no podrá volver a confirmarse.
             </p>
             <div className="mb-3">
               <label htmlFor="motivo-cancelacion" className="form-label">Motivo de la cancelación *</label>
-              <p id="ayuda-cancelacion" className="small text-muted">De {MOTIVO_MIN} a {MOTIVO_MAX} caracteres</p>
+              <p id="ayuda-cancelacion" className="panel-ayuda">De {MOTIVO_MIN} a {MOTIVO_MAX} caracteres</p>
               <textarea
                 className={`form-control ${errorMotivo ? 'is-invalid' : ''}`}
                 rows={3}
@@ -382,9 +405,9 @@ export function DetalleReserva() {
                 placeholder="Explica al cliente por qué se cancela la reserva..."
                 disabled={procesando}
               ></textarea>
-              <div className="d-flex justify-content-between mt-1">
+              <div className="reserva-dialogo-pie-campo">
                 {errorMotivo && <div className="panel-alerta panel-alerta--error" role="alert"><div className="panel-alerta-contenido">{errorMotivo}</div></div>}
-                <span id="contador-cancelacion" className="text-muted small">{motivo.trim().length}/{MOTIVO_MAX}</span>
+                <span id="contador-cancelacion" className="panel-ayuda">{motivo.trim().length}/{MOTIVO_MAX}</span>
               </div>
             </div>
             <div className="panel-dialogo-acciones">
@@ -401,7 +424,7 @@ export function DetalleReserva() {
         <div className="panel-dialogo-fondo" role="alertdialog" aria-modal="true">
           <div className="panel-dialogo">
             <h3 className="panel-dialogo-titulo">{mostrarCompletar ? '¿Marcar esta reserva como completada? Ya no se podrá modificar.' : '¿Confirmar la reserva?'}</h3>
-            <p className="text-muted mb-4">
+            <p className="panel-dialogo-texto">
               {mostrarCompletar ? <>Reserva <strong>{reserva.folio}</strong> de </> : '¿Confirmar la reserva de '}
               <strong>{reserva.cliente.nombre}</strong> el {formatearFecha(reserva.inicio)} a las {formatearHora(reserva.inicio)}{mostrarCompletar ? '.' : '?'}
             </p>
@@ -423,7 +446,7 @@ export function DetalleReserva() {
             <h3 className="panel-dialogo-titulo">Rechazar solicitud</h3>
             <div className="mb-3">
               <label htmlFor="motivo-rechazo" className="form-label">Motivo del rechazo *</label>
-              <p id="ayuda-rechazo" className="small text-muted">De {MOTIVO_MIN} a {MOTIVO_MAX} caracteres</p>
+              <p id="ayuda-rechazo" className="panel-ayuda">De {MOTIVO_MIN} a {MOTIVO_MAX} caracteres</p>
               <textarea
                 className={`form-control ${errorMotivo ? 'is-invalid' : ''}`}
                 rows={3}
@@ -435,9 +458,9 @@ export function DetalleReserva() {
                 placeholder="Explica al cliente por qué no puedes aceptar la reserva..."
                 disabled={procesando}
               ></textarea>
-              <div className="d-flex justify-content-between mt-1">
+              <div className="reserva-dialogo-pie-campo">
                 {errorMotivo && <div className="panel-alerta panel-alerta--error" role="alert"><div className="panel-alerta-contenido">{errorMotivo}</div></div>}
-                <span id="contador-rechazo" className="text-muted small">{motivoRechazo.trim().length}/{MOTIVO_MAX}</span>
+                <span id="contador-rechazo" className="panel-ayuda">{motivoRechazo.trim().length}/{MOTIVO_MAX}</span>
               </div>
             </div>
             <div className="panel-dialogo-acciones">
