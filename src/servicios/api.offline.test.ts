@@ -3,10 +3,11 @@ import {
   ErrorAccionPendiente,
   ErrorSinConexion,
   MENSAJE_ACCION_PENDIENTE,
+  MENSAJE_REQUIERE_CONEXION,
   MENSAJE_SIN_CONEXION,
   reenviarAccionesPendientes,
 } from './api'
-import { cantidadAccionesPendientes, vaciarCola } from './colaOffline'
+import { cantidadAccionesPendientes, guardarAccion, leerAcciones, vaciarCola } from './colaOffline'
 
 function respuesta(estado: number, cuerpo?: unknown) {
   return new Response(cuerpo === undefined ? '' : JSON.stringify(cuerpo), { status: estado })
@@ -78,6 +79,37 @@ describe('api sin conexión', () => {
     expect(error).toBeInstanceOf(ErrorAccionPendiente)
     expect((error as Error).message).toBe(MENSAJE_ACCION_PENDIENTE)
     expect(await cantidadAccionesPendientes()).toBe(1)
+  })
+
+  it('con sinCola no guarda la escritura y pide conexión', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'))
+
+    for (let intento = 0; intento < 3; intento++) {
+      const error = await api('/auth/registro/negocio', {
+        method: 'POST',
+        sinCola: true,
+        body: JSON.stringify({ correo: 'a@b.mx', contrasena: 'secreta123' }),
+      }).catch((causa: unknown) => causa)
+
+      expect(error).toBeInstanceOf(ErrorSinConexion)
+      expect(error).not.toBeInstanceOf(ErrorAccionPendiente)
+      expect((error as Error).message).toBe(MENSAJE_REQUIERE_CONEXION)
+    }
+    expect(await cantidadAccionesPendientes()).toBe(0)
+    expect(fetchMock.mock.calls[0][1]).not.toHaveProperty('sinCola')
+  })
+
+  it('descarta sin enviar las acciones de registro o con contraseña y conserva las demás', async () => {
+    const base = { method: 'POST', headers: {}, creadaEn: 1 }
+    await guardarAccion({ ...base, id: 'r1', url: 'http://x/auth/registro/negocio', body: '{"correo":"a@b.mx"}' })
+    await guardarAccion({ ...base, id: 'r2', url: 'http://x/otra', body: '{"contrasena":"abc12345"}' })
+    await guardarAccion({ ...base, id: 'ok', url: 'http://x/negocios/mio/servicios', body: '{"nombre":"Corte"}', creadaEn: 2 })
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'))
+
+    await reenviarAccionesPendientes()
+
+    expect((await leerAcciones()).map((a) => a.id)).toEqual(['ok'])
+    expect(fetchMock.mock.calls.map(([u]) => u)).toEqual(['http://x/negocios/mio/servicios'])
   })
 
   it('reenvía la acción pendiente cuando vuelve la conexión', async () => {
