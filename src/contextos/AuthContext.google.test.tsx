@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { AuthProvider, useAuth, type ResultadoGoogle } from './AuthContext'
 import { ErrorApi, ErrorSinConexion, MENSAJE_REQUIERE_CONEXION } from '../servicios/api'
@@ -36,10 +37,11 @@ vi.mock('../servicios/notificaciones', () => ({ desactivarTokenPushActual: vi.fn
 const getIdToken = vi.fn()
 const usuarioGoogle = { uid: 'g-1', email: 'g@ejemplo.com', getIdToken }
 
-let contexto: ReturnType<typeof useAuth>
+const captura = { contexto: null as unknown as ReturnType<typeof useAuth> }
 function Espia() {
-  contexto = useAuth()
-  return <span>{contexto.usuario ? `Sesión: ${contexto.usuario.uid}` : 'Sin sesión'}</span>
+  const auth = useAuth()
+  useEffect(() => { captura.contexto = auth })
+  return <span>{auth.usuario ? `Sesión: ${auth.usuario.uid}` : 'Sin sesión'}</span>
 }
 
 async function montar() {
@@ -87,7 +89,7 @@ describe('AuthContext: continuar con Google', () => {
     popupConCarrera()
 
     let resultado: ResultadoGoogle | null = null
-    await act(async () => { resultado = await contexto.iniciarSesionConGoogle() })
+    await act(async () => { resultado = await captura.contexto.iniciarSesionConGoogle() })
 
     expect(resultado).toEqual({ nuevaCuenta: true })
     expect(mocks.setCustomParameters).toHaveBeenCalledWith({ prompt: 'select_account' })
@@ -107,7 +109,7 @@ describe('AuthContext: continuar con Google', () => {
       ruta === '/auth/google/negocio' ? { tipo: 'negocio', nuevaCuenta: false } : { tipo: 'negocio' })
 
     let resultado: ResultadoGoogle | null = null
-    await act(async () => { resultado = await contexto.iniciarSesionConGoogle() })
+    await act(async () => { resultado = await captura.contexto.iniciarSesionConGoogle() })
 
     expect(resultado).toEqual({ nuevaCuenta: false })
     expect(screen.getByText('Sesión: g-1')).toBeVisible()
@@ -116,7 +118,7 @@ describe('AuthContext: continuar con Google', () => {
   it('tras prepararse la cuenta, la verificación de AuthContext vuelve a funcionar normal', async () => {
     await montar()
     popupConCarrera()
-    await act(async () => { await contexto.iniciarSesionConGoogle() })
+    await act(async () => { await captura.contexto.iniciarSesionConGoogle() })
 
     // Ahora un cliente entra por otra vía: debe verificarse y sacarse como siempre.
     mocks.api.mockImplementation(async () => ({ tipo: 'cliente' }))
@@ -137,7 +139,7 @@ describe('AuthContext: continuar con Google', () => {
     })
 
     let resultado: ResultadoGoogle | null | undefined
-    await act(async () => { resultado = await contexto.iniciarSesionConGoogle() })
+    await act(async () => { resultado = await captura.contexto.iniciarSesionConGoogle() })
 
     expect(resultado).toBeNull()
     expect(mocks.signOut).toHaveBeenCalledTimes(1)
@@ -153,7 +155,7 @@ describe('AuthContext: continuar con Google', () => {
       mocks.signInWithPopup.mockRejectedValue(Object.assign(new Error('cerrado'), { code }))
 
       let resultado: ResultadoGoogle | null | undefined
-      await act(async () => { resultado = await contexto.iniciarSesionConGoogle() })
+      await act(async () => { resultado = await captura.contexto.iniciarSesionConGoogle() })
 
       expect(resultado).toBeNull()
       expect(llamadasAlertas()).toHaveLength(0)
@@ -169,7 +171,7 @@ describe('AuthContext: continuar con Google', () => {
       await montar()
       mocks.signInWithPopup.mockRejectedValue(Object.assign(new Error('bloqueado'), { code }))
 
-      await act(async () => { await contexto.iniciarSesionConGoogle() })
+      await act(async () => { await captura.contexto.iniciarSesionConGoogle() })
 
       expect(mocks.signInWithRedirect).toHaveBeenCalledTimes(1)
       expect(llamadasAlertas()).toHaveLength(0)
@@ -191,8 +193,8 @@ describe('AuthContext: continuar con Google', () => {
     expect(llamadasA('/auth/yo')).toHaveLength(0)
     expect(mocks.signOut).not.toHaveBeenCalled()
     expect(getIdToken).toHaveBeenCalledWith(true)
-    expect(contexto.leerBienvenidaGoogle()).toEqual({ nuevaCuenta: true })
-    expect(contexto.cargando).toBe(false)
+    expect(captura.contexto.leerBienvenidaGoogle()).toEqual({ nuevaCuenta: true })
+    expect(captura.contexto.cargando).toBe(false)
     expect(localStorage.getItem('servia:google-redireccion')).toBeNull()
   })
 
@@ -204,7 +206,7 @@ describe('AuthContext: continuar con Google', () => {
       return { tipo: 'negocio' }
     })
 
-    await act(async () => { await contexto.iniciarSesionConGoogle() })
+    await act(async () => { await captura.contexto.iniciarSesionConGoogle() })
 
     expect(ultimaAlerta()).toMatchObject({ icon: 'warning', title: 'Sin conexión', text: MENSAJE_REQUIERE_CONEXION })
     expect(mocks.signOut).toHaveBeenCalledTimes(1)
@@ -215,7 +217,7 @@ describe('AuthContext: continuar con Google', () => {
     await montar()
     vi.stubGlobal('navigator', { ...navigator, onLine: false })
 
-    await act(async () => { await contexto.iniciarSesionConGoogle() })
+    await act(async () => { await captura.contexto.iniciarSesionConGoogle() })
     vi.unstubAllGlobals()
 
     expect(mocks.signInWithPopup).not.toHaveBeenCalled()
