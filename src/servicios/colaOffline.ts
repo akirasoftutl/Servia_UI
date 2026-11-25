@@ -108,6 +108,19 @@ export async function borrarAccion(id: string): Promise<void> {
   notificarCambioCola()
 }
 
+// Las contraseñas no deben quedar en IndexedDB. Versiones anteriores encolaban el
+// registro de negocio con la contraseña en texto plano: se descartan sin enviarlas.
+function esAccionSensible(accion: AccionPendiente): boolean {
+  if (accion.url.includes('/auth/registro')) return true
+  return typeof accion.body === 'string' && /contrasena|password/i.test(accion.body)
+}
+
+export async function descartarAccionesSensibles(): Promise<void> {
+  for (const accion of await leerAcciones()) {
+    if (esAccionSensible(accion)) await borrarAccion(accion.id)
+  }
+}
+
 export async function vaciarCola(): Promise<void> {
   const base = await abrirBase()
   if (base) {

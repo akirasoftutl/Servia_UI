@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router'; 
-import { api } from '../../servicios/api'; 
+import { api, ErrorSinConexion, MENSAJE_REQUIERE_CONEXION } from '../../servicios/api';
+import { aviso } from '../../servicios/alertas';
 import { auth } from '../../servicios/firebase'; 
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
@@ -63,11 +64,16 @@ export function RegistroNegocio() {
     setErrorGlobal('');
     
     if (!validar()) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      await aviso(MENSAJE_REQUIERE_CONEXION, 'Sin conexión');
+      return;
+    }
     setCargando(true);
 
     try {
       await api('/auth/registro/negocio', {
         method: 'POST',
+        sinCola: true, // lleva la contraseña: nunca se guarda en la cola offline
         body: JSON.stringify({
           nombreNegocio: form.nombreNegocio,
           correo: form.correo,
@@ -83,7 +89,9 @@ export function RegistroNegocio() {
       });
 
     } catch (error: any) {
-      if (error.estado === 409) {
+      if (error instanceof ErrorSinConexion) {
+        await aviso(error.message, 'Sin conexión');
+      } else if (error.estado === 409) {
         setErrorGlobal('Ese correo ya tiene una cuenta');
       } else {
         setErrorGlobal(error.message || 'Ocurrió un error. Intenta de nuevo.');
