@@ -1,11 +1,19 @@
 import { auth } from './firebase'
 import { guardarDato, invalidarDatosDe, leerDato, vaciarCacheDatos } from './cacheOffline'
-import { avisarOffline, borrarAccion, guardarAccion, leerAcciones, type AccionPendiente } from './colaOffline'
+import {
+  avisarOffline,
+  borrarAccion,
+  descartarAccionesSensibles,
+  guardarAccion,
+  leerAcciones,   type AccionPendiente,
+} from './colaOffline'
 
 const URL_API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 
 export const MENSAJE_SIN_CONEXION =
   'Sin conexión. Estás viendo los últimos datos guardados en este dispositivo.'
+export const MENSAJE_REQUIERE_CONEXION =
+  'Necesitas conexión para realizar esta acción. Conéctate e inténtalo de nuevo.'
 export const MENSAJE_ACCION_PENDIENTE =
   'Sin conexión. Guardamos tu acción y la enviaremos automáticamente cuando vuelva la conexión.'
 
@@ -44,6 +52,10 @@ export class ErrorAccionPendiente extends ErrorSinConexion {
     this.name = 'ErrorAccionPendiente'
   }
 }
+
+// Opciones de `api()`: las de `fetch` más `sinCola`, que impide guardar la
+// escritura en la cola offline (por ejemplo, si lleva contraseñas).
+export type OpcionesApi = RequestInit & { sinCola?: boolean }
 
 export type TipoFotoNegocio = 'portada' | 'galeria'
 
@@ -140,8 +152,9 @@ async function encolarAccion(
 // Llama a la API de Servia. Si hay sesión, agrega el token de Firebase.
 // Las lecturas usan la red primero y, si falla, el último dato guardado.
 // Las escrituras que fallan por red se guardan y se reenvían al volver la conexión.
+// Con `sinCola: true` una escritura sin red no se guarda: lanza `ErrorSinConexion`.
 // Ejemplo: `const perfil = await api<Perfil>('/negocios/mio')`.
-export async function api<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
+export async function api<T>(ruta: string, { sinCola = false, ...opciones }: OpcionesApi = {}): Promise<T> {
   const url = `${URL_API}${ruta}`
   const metodo = (opciones.method ?? 'GET').toUpperCase()
   const cabeceras = new Headers(opciones.headers)
@@ -158,6 +171,7 @@ export async function api<T>(ruta: string, opciones: RequestInit = {}): Promise<
     respuesta = await fetch(url, { ...opciones, headers: cabeceras })
   } catch (error) {
     if (!esFalloDeRed(error)) throw error
+    if (esEscritura(metodo) && sinCola) throw new ErrorSinConexion(MENSAJE_REQUIERE_CONEXION)
     if (esEscritura(metodo)) return encolarAccion(url, metodo, cabeceras, opciones.body)
     const guardado = await leerDato<T>(url)
     if (guardado !== undefined) return guardado
@@ -199,6 +213,7 @@ export async function reenviarAccionesPendientes(): Promise<void> {
   if (reenviando) return
   reenviando = true
   try {
+    await descartarAccionesSensibles()
     const acciones = await leerAcciones()
     if (acciones.length === 0) return
 
