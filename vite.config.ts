@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'favicon.png', 'apple-touch-icon.png'],
       workbox: {
         globIgnores: ['**/firebase-messaging-sw.js'],

@@ -8,12 +8,14 @@ import './estilos/panel.css';
 import './estilos/alertas.css';
 import { AuthProvider } from './contextos/AuthContext';
 import { BannerOffline } from './componentes/estadoOffline/BannerOffline';
+import * as alertas from './servicios/alertas';
+import { iniciarActualizacionPwa } from './servicios/actualizacionPwa';
 import { iniciarSincronizacionOffline } from './servicios/sincronizacionOffline';
 import { router } from './router'
 import './index.css'
 
-// Service worker de la PWA: permite instalar el panel y lo actualiza solo.
-registerSW({ immediate: true })
+// Service worker de la PWA: permite instalar el panel y avisa cuando hay versión nueva.
+iniciarActualizacionPwa({ registerSW, alertas })
 // Reenvía las acciones que se hicieron sin conexión.
 iniciarSincronizacionOffline()
 
