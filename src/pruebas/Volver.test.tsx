@@ -8,6 +8,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Login } from '../paginas/login/Login'
 import { RegistroNegocio } from '../paginas/registro_negocio/RegistroNegocio'
 
+vi.mock('../contextos/AuthContext', () => ({
+  useAuth: () => ({
+    usuario: null,
+    cargando: false,
+    iniciarSesionConGoogle: vi.fn(),
+    leerBienvenidaGoogle: () => null,
+    limpiarBienvenidaGoogle: () => {},
+  }),
+}))
 vi.mock('../servicios/firebase', () => ({ auth: {} }))
 vi.mock('../servicios/api', () => ({ api: vi.fn() }))
 

@@ -7,6 +7,15 @@ import { Login } from './Login'
 
 const authFalso = vi.hoisted(() => ({ nombre: 'auth-de-prueba' }))
 vi.mock('../../servicios/firebase', () => ({ auth: authFalso }))
+vi.mock('../../contextos/AuthContext', () => ({
+  useAuth: () => ({
+    usuario: null,
+    cargando: false,
+    iniciarSesionConGoogle: vi.fn(),
+    leerBienvenidaGoogle: () => null,
+    limpiarBienvenidaGoogle: () => {},
+  }),
+}))
 vi.mock('../../servicios/api', () => ({ api: vi.fn() }))
 vi.mock('firebase/auth', async (original) => ({
   ...(await original<typeof import('firebase/auth')>()),

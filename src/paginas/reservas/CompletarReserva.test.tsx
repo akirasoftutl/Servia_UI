@@ -40,7 +40,14 @@ beforeEach(() => {
   vi.setSystemTime(new Date(inicio));
   apiMock.mockReset();
   cerrarSesion.mockClear();
-  vi.mocked(useAuth).mockReturnValue({ usuario: null, cargando: false, cerrarSesion });
+  vi.mocked(useAuth).mockReturnValue({
+    usuario: null,
+    cargando: false,
+    cerrarSesion,
+    iniciarSesionConGoogle: vi.fn(),
+    leerBienvenidaGoogle: () => null,
+    limpiarBienvenidaGoogle: () => {},
+  });
   apiMock.mockResolvedValue(reserva());
   vi.spyOn(window, 'alert').mockImplementation(() => {});
 });
