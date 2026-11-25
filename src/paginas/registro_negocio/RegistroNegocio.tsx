@@ -6,6 +6,8 @@ import { auth } from '../../servicios/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useVolver } from '../../utilidades/useVolver';
+import { useAccesoGoogle } from '../../utilidades/useAccesoGoogle';
+import { BotonGoogle } from '../../componentes/BotonGoogle';
 import './Registro.css'; 
 
 interface FormularioRegistro {
@@ -20,6 +22,7 @@ type ErroresFormulario = Partial<Record<keyof FormularioRegistro, string>>;
 export function RegistroNegocio() {
   const navigate = useNavigate();
   const volver = useVolver();
+  const { cargandoGoogle, continuarConGoogle } = useAccesoGoogle();
   
   const [form, setForm] = useState<FormularioRegistro>({
     nombreNegocio: '',
@@ -227,11 +230,24 @@ export function RegistroNegocio() {
             <button 
               type="submit" 
               className="submit-btn"
-              disabled={cargando}
+              disabled={cargando || cargandoGoogle}
             >
               {cargando ? 'Registrando...' : 'REGISTRARSE'}
             </button>
           </form>
+
+          <div className="divider">
+            <div className="divider-line">
+              <hr />
+            </div>
+            <span>o</span>
+          </div>
+
+          <BotonGoogle
+            onClick={() => void continuarConGoogle()}
+            cargando={cargandoGoogle}
+            deshabilitado={cargando}
+          />
         </div>
 
         {/* Footer con enlace a Login */}

@@ -4,6 +4,15 @@ import { api, ErrorSinConexion, MENSAJE_REQUIERE_CONEXION } from '../../servicio
 import { llamadasAlertas, ultimaAlerta } from '../../pruebas/mockAlertas'
 import { RegistroNegocio } from './RegistroNegocio'
 
+vi.mock('../../contextos/AuthContext', () => ({
+  useAuth: () => ({
+    usuario: null,
+    cargando: false,
+    iniciarSesionConGoogle: vi.fn(),
+    leerBienvenidaGoogle: () => null,
+    limpiarBienvenidaGoogle: () => {},
+  }),
+}))
 vi.mock('../../servicios/firebase', () => ({ auth: {} }))
 vi.mock('firebase/auth', () => ({ signInWithEmailAndPassword: vi.fn() }))
 vi.mock('../../servicios/api', async (importOriginal) => {
